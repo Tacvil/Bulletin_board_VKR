@@ -1,0 +1,50 @@
+<resources>
+    <string name="app_name">Bulletin_board</string>
+    <string name="ad_id">ca-app-pub-3940256099942544/6300978111</string>
+    <!-- Menu Drawer Strings -->
+    <string name="ad_cat1"><font color="?attr/colorPrimary">Объявления</font></string>
+    <string name="ad_my_ads">Мои объявления</string>
+    <string name="ad_car">Машины</string>
+    <string name="ad_pc">Компьютеры</string>
+    <string name="ad_smartphone">Смартфоны</string>
+    <string name="ad_dm">Бытовая техника</string>
+
+    <string name="ad_cat2"><font color="?attr/colorPrimary">Аккаунт</font></string>
+    <string name="ac_sign_up">Регистрация</string>
+    <string name="ac_sign_in">Вход</string>
+    <string name="ac_sign_out">Выход</string>
+
+    <string name="open">Open</string>
+    <string name="close">Close</string>
+
+    <string name="not_reg">Войдите или зарегистрируйтесь!</string>
+    <!-- Sign dialog -->
+    <string name="email_hint">Email</string>
+    <string name="email_reset">Reset Email was sent!</string>
+    <string name="dialog_reset_email_message">Для восстановления пароля укажите Ваш Email адрес!</string>
+    <string name="password_hint">Password</string>
+    <string name="sign_up_action">Зарегистрироваться</string>
+    <string name="sign_in_action">Войти</string>
+    <string name="forget_password">Забыли пароль?</string>
+    <string name="sign_up_error">Не удалось зарегистрироваться</string>
+    <string name="sign_in_error">Не удалось войти в аккаунт</string>
+    <string name="send_verification_email_error">Не удалось отправить email для подтверждения!</string>
+    <string name="send_verification_email_done">На вашу почту была отправлена ссылка для подтверждения вашего аккаунта!</string>
+    <!-- Sign dialog -->
+    <string name="link_done">Email подключен к Google</string>
+    <string name="enter_to_google">У Вас уже есть аккаунт с этим Email адресом, войдите по нему.</string>
+    <!-- Edit Activity -->
+    <string name="select_country">*Выберите страну</string>
+    <string name="select_city">*Выберите город</string>
+    <string name="index">*Индекс</string>
+    <string name="tel_numb">*Номер телефона</string>
+    <string name="select_category">*Выберите категорию</string>
+    <string name="price">*Укажите цену</string>
+    <string name="description">*Описание</string>
+    <string name="with_send">С отправкой</string>
+    <string name="publish">Опубликовать</string>
+    <string name="title">*Название объявления</string>
+    <!-- Ad list item -->
+    <string name="price_desc">Цена:</string>
+
+</resources>
