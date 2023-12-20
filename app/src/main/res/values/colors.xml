@@ -9,6 +9,8 @@
     <color name="color_background">#7E91F4</color>
     <color name="color_background_item">#AEBCF8</color>
 
+    <color name="colour_background_item">@android:color/primary_text_dark</color>
+
     <color name="seed">#0047cf</color>
     <color name="md_theme_light_primary">#1B52D9</color>
     <color name="md_theme_light_onPrimary">#FFFFFF</color>

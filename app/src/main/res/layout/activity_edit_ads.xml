@@ -4,7 +4,6 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/color_background"
     android:id="@+id/place_holder"
     tools:context=".act.EditAdsActivity">
 
@@ -20,15 +19,16 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_margin="5dp"
             android:orientation="vertical">
 
             <androidx.cardview.widget.CardView
                 android:id="@+id/card_image"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                app:cardBackgroundColor="@color/color_background_item"
-                app:cardCornerRadius="5dp">
+
+                android:layout_margin="5dp"
+                app:cardCornerRadius="5dp"
+                app:cardElevation="5dp">
 
                 <androidx.constraintlayout.widget.ConstraintLayout
                     android:layout_width="match_parent"
@@ -76,9 +76,10 @@
                 android:id="@+id/card_address"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:layout_marginTop="5dp"
-                app:cardBackgroundColor="@color/color_background_item"
-                app:cardCornerRadius="5dp">
+
+                android:layout_margin="5dp"
+                app:cardCornerRadius="5dp"
+                app:cardElevation="5dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -178,13 +179,6 @@
                             android:inputType="phone" />
                     </com.google.android.material.textfield.TextInputLayout>
 
-                    <CheckBox
-                        android:id="@+id/check_box_with_send"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="5dp"
-                        android:text="@string/with_send" />
-
                 </LinearLayout>
             </androidx.cardview.widget.CardView>
 
@@ -192,9 +186,9 @@
                 android:id="@+id/card_category"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:layout_marginTop="5dp"
-                app:cardBackgroundColor="@color/color_background_item"
-                app:cardCornerRadius="5dp">
+                android:layout_margin="5dp"
+                app:cardCornerRadius="5dp"
+                app:cardElevation="5dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -237,6 +231,13 @@
                             android:clickable="true"
                             android:focusable="false"
                             android:hint="@string/select_category" />
+
+                        <CheckBox
+                            android:id="@+id/check_box_with_send"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="5dp"
+                            android:text="@string/with_send" />
                     </com.google.android.material.textfield.TextInputLayout>
 
                     <com.google.android.material.textfield.TextInputLayout
@@ -273,8 +274,7 @@
                 android:id="@+id/button_publish"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="5dp"
-                android:layout_marginBottom="8dp"
+                android:layout_margin="5dp"
                 android:text="@string/publish" />
 
         </LinearLayout>
