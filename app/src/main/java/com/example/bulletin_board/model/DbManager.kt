@@ -4,6 +4,7 @@ import android.util.Log
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.Query
 import com.google.firebase.database.ValueEventListener
 import com.google.firebase.database.ktx.database
 import com.google.firebase.ktx.Firebase
@@ -16,8 +17,18 @@ class DbManager {
         if (auth.uid != null)database.child(announcement.key ?: "empty").child(auth.uid!!).child("announcement").setValue(announcement)
     }
 
-    fun readDataFromDb(readDataCallback: ReadDataCallback?){
-        database.addListenerForSingleValueEvent(object : ValueEventListener{
+    fun getMyAnnouncement(readDataCallback: ReadDataCallback?){
+        val query = database.orderByChild(auth.uid + "/announcement/uid").equalTo(auth.uid)
+        readDataFromDb(query, readDataCallback)
+    }
+
+    fun getAllAnnouncement(readDataCallback: ReadDataCallback?){
+        val query = database.orderByChild(auth.uid + "/announcement/price")
+        readDataFromDb(query, readDataCallback)
+    }
+
+    private fun readDataFromDb(query: Query, readDataCallback: ReadDataCallback?){
+        query.addListenerForSingleValueEvent(object : ValueEventListener{
             val adArray = ArrayList<Announcement>()
             override fun onDataChange(snapshot: DataSnapshot) {
                 for (item in snapshot.children){

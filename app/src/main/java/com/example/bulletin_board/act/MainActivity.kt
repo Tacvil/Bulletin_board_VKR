@@ -4,7 +4,6 @@ import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
-import android.view.Menu
 import android.view.MenuItem
 import android.widget.TextView
 import android.widget.Toast
@@ -47,7 +46,7 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener{
         init()
         initRecyclerView()
         initViewModel()
-        firebaseViewModel.loadAllAds()
+        firebaseViewModel.loadAllAnnouncement()
         bottomMenuOnClick()
     }
 
@@ -130,9 +129,15 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener{
             val i = Intent(this@MainActivity, EditAdsActivity::class.java)
             startActivity(i)
         }
-        R.id.id_new_ads -> {}
+        R.id.id_my_ads -> {
+            firebaseViewModel.loadMyAnnouncement()
+            mainContent.toolbar.title = getString(R.string.ad_my_ads)
+        }
         R.id.id_favs -> {}
-        R.id.id_home -> {}
+        R.id.id_home -> {
+            firebaseViewModel.loadAllAnnouncement()
+            mainContent.toolbar.title = getString(R.string.def)
+        }
         }
             true
 
