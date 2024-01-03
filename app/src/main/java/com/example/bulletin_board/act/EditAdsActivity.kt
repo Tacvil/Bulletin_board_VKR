@@ -3,7 +3,9 @@ package com.example.bulletin_board.act
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
+import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import android.view.View
 import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
@@ -19,6 +21,7 @@ import com.example.bulletin_board.fragments.ImageListFrag
 import com.example.bulletin_board.utils.CityHelper
 import com.example.bulletin_board.utils.ImagePicker
 import com.fxn.utility.PermUtil
+import java.io.Serializable
 import kotlin.collections.ArrayList
 
 
@@ -28,19 +31,55 @@ class EditAdsActivity : AppCompatActivity(), FragmentCloseInterface {
     private val dialog = DialogSpinnerHelper()
     lateinit var imageAdapter: ImageAdapter
     private val dbManager = DbManager()
-    var editImagePos = 0
     var launcherMultiSelectImage: ActivityResultLauncher<Intent>? = null
     var launcherSingleSelectImage: ActivityResultLauncher<Intent>? = null
-
+    var editImagePos = 0
+    private var isEditState = false
+    private var ad: Announcement? = null
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityEditAdsBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
         init()
+        checkEditState()
         onClickSelectCountryCity()
         onClickSelectCategory()
         onClickPublish()
+    }
+
+    private fun checkEditState() {
+        if (isEditState()) {
+            isEditState = true
+            ad = intent.serializable<Announcement>(MainActivity.ADS_DATA)
+            Log.d("adNill", "$ad")
+            ad?.let { fillViews(it) }
+        }
+    }
+
+    private inline fun <reified T : Serializable> Intent.serializable(key: String): T? = when {
+        Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU -> getSerializableExtra(
+            key,
+            T::class.java
+        )
+
+        else -> @Suppress("DEPRECATION") getSerializableExtra(key) as? T
+    }
+
+    private fun isEditState(): Boolean {
+        return intent.getBooleanExtra(MainActivity.EDIT_STATE, false)
+    }
+
+    private fun fillViews(ad: Announcement) = with(binding) {
+        textViewTitle.setText(ad.title)
+        textViewSelectCountry.setText(ad.country)
+        textViewSelectCity.setText(ad.city)
+        textViewIndex.setText(ad.index)
+        textViewSelectTelNumb.setText(ad.tel)
+        textViewSelectCategory.setText(ad.category)
+        checkBoxWithSend.isChecked = ad.withSend.toBoolean()
+        textViewPrice.setText(ad.price)
+        textViewDescription.setText(ad.description)
     }
 
     override fun onRequestPermissionsResult(
@@ -97,15 +136,15 @@ class EditAdsActivity : AppCompatActivity(), FragmentCloseInterface {
             }
         }
 
-        binding.textViewSelectCity.setOnClickListener {
-            val selectedCountry = binding.textViewSelectCountry.text.toString()
-            if (selectedCountry != getString(R.string.select_country)) {
-                val listCity = CityHelper.getAllCities(selectedCountry, this)
-                dialog.showSpinnerDialog(this, listCity, binding.textViewSelectCity)
-            } else {
-                Toast.makeText(this, "No country selected", Toast.LENGTH_LONG).show()
-            }
-        }
+//        binding.textViewSelectCity.setOnClickListener {
+//            val selectedCountry = binding.textViewSelectCountry.text.toString()
+//            if (selectedCountry != getString(R.string.select_country)) {
+//                val listCity = CityHelper.getAllCities(selectedCountry, this)
+//                dialog.showSpinnerDialog(this, listCity, binding.textViewSelectCity)
+//            } else {
+//                Toast.makeText(this, "No country selected", Toast.LENGTH_LONG).show()
+//            }
+//        }
 
         binding.imageButton.setOnClickListener {
 
@@ -122,13 +161,28 @@ class EditAdsActivity : AppCompatActivity(), FragmentCloseInterface {
         }
     }
 
-    fun onClickPublish(){
+    fun onClickPublish() {
         binding.buttonPublish.setOnClickListener {
-            dbManager.publishAnnouncement(fillAnnouncement())
+            val adTemp = fillAnnouncement()
+            if (isEditState){
+                dbManager.publishAnnouncement(adTemp.copy(key = ad?.key), onPublishFinish())
+            } else{
+                dbManager.publishAnnouncement(adTemp, onPublishFinish())
+
+            }
         }
     }
 
-    private fun fillAnnouncement(): Announcement{
+    private fun onPublishFinish(): DbManager.FinishWorkListener{
+        return object: DbManager.FinishWorkListener{
+            override fun onFinish() {
+                finish()
+            }
+
+        }
+    }
+
+    private fun fillAnnouncement(): Announcement {
         val announcement: Announcement
         binding.apply {
             announcement = Announcement(
@@ -143,7 +197,7 @@ class EditAdsActivity : AppCompatActivity(), FragmentCloseInterface {
                 textViewDescription.text.toString(),
                 dbManager.database.push().key,
                 dbManager.auth.uid
-                )
+            )
         }
         return announcement
     }
@@ -152,8 +206,9 @@ class EditAdsActivity : AppCompatActivity(), FragmentCloseInterface {
 
         binding.textViewSelectCategory.setOnClickListener {
 
-                val listCategory = resources.getStringArray(R.array.category).toMutableList() as ArrayList
-                dialog.showSpinnerDialog(this, listCategory, binding.textViewSelectCategory)
+            val listCategory =
+                resources.getStringArray(R.array.category).toMutableList() as ArrayList
+            dialog.showSpinnerDialog(this, listCategory, binding.textViewSelectCategory)
 
         }
     }

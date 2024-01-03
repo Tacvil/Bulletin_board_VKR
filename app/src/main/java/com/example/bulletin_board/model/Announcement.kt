@@ -1,5 +1,7 @@
 package com.example.bulletin_board.model
 
+import java.io.Serializable
+
 data class Announcement(
     val title: String? = null,
     val country: String? = null,
@@ -12,4 +14,4 @@ data class Announcement(
     val description: String? = null,
     val key: String? = null,
     val uid: String? = null
-)
+): Serializable

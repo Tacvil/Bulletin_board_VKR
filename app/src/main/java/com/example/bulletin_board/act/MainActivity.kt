@@ -32,7 +32,7 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener{
     private lateinit var binding: ActivityMainBinding
     private val dialogHelper = DialogHelper(this)
     val mAuth = Firebase.auth
-    val adapter = AdsRcAdapter(mAuth)
+    val adapter = AdsRcAdapter(this)
     private val firebaseViewModel: FirebaseViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -200,5 +200,8 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener{
         }
     }
 
-
+    companion object{
+        const val EDIT_STATE = "edit_state"
+        const val ADS_DATA = "ads_data"
+    }
 }

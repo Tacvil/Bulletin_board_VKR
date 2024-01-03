@@ -89,14 +89,14 @@
 
                     <com.google.android.material.textfield.TextInputLayout
                         android:layout_width="match_parent"
-                        android:layout_height="match_parent">
+                        android:layout_height="match_parent"
+                        android:hint="@string/title" >
 
                         <com.google.android.material.textfield.TextInputEditText
                             android:id="@+id/text_view_title"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:focusable="true"
-                            android:hint="@string/title" />
+                            android:focusable="true" />
                     </com.google.android.material.textfield.TextInputLayout>
 
                     <!--                    <TextView-->
@@ -126,56 +126,56 @@
                     <com.google.android.material.textfield.TextInputLayout
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
-                        android:layout_marginTop="5dp">
+                        android:layout_marginTop="5dp"
+                        android:hint="@string/select_country" >
 
                         <com.google.android.material.textfield.TextInputEditText
                             android:id="@+id/text_view_select_country"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:clickable="true"
-                            android:focusable="false"
-                            android:hint="@string/select_country" />
+                            android:focusable="false" />
                     </com.google.android.material.textfield.TextInputLayout>
 
                     <com.google.android.material.textfield.TextInputLayout
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
-                        android:layout_marginTop="5dp">
+                        android:layout_marginTop="5dp"
+                        android:hint="@string/select_city" >
 
                         <com.google.android.material.textfield.TextInputEditText
                             android:id="@+id/text_view_select_city"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:clickable="true"
-                            android:focusable="false"
-                            android:hint="@string/select_city" />
+                            android:focusable="false" />
                     </com.google.android.material.textfield.TextInputLayout>
 
                     <com.google.android.material.textfield.TextInputLayout
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
-                        android:layout_marginTop="5dp">
+                        android:layout_marginTop="5dp"
+                        android:hint="@string/index">
 
                         <com.google.android.material.textfield.TextInputEditText
                             android:id="@+id/text_view_index"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:focusable="true"
-                            android:hint="@string/index"
                             android:inputType="number" />
                     </com.google.android.material.textfield.TextInputLayout>
 
                     <com.google.android.material.textfield.TextInputLayout
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
-                        android:layout_marginTop="5dp">
+                        android:layout_marginTop="5dp"
+                        android:hint="@string/tel_numb">
 
                         <com.google.android.material.textfield.TextInputEditText
                             android:id="@+id/text_view_select_tel_numb"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:focusable="true"
-                            android:hint="@string/tel_numb"
                             android:inputType="phone" />
                     </com.google.android.material.textfield.TextInputLayout>
 
@@ -222,15 +222,15 @@
 
                     <com.google.android.material.textfield.TextInputLayout
                         android:layout_width="match_parent"
-                        android:layout_height="match_parent">
+                        android:layout_height="match_parent"
+                        android:hint="@string/select_category" >
 
                         <com.google.android.material.textfield.TextInputEditText
                             android:id="@+id/text_view_select_category"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:clickable="true"
-                            android:focusable="false"
-                            android:hint="@string/select_category" />
+                            android:focusable="false" />
 
                         <CheckBox
                             android:id="@+id/check_box_with_send"
@@ -243,28 +243,28 @@
                     <com.google.android.material.textfield.TextInputLayout
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
-                        android:layout_marginTop="5dp">
+                        android:layout_marginTop="5dp"
+                        android:hint="@string/price">
 
                         <com.google.android.material.textfield.TextInputEditText
                             android:id="@+id/text_view_price"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:focusable="true"
-                            android:hint="@string/price"
                             android:inputType="number" />
                     </com.google.android.material.textfield.TextInputLayout>
 
                     <com.google.android.material.textfield.TextInputLayout
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
-                        android:layout_marginTop="5dp">
+                        android:layout_marginTop="5dp"
+                        android:hint="@string/description" >
 
                         <com.google.android.material.textfield.TextInputEditText
                             android:id="@+id/text_view_description"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:focusable="true"
-                            android:hint="@string/description" />
+                            android:focusable="true" />
                     </com.google.android.material.textfield.TextInputLayout>
 
                 </LinearLayout>
