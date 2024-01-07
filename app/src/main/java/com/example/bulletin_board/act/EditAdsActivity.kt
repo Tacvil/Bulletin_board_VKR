@@ -52,7 +52,6 @@ class EditAdsActivity : AppCompatActivity(), FragmentCloseInterface {
         if (isEditState()) {
             isEditState = true
             ad = intent.serializable<Announcement>(MainActivity.ADS_DATA)
-            Log.d("adNill", "$ad")
             ad?.let { fillViews(it) }
         }
     }

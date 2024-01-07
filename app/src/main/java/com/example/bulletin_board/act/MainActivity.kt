@@ -18,6 +18,7 @@ import com.example.bulletin_board.adapters.AdsRcAdapter
 import com.example.bulletin_board.databinding.ActivityMainBinding
 import com.example.bulletin_board.dialoghelper.DialogConst
 import com.example.bulletin_board.dialoghelper.DialogHelper
+import com.example.bulletin_board.model.Announcement
 import com.example.bulletin_board.viewmodel.FirebaseViewModel
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.common.api.ApiException
@@ -26,7 +27,7 @@ import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
 
-class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener{
+class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener, AdsRcAdapter.DeleteItemListener{
 
     private lateinit var textViewAccount: TextView
     private lateinit var binding: ActivityMainBinding
@@ -102,7 +103,7 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener{
 
     private fun initViewModel(){
         firebaseViewModel.liveAdsData.observe(this) {
-            adapter.updateAdapter(it)
+            it?.let { it1 -> adapter.updateAdapter(it1) }
         }
     }
 
@@ -203,5 +204,9 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener{
     companion object{
         const val EDIT_STATE = "edit_state"
         const val ADS_DATA = "ads_data"
+    }
+
+    override fun onDeleteItem(ad: Announcement) {
+        firebaseViewModel.deleteItem(ad)
     }
 }

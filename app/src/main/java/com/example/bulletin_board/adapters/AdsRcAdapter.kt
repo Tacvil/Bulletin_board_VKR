@@ -4,6 +4,7 @@ import android.content.Intent
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 import com.example.bulletin_board.act.EditAdsActivity
 import com.example.bulletin_board.act.MainActivity
@@ -25,6 +26,9 @@ class AdsRcAdapter(val act: MainActivity) : RecyclerView.Adapter<AdsRcAdapter.Ad
 
             showEditPanel(isOwner(ad))
             imageButtonEditAd.setOnClickListener(onClickEdit(ad))
+            imageButtonDeleteAd.setOnClickListener {
+                act.onDeleteItem(ad)
+            }
         }
 
         private fun onClickEdit(ad: Announcement): View.OnClickListener{
@@ -65,9 +69,13 @@ class AdsRcAdapter(val act: MainActivity) : RecyclerView.Adapter<AdsRcAdapter.Ad
     }
 
     fun updateAdapter(newList: List<Announcement>) {
+        val diffResult = DiffUtil.calculateDiff(DiffUtilHelper(adArray, newList))
+        diffResult.dispatchUpdatesTo(this)
         adArray.clear()
         adArray.addAll(newList)
-        notifyDataSetChanged()
     }
 
+    interface DeleteItemListener{
+        fun onDeleteItem(ad: Announcement)
+    }
 }
