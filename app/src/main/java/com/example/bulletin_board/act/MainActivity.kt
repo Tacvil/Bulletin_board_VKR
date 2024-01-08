@@ -27,7 +27,7 @@ import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
 
-class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener, AdsRcAdapter.DeleteItemListener{
+class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener, AdsRcAdapter.Listener{
 
     private lateinit var textViewAccount: TextView
     private lateinit var binding: ActivityMainBinding
@@ -208,5 +208,9 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener, AdsR
 
     override fun onDeleteItem(ad: Announcement) {
         firebaseViewModel.deleteItem(ad)
+    }
+
+    override fun onAdViewed(ad: Announcement) {
+        firebaseViewModel.adViewed(ad)
     }
 }

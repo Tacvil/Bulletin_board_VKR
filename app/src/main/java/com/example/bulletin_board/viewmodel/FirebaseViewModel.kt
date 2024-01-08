@@ -16,6 +16,10 @@ class FirebaseViewModel: ViewModel() {
         })
     }
 
+    fun adViewed(ad: Announcement){
+        dbManager.adViewed(ad)
+    }
+
     fun loadMyAnnouncement(){
         dbManager.getMyAnnouncement(object : DbManager.ReadDataCallback{
             override fun readData(list: ArrayList<Announcement>) {

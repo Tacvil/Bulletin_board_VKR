@@ -10,7 +10,6 @@ import com.example.bulletin_board.act.EditAdsActivity
 import com.example.bulletin_board.act.MainActivity
 import com.example.bulletin_board.model.Announcement
 import com.example.bulletin_board.databinding.AdListItemBinding
-import com.google.firebase.auth.FirebaseAuth
 
 class AdsRcAdapter(val act: MainActivity) : RecyclerView.Adapter<AdsRcAdapter.AdHolder>() {
 
@@ -23,8 +22,11 @@ class AdsRcAdapter(val act: MainActivity) : RecyclerView.Adapter<AdsRcAdapter.Ad
             textViewDescription.text = ad.description
             textViewPrice.text = ad.price
             textViewTitle.text = ad.title
-
+            textViewViewCounter.text = ad.viewsCounter
             showEditPanel(isOwner(ad))
+            itemView.setOnClickListener {
+                act.onAdViewed(ad)
+            }
             imageButtonEditAd.setOnClickListener(onClickEdit(ad))
             imageButtonDeleteAd.setOnClickListener {
                 act.onDeleteItem(ad)
@@ -75,7 +77,8 @@ class AdsRcAdapter(val act: MainActivity) : RecyclerView.Adapter<AdsRcAdapter.Ad
         adArray.addAll(newList)
     }
 
-    interface DeleteItemListener{
+    interface Listener{
         fun onDeleteItem(ad: Announcement)
+        fun onAdViewed(ad: Announcement)
     }
 }

@@ -10,15 +10,23 @@ import com.google.firebase.database.ktx.database
 import com.google.firebase.ktx.Firebase
 
 class DbManager {
-    val database = Firebase.database.getReference("main")
+    val database = Firebase.database.getReference(MAIN_NODE)
     val auth = Firebase.auth
 
-    fun publishAnnouncement(announcement: Announcement, finishListener:FinishWorkListener) {
+    fun publishAnnouncement(announcement: Announcement, finishListener: FinishWorkListener) {
         if (auth.uid != null) database.child(announcement.key ?: "empty").child(auth.uid!!)
-            .child("announcement")
+            .child(AD_NODE)
             .setValue(announcement).addOnCompleteListener {
                 finishListener.onFinish()
             }
+    }
+
+    fun adViewed(ad: Announcement) {
+        var counter = ad.viewsCounter.toInt()
+        counter++
+        if (auth.uid != null) database.child(ad.key ?: "empty")
+            .child(INFO_NODE)
+            .setValue(InfoItem(counter.toString(), ad.emailCounter, ad.callsCounter))
     }
 
     fun getMyAnnouncement(readDataCallback: ReadDataCallback?) {
@@ -31,7 +39,7 @@ class DbManager {
         readDataFromDb(query, readDataCallback)
     }
 
-    fun deleteAnnouncement(ad: Announcement, listener: FinishWorkListener){
+    fun deleteAnnouncement(ad: Announcement, listener: FinishWorkListener) {
         if (ad.key == null || ad.uid == null) return
         database.child(ad.key).child(ad.uid).removeValue().addOnCompleteListener {
             if (it.isSuccessful) listener.onFinish()
@@ -43,10 +51,18 @@ class DbManager {
             val adArray = ArrayList<Announcement>()
             override fun onDataChange(snapshot: DataSnapshot) {
                 for (item in snapshot.children) {
-                    val ad = item.children.iterator().next().child("announcement")
-                        .getValue(Announcement::class.java)
-                    Log.d("MyLog", "data: $ad")
-                    if (ad != null) adArray.add(ad)
+
+                    var ad: Announcement? = null
+
+                    item.children.forEach {
+                        if (ad == null) ad = it.child(AD_NODE).getValue(Announcement::class.java)
+                    }
+                    val infoItem = item.child(INFO_NODE).getValue(InfoItem::class.java)
+
+                    ad?.viewsCounter = infoItem?.viewsCounter ?: "0"
+                    ad?.emailCounter = infoItem?.emailCounter ?: "0"
+                    ad?.callsCounter = infoItem?.callsCounter ?: "0"
+                    if (ad != null) adArray.add(ad!!)
                 }
                 readDataCallback?.readData(adArray)
             }
@@ -64,5 +80,11 @@ class DbManager {
 
     interface FinishWorkListener {
         fun onFinish()
+    }
+
+    companion object {
+        const val AD_NODE = "announcement"
+        const val INFO_NODE = "info"
+        const val MAIN_NODE = "main"
     }
 }
