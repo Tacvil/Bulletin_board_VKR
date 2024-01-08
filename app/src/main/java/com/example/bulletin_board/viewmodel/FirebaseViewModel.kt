@@ -16,6 +16,22 @@ class FirebaseViewModel: ViewModel() {
         })
     }
 
+    fun onFavClick(ad: Announcement){
+        dbManager.onFavClick(ad, object: DbManager.FinishWorkListener{
+            override fun onFinish() {
+                val updateList = liveAdsData.value
+                val pos = updateList?.indexOf(ad)
+
+                if (pos != -1){
+                    pos?.let {
+                        updateList[pos] = updateList[pos].copy(isFav = !ad.isFav)
+                    }
+                }
+                liveAdsData.postValue(updateList)
+            }
+        })
+    }
+
     fun adViewed(ad: Announcement){
         dbManager.adViewed(ad)
     }

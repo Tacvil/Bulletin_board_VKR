@@ -1,11 +1,14 @@
 package com.example.bulletin_board.adapters
 
+import android.animation.Animator
 import android.content.Intent
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
+import com.example.bulletin_board.R
 import com.example.bulletin_board.act.EditAdsActivity
 import com.example.bulletin_board.act.MainActivity
 import com.example.bulletin_board.model.Announcement
@@ -18,12 +21,59 @@ class AdsRcAdapter(val act: MainActivity) : RecyclerView.Adapter<AdsRcAdapter.Ad
     class AdHolder(val binding: AdListItemBinding, val act: MainActivity) :
         RecyclerView.ViewHolder(binding.root) {
 
+            private var isAnimationInProgress = false
         fun setData(ad: Announcement) = with(binding) {
             textViewDescription.text = ad.description
             textViewPrice.text = ad.price
             textViewTitle.text = ad.title
             textViewViewCounter.text = ad.viewsCounter
+//            if (ad.isFav) imageButtonFav.setImageResource(R.drawable.ic_favorite_pressed) else imageButtonFav.setImageResource(R.drawable.ic_favorite_normal)
+            if (ad.isFav && !isAnimationInProgress){
+                imageButtonFav1.setMinAndMaxProgress(0.5f, 0.5f)
+                imageButtonFav1.playAnimation()
+            } else if (!ad.isFav && !isAnimationInProgress){
+                Log.d("FAV ELSE", "ELSE")
+                imageButtonFav1.setMinAndMaxProgress(1.0f, 1.0f)
+                imageButtonFav1.playAnimation()
+            }
             showEditPanel(isOwner(ad))
+
+            imageButtonFav1.setOnClickListener {
+                // Обработка клика
+                if (!ad.isFav){
+                    imageButtonFav1.setMinAndMaxProgress(0.0f, 0.5f)
+                } else {
+                    imageButtonFav1.setMinAndMaxProgress(0.5f, 1.0f)
+                }
+
+                // Запуск анимации
+                imageButtonFav1.playAnimation()
+
+                // Добавление слушателя анимации
+                imageButtonFav1.addAnimatorListener(object : Animator.AnimatorListener {
+                    override fun onAnimationStart(animation: Animator) {
+                        // Можно добавить логику при начале анимации, если необходимо
+                        isAnimationInProgress = true
+                        act.onFavClicked(ad)
+                    }
+
+                    override fun onAnimationEnd(animation: Animator) {
+                        // Вызов метода по завершению анимации
+                        //act.onFavClicked(ad)
+                        isAnimationInProgress = false
+                        // Удаление слушателя, чтобы избежать многократного вызова
+                        imageButtonFav1.removeAnimatorListener(this)
+                    }
+
+                    override fun onAnimationCancel(animation: Animator) {
+                        // Можно добавить логику при отмене анимации, если необходимо
+                    }
+
+                    override fun onAnimationRepeat(animation: Animator) {
+                        // Можно добавить логику при повторении анимации, если необходимо
+                    }
+                })
+            }
             itemView.setOnClickListener {
                 act.onAdViewed(ad)
             }
@@ -80,5 +130,6 @@ class AdsRcAdapter(val act: MainActivity) : RecyclerView.Adapter<AdsRcAdapter.Ad
     interface Listener{
         fun onDeleteItem(ad: Announcement)
         fun onAdViewed(ad: Announcement)
+        fun onFavClicked(ad: Announcement)
     }
 }

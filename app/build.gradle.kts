@@ -73,4 +73,7 @@ dependencies {
     implementation ("com.google.android.gms:play-services-ads:22.3.0")
     implementation ("com.yandex.android:mobileads:5.10.0")
     implementation ("com.yandex.ads.adapter:admob-mobileads:5.10.0.0")
+
+    //lotili
+    implementation ("com.airbnb.android:lottie:6.3.0")
 }

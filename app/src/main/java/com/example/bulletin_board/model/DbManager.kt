@@ -29,6 +29,32 @@ class DbManager {
             .setValue(InfoItem(counter.toString(), ad.emailCounter, ad.callsCounter))
     }
 
+    fun onFavClick(ad: Announcement, listener: FinishWorkListener) {
+        if (ad.isFav) removeFromFavs(ad, listener) else addToFavs(ad, listener)
+    }
+
+    private fun addToFavs(ad: Announcement, listener: FinishWorkListener) {
+        ad.key?.let {
+            auth.uid?.let { uid ->
+                database.child(it).child(FAVS_NODE)
+                    .child(uid).setValue(uid).addOnCompleteListener {
+                        if (it.isSuccessful) listener.onFinish()
+                    }
+            }
+        }
+    }
+
+    private fun removeFromFavs(ad: Announcement, listener: FinishWorkListener) {
+        ad.key?.let {
+            auth.uid?.let { uid ->
+                database.child(it).child(FAVS_NODE)
+                    .child(uid).removeValue().addOnCompleteListener {
+                        if (it.isSuccessful) listener.onFinish()
+                    }
+            }
+        }
+    }
+
     fun getMyAnnouncement(readDataCallback: ReadDataCallback?) {
         val query = database.orderByChild(auth.uid + "/announcement/uid").equalTo(auth.uid)
         readDataFromDb(query, readDataCallback)
@@ -86,5 +112,6 @@ class DbManager {
         const val AD_NODE = "announcement"
         const val INFO_NODE = "info"
         const val MAIN_NODE = "main"
+        const val FAVS_NODE = "favs"
     }
 }
