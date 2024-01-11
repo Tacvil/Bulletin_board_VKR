@@ -24,7 +24,8 @@ class FirebaseViewModel: ViewModel() {
 
                 if (pos != -1){
                     pos?.let {
-                        updateList[pos] = updateList[pos].copy(isFav = !ad.isFav)
+                        val favCounter = if (ad.isFav) ad.favCounter.toInt() - 1 else ad.favCounter.toInt() + 1
+                        updateList[pos] = updateList[pos].copy(isFav = !ad.isFav, favCounter = favCounter.toString())
                     }
                 }
                 liveAdsData.postValue(updateList)
@@ -38,6 +39,14 @@ class FirebaseViewModel: ViewModel() {
 
     fun loadMyAnnouncement(){
         dbManager.getMyAnnouncement(object : DbManager.ReadDataCallback{
+            override fun readData(list: ArrayList<Announcement>) {
+                liveAdsData.value = list
+            }
+        })
+    }
+
+    fun loadMyFavs(){
+        dbManager.getMyFavs(object : DbManager.ReadDataCallback{
             override fun readData(list: ArrayList<Announcement>) {
                 liveAdsData.value = list
             }

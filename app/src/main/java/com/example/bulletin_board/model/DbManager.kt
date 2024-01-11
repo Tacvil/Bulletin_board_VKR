@@ -60,6 +60,11 @@ class DbManager {
         readDataFromDb(query, readDataCallback)
     }
 
+    fun getMyFavs(readDataCallback: ReadDataCallback?) {
+        val query = database.orderByChild("/favs/${auth.uid}").equalTo(auth.uid)
+        readDataFromDb(query, readDataCallback)
+    }
+
     fun getAllAnnouncement(readDataCallback: ReadDataCallback?) {
         val query = database.orderByChild(auth.uid + "/announcement/price")
         readDataFromDb(query, readDataCallback)
@@ -84,7 +89,10 @@ class DbManager {
                         if (ad == null) ad = it.child(AD_NODE).getValue(Announcement::class.java)
                     }
                     val infoItem = item.child(INFO_NODE).getValue(InfoItem::class.java)
-
+                    val favCounter = item.child(FAVS_NODE).childrenCount
+                    val isFav = auth.uid?.let{item.child(FAVS_NODE).child(it).getValue(String::class.java)}
+                    ad?.isFav = isFav != null
+                    ad?.favCounter = favCounter.toString()
                     ad?.viewsCounter = infoItem?.viewsCounter ?: "0"
                     ad?.emailCounter = infoItem?.emailCounter ?: "0"
                     ad?.callsCounter = infoItem?.callsCounter ?: "0"

@@ -9,6 +9,7 @@
     <string name="ad_smartphone">Смартфоны</string>
     <string name="ad_dm">Бытовая техника</string>
     <string name="def">Разное</string>
+    <string name="favs">Избранное</string>
 
     <string name="ad_cat2"><font color="?attr/colorPrimary">Аккаунт</font></string>
     <string name="ac_sign_up">Регистрация</string>

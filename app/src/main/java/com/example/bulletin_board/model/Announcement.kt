@@ -14,8 +14,9 @@ data class Announcement(
     val description: String? = null,
     val key: String? = null,
     val uid: String? = null,
-    val isFav: Boolean = false,
+    var isFav: Boolean = false,
 
+    var favCounter: String = "0",
     var viewsCounter: String = "0",
     var emailCounter: String = "0",
     var callsCounter: String = "0"

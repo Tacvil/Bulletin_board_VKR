@@ -5,6 +5,7 @@ import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
 import android.view.MenuItem
+import android.view.View
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.viewModels
@@ -12,7 +13,9 @@ import androidx.activity.viewModels
 import androidx.appcompat.app.ActionBarDrawerToggle
 import androidx.core.view.GravityCompat
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.airbnb.lottie.LottieDrawable
 import com.example.bulletin_board.R
+import com.example.bulletin_board.accounthelper.AccountHelper
 import com.example.bulletin_board.accounthelper.AccountHelper.Companion.RESULT_CODE_SUCCESS
 import com.example.bulletin_board.adapters.AdsRcAdapter
 import com.example.bulletin_board.databinding.ActivityMainBinding
@@ -103,7 +106,18 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener, AdsR
 
     private fun initViewModel(){
         firebaseViewModel.liveAdsData.observe(this) {
-            it?.let { it1 -> adapter.updateAdapter(it1) }
+            it?.let { content -> adapter.updateAdapter(content)
+            if (content.isEmpty()){
+                binding.mainContent.recyclerViewMainContent.visibility = View.INVISIBLE
+                binding.mainContent.nothinkWhiteAnim.visibility = View.VISIBLE
+                binding.mainContent.nothinkWhiteAnim.repeatCount = LottieDrawable.INFINITE
+                binding.mainContent.nothinkWhiteAnim.playAnimation()
+            } else{
+                binding.mainContent.recyclerViewMainContent.visibility = View.VISIBLE
+                binding.mainContent.nothinkWhiteAnim.cancelAnimation()
+                binding.mainContent.nothinkWhiteAnim.visibility = View.GONE
+            }
+            }
         }
     }
 
@@ -134,7 +148,10 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener, AdsR
             firebaseViewModel.loadMyAnnouncement()
             mainContent.toolbar.title = getString(R.string.ad_my_ads)
         }
-        R.id.id_favs -> {}
+        R.id.id_favs -> {
+            firebaseViewModel.loadMyFavs()
+            mainContent.toolbar.title = getString(R.string.favs)
+        }
         R.id.id_home -> {
             firebaseViewModel.loadAllAnnouncement()
             mainContent.toolbar.title = getString(R.string.def)
@@ -184,6 +201,10 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener, AdsR
             }
 
             R.id.id_sign_out -> {
+                if (mAuth.currentUser?.isAnonymous == true){
+                    binding.drawerLayout.closeDrawer(GravityCompat.START)
+                    return true
+                }
                 uiUpdate(null)
                 mAuth.signOut()
                 dialogHelper.accHelper.signOutGoogle()
@@ -194,10 +215,17 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener, AdsR
     }
 
     fun uiUpdate(user: FirebaseUser?) {
-        textViewAccount.text = if (user == null) {
-            resources.getString(R.string.not_reg)
-        } else {
-            user.email
+        if (user == null) {
+            dialogHelper.accHelper.signInAnonymously(object: AccountHelper.Listener{
+                override fun onComplete() {
+                    textViewAccount.text = "Гость"
+                }
+
+            })
+        } else if (user.isAnonymous) {
+            textViewAccount.text = "Гость"
+        }else if (!user.isAnonymous){
+            textViewAccount.text = user.email
         }
     }
 
