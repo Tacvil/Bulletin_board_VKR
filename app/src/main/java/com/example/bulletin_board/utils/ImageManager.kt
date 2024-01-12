@@ -1,5 +1,6 @@
 package com.example.bulletin_board.utils
 
+import android.app.Activity
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.BitmapShader
@@ -13,8 +14,10 @@ import android.graphics.PorterDuffXfermode
 import android.graphics.Rect
 import android.graphics.RectF
 import android.graphics.Shader
+import android.net.Uri
 import android.util.Log
 import android.widget.ImageView
+import androidx.core.net.toUri
 import androidx.exifinterface.media.ExifInterface
 import com.bumptech.glide.Glide
 import com.example.bulletin_board.R
@@ -25,37 +28,50 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 
 import java.io.File
+import java.io.InputStream
 
 object ImageManager {
 
     private const val MAX_IMAGE_SIZE = 1000
 
-    fun getImageSize(uri: String): List<Int> {
+    fun getImageSize(uri: Uri, act: Activity): List<Int> {
+        val inStream = act.contentResolver.openInputStream(uri)
+//        val fTemp = File(act.cacheDir, "temp.tmp")
+//        if (inStream != null) {
+//            fTemp.copyInStreamToFile(inStream)
+//        }
         val options = BitmapFactory.Options().apply {
             inJustDecodeBounds = true
         }
-        BitmapFactory.decodeFile(uri, options)
-        return if (imageRotation(uri) == 90)
-            listOf(options.outHeight, options.outWidth)
-        else listOf(options.outWidth, options.outHeight)
+        BitmapFactory.decodeStream(inStream, null, options)
+//        return if (imageRotation(fTemp) == 90)
+//            listOf(options.outHeight, options.outWidth)
+//        else listOf(options.outWidth, options.outHeight)
+        return listOf(options.outWidth, options.outHeight)
     }
 
-    private fun imageRotation(uri: String): Int {
-        val rotation: Int
-        val imageFile = File(uri)
-        val exif = ExifInterface(imageFile.absolutePath)
-        val orientation =
-            exif.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL)
+//    private fun File.copyInStreamToFile(inStream: InputStream){
+//        this.outputStream().use {
+//            out -> inStream.copyTo(out)
+//        }
+//    }
 
-        rotation =
-            if (orientation == ExifInterface.ORIENTATION_ROTATE_90 || orientation == ExifInterface.ORIENTATION_ROTATE_270) {
-                90
-            } else {
-                0
-            }
-
-        return rotation
-    }
+//    private fun imageRotation(imageFile: File): Int {
+//        val rotation: Int
+//
+//        val exif = ExifInterface(imageFile.absolutePath)
+//        val orientation =
+//            exif.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL)
+//
+//        rotation =
+//            if (orientation == ExifInterface.ORIENTATION_ROTATE_90 || orientation == ExifInterface.ORIENTATION_ROTATE_270) {
+//                90
+//            } else {
+//                0
+//            }
+//
+//        return rotation
+//    }
 
     fun chooseScaleType(im: ImageView, bitmap: Bitmap): Boolean{
         var crop = true
@@ -69,12 +85,12 @@ object ImageManager {
 
 
 
-    suspend fun imageResize(uris: List<String>) : List<Bitmap> = withContext(Dispatchers.IO) {
+    suspend fun imageResize(uris: List<Uri>, act: Activity) : List<Bitmap> = withContext(Dispatchers.IO) {
         val tempList = ArrayList<List<Int>>()
         val bitmapList = ArrayList<Bitmap>()
 
         for (n in uris.indices) {
-            val size = getImageSize(uris[n])
+            val size = getImageSize(uris[n], act)
             val imageRatio = size[0].toFloat() / size[1].toFloat()
 
             if (imageRatio > 1) {
@@ -97,7 +113,7 @@ object ImageManager {
 
         for (i in uris.indices){
            val e = kotlin.runCatching {
-               bitmapList.add(Picasso.get().load(File(uris[i])).resize(tempList[i][0], tempList[i][1]).get())
+               bitmapList.add(Picasso.get().load(uris[i]).resize(tempList[i][0], tempList[i][1]).get())
            }
            // Log.d("MyLog", "Bitmap load done: ${e.isSuccess}")
         }

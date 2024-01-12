@@ -1,14 +1,12 @@
 package com.example.bulletin_board.act
 
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.graphics.Bitmap
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
-import android.util.Log
 import android.view.View
 import android.widget.Toast
-import androidx.activity.result.ActivityResultLauncher
 import androidx.appcompat.app.AppCompatActivity
 import com.example.bulletin_board.R
 import com.example.bulletin_board.adapters.ImageAdapter
@@ -20,7 +18,6 @@ import com.example.bulletin_board.fragments.FragmentCloseInterface
 import com.example.bulletin_board.fragments.ImageListFrag
 import com.example.bulletin_board.utils.CityHelper
 import com.example.bulletin_board.utils.ImagePicker
-import com.fxn.utility.PermUtil
 import java.io.Serializable
 import kotlin.collections.ArrayList
 
@@ -31,8 +28,6 @@ class EditAdsActivity : AppCompatActivity(), FragmentCloseInterface {
     private val dialog = DialogSpinnerHelper()
     lateinit var imageAdapter: ImageAdapter
     private val dbManager = DbManager()
-    var launcherMultiSelectImage: ActivityResultLauncher<Intent>? = null
-    var launcherSingleSelectImage: ActivityResultLauncher<Intent>? = null
     var editImagePos = 0
     private var isEditState = false
     private var ad: Announcement? = null
@@ -81,35 +76,10 @@ class EditAdsActivity : AppCompatActivity(), FragmentCloseInterface {
         textViewDescription.setText(ad.description)
     }
 
-    override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<out String>,
-        grantResults: IntArray
-    ) {
-        when (requestCode) {
-            PermUtil.REQUEST_CODE_ASK_MULTIPLE_PERMISSIONS -> {
-
-                // If request is cancelled, the result arrays are empty.
-                if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    //ImagePicker.getOptions(this, 3, ImagePicker.REQUEST_CODE_GET_IMAGES)
-                } else {
-                    Toast.makeText(
-                        this,
-                        "Approve permissions to open Pix ImagePicker",
-                        Toast.LENGTH_LONG
-                    ).show()
-                }
-                return
-            }
-        }
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-    }
-
     private fun init() {
         imageAdapter = ImageAdapter()
         binding.viewPagerImages.adapter = imageAdapter
-        launcherMultiSelectImage = ImagePicker.getLauncherForMultiSelectImages(this)
-        launcherSingleSelectImage = ImagePicker.getLauncherForSingleImage(this)
+
 //        val listCountry = CityHelper.getAllCountries(this)
 //        dialog.showSpinnerDialog(this, listCountry)
     }
@@ -149,7 +119,7 @@ class EditAdsActivity : AppCompatActivity(), FragmentCloseInterface {
 
             if (imageAdapter.mainArray.size == 0) {
 
-                ImagePicker.launcher(this, launcherMultiSelectImage, 3)
+                ImagePicker.getMultiImages(this, 3)
                 //ImagePicker.getImages(this)
             } else {
 
@@ -163,17 +133,17 @@ class EditAdsActivity : AppCompatActivity(), FragmentCloseInterface {
     fun onClickPublish() {
         binding.buttonPublish.setOnClickListener {
             val adTemp = fillAnnouncement()
-            if (isEditState){
+            if (isEditState) {
                 dbManager.publishAnnouncement(adTemp.copy(key = ad?.key), onPublishFinish())
-            } else{
+            } else {
                 dbManager.publishAnnouncement(adTemp, onPublishFinish())
 
             }
         }
     }
 
-    private fun onPublishFinish(): DbManager.FinishWorkListener{
-        return object: DbManager.FinishWorkListener{
+    private fun onPublishFinish(): DbManager.FinishWorkListener {
+        return object : DbManager.FinishWorkListener {
             override fun onFinish() {
                 finish()
             }
@@ -219,8 +189,9 @@ class EditAdsActivity : AppCompatActivity(), FragmentCloseInterface {
 
     }
 
-    fun openChooseImageFrag(newList: ArrayList<String>?) {
-        chooseImageFrag = ImageListFrag(this, newList)
+    fun openChooseImageFrag(newList: ArrayList<Uri>?) {
+        chooseImageFrag = ImageListFrag(this)
+        if (newList != null) chooseImageFrag?.resizeSelectedImages(newList, true, this)
         binding.scrollViewMain.visibility = View.GONE
         val fm = supportFragmentManager.beginTransaction()
         fm.replace(R.id.place_holder, chooseImageFrag!!)

@@ -33,11 +33,7 @@ class SelectImageRvAdapter(val adapterCallback: AdapterCallback) :
         fun setData(bitMap: Bitmap) {
 
             binding.imageButtonEditImage.setOnClickListener {
-                ImagePicker.launcher(
-                    context as EditAdsActivity,
-                    context.launcherSingleSelectImage,
-                    1
-                )
+                ImagePicker.getSingleImages(context as EditAdsActivity)
                 context.editImagePos = adapterPosition
             }
 
