@@ -1,13 +1,19 @@
 package com.example.bulletin_board.utils
 
 import android.graphics.Bitmap
+import android.hardware.camera2.CameraCaptureSession
 import android.net.Uri
+import android.os.Build
+import android.util.Log
 import android.view.View
+import android.view.WindowManager
+import androidx.core.view.WindowCompat
 import androidx.fragment.app.Fragment
 import com.example.bulletin_board.R
 import com.example.bulletin_board.act.EditAdsActivity
 import io.ak1.pix.helpers.PixEventCallback
 import io.ak1.pix.helpers.addPixToActivity
+import io.ak1.pix.helpers.showStatusBar
 import io.ak1.pix.models.Mode
 import io.ak1.pix.models.Options
 import io.ak1.pix.models.Ratio
@@ -19,7 +25,7 @@ object ImagePicker {
     const val MAX_IMAGE_COUNT = 3
     const val REQUEST_CODE_GET_IMAGES = 999
     const val REQUEST_CODE_GET_SINGLE_IMAGE = 998
-    private fun getOptions(imageCounter: Int): Options {
+    fun getOptions(imageCounter: Int): Options {
         val options = Options().apply {
             count = imageCounter
             isFrontFacing = false
@@ -35,6 +41,12 @@ object ImagePicker {
             when (result.status) {
                 PixEventCallback.Status.SUCCESS -> {
                     getMultiSelectImages(edAct, result.data)
+                    WindowCompat.setDecorFitsSystemWindows(edAct.window, true)
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                        edAct.window.attributes.layoutInDisplayCutoutMode =
+                            WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_DEFAULT
+                    }
+                    edAct.showStatusBar()
                 }
 
                 else -> {}
@@ -43,12 +55,10 @@ object ImagePicker {
     }
 
     fun addImages(edAct: EditAdsActivity, imageCounter: Int) {
-        val f = edAct.chooseImageFrag
         edAct.addPixToActivity(R.id.place_holder, getOptions(imageCounter)) { result ->
             when (result.status) {
                 PixEventCallback.Status.SUCCESS -> {
-                    edAct.chooseImageFrag = f
-                    openChooseImageFrag(edAct, f!!)
+                    openChooseImageFrag(edAct)
                     edAct.chooseImageFrag?.updateAdapter(result.data as ArrayList<Uri>, edAct)
                 }
 
@@ -58,12 +68,10 @@ object ImagePicker {
     }
 
     fun getSingleImages(edAct: EditAdsActivity) {
-        val f = edAct.chooseImageFrag
         edAct.addPixToActivity(R.id.place_holder, getOptions(1)) { result ->
             when (result.status) {
                 PixEventCallback.Status.SUCCESS -> {
-                    edAct.chooseImageFrag = f
-                    openChooseImageFrag(edAct, f!!)
+                    openChooseImageFrag(edAct)
                     singleImage(edAct, result.data[0])
                 }
 
@@ -72,13 +80,14 @@ object ImagePicker {
         }
     }
 
-    private fun openChooseImageFrag(edAct: EditAdsActivity, f: Fragment) {
-        edAct.supportFragmentManager.beginTransaction().replace(R.id.place_holder, f).commit()
+    private fun openChooseImageFrag(edAct: EditAdsActivity) {
+        edAct.supportFragmentManager.beginTransaction().replace(R.id.place_holder, edAct.chooseImageFrag!!).commit()
     }
 
     private fun closePixFrag(edAct: EditAdsActivity) {
         val fList = edAct.supportFragmentManager.fragments
         fList.forEach {
+            Log.d("It", "$it")
             if (it.isVisible) edAct.supportFragmentManager.beginTransaction().remove(it).commit()
         }
     }

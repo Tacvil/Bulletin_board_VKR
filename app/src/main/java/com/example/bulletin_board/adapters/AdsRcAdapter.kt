@@ -8,12 +8,17 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
+import com.bumptech.glide.Glide
+import com.bumptech.glide.load.resource.bitmap.CenterCrop
+import com.bumptech.glide.load.resource.bitmap.RoundedCorners
+import com.bumptech.glide.request.RequestOptions
 import com.example.bulletin_board.R
 import com.example.bulletin_board.act.EditAdsActivity
 import com.example.bulletin_board.act.MainActivity
 import com.example.bulletin_board.application.MyApplication
 import com.example.bulletin_board.model.Announcement
 import com.example.bulletin_board.databinding.AdListItemBinding
+import com.squareup.picasso.Picasso
 
 class AdsRcAdapter(val act: MainActivity) : RecyclerView.Adapter<AdsRcAdapter.AdHolder>() {
 
@@ -27,6 +32,18 @@ class AdsRcAdapter(val act: MainActivity) : RecyclerView.Adapter<AdsRcAdapter.Ad
             textViewTitle.text = ad.title
             textViewViewCounter.text = ad.viewsCounter
             textViewFav.text = ad.favCounter
+
+            val roundedCorners = RoundedCorners(20)
+            val centerCrop = CenterCrop()
+            val requestOptions = RequestOptions().transform(centerCrop, roundedCorners)
+
+            Glide.with(binding.root)
+                .load(ad.mainImage)
+                .apply(requestOptions)
+                .into(imageViewMainImage)
+
+            //Picasso.get().load(ad.mainImage).into(imageViewMainImage)
+
 //            if (ad.isFav) imageButtonFav.setImageResource(R.drawable.ic_favorite_pressed) else imageButtonFav.setImageResource(R.drawable.ic_favorite_normal)
             if (ad.isFav){
                 imageButtonFav1.setMinAndMaxProgress(0.5f, 0.5f)

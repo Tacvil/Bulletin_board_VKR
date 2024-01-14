@@ -69,8 +69,7 @@ class ImageListFrag(
 
     override fun onDetach() {
         super.onDetach()
-        fragCloseInterface.onFragClose(adapter.mainArray)
-        job?.cancel()
+
     }
 
     //
@@ -101,6 +100,8 @@ class ImageListFrag(
             //istanceBaseAds.loadInterstitial()
             //onLoadClickListener?.invoke()
             activity?.supportFragmentManager?.beginTransaction()?.remove(this)?.commit()
+            fragCloseInterface.onFragClose(adapter.mainArray)
+            job?.cancel()
         }
 
         deleteItem.setOnMenuItemClickListener {

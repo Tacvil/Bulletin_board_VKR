@@ -7,7 +7,7 @@
     android:id="@+id/place_holder"
     tools:context=".act.EditAdsActivity">
 
-    <ScrollView
+    <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
         android:id="@+id/scroll_view_main"
         android:layout_height="match_parent"
@@ -17,6 +17,7 @@
         app:layout_constraintTop_toTopOf="parent">
 
         <LinearLayout
+            android:id="@+id/placeee"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical">
@@ -278,6 +279,6 @@
                 android:text="@string/publish" />
 
         </LinearLayout>
-    </ScrollView>
+    </androidx.core.widget.NestedScrollView>
 
 </FrameLayout>
