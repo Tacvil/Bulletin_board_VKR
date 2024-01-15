@@ -33,13 +33,13 @@ class AdsRcAdapter(val act: MainActivity) : RecyclerView.Adapter<AdsRcAdapter.Ad
             textViewViewCounter.text = ad.viewsCounter
             textViewFav.text = ad.favCounter
 
-            val roundedCorners = RoundedCorners(20)
-            val centerCrop = CenterCrop()
-            val requestOptions = RequestOptions().transform(centerCrop, roundedCorners)
+            //val roundedCorners = RoundedCorners(20)
+            //val centerCrop = CenterCrop()
+            //val requestOptions = RequestOptions().transform(centerCrop, roundedCorners)
 
             Glide.with(binding.root)
                 .load(ad.mainImage)
-                .apply(requestOptions)
+                .apply(RequestOptions().transform(RoundedCorners(20)))
                 .into(imageViewMainImage)
 
             //Picasso.get().load(ad.mainImage).into(imageViewMainImage)

@@ -72,4 +72,11 @@
     <color name="md_theme_dark_surfaceTint">#B6C4FF</color>
     <color name="md_theme_dark_outlineVariant">#45464F</color>
     <color name="md_theme_dark_scrim">#000000</color>
+
+<!-- PIX-->
+    <color name="video_counter_color_pix">#E53935</color>
+    <color name="primary_color_pix">#075e54</color>
+    <color name="primary_light_color_pix">#80075e54</color>
+    <color name="surface_color_pix">#ffffff</color>
+    <color name="text_color_pix">#807f7f</color>
 </resources>

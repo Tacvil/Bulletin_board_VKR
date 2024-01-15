@@ -54,7 +54,7 @@ dependencies {
 
     implementation ("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
 
-    implementation  ("io.ak1.pix:piximagepicker:1.6.3")
+//    implementation  ("io.ak1.pix:piximagepicker:1.6.3")
 
     //firebase
     implementation(platform("com.google.firebase:firebase-bom:32.7.0"))
@@ -76,4 +76,25 @@ dependencies {
 
     //lotili
     implementation ("com.airbnb.android:lottie:6.3.0")
+    implementation ("org.jetbrains.kotlin:kotlin-parcelize-runtime:1.7.20")
+
+    val camerax_version = "1.2.3"
+    // CameraX core library using camera2 implementation
+    implementation ("androidx.camera:camera-camera2:$camerax_version")
+    // CameraX Lifecycle Library
+    implementation ("androidx.camera:camera-lifecycle:$camerax_version")
+    // CameraX View class
+    implementation ("androidx.camera:camera-view:1.2.3")
+    // If you want to additionally use the CameraX Extensions library
+    implementation ("androidx.camera:camera-extensions:1.2.3")
+    implementation ("com.google.guava:guava:31.0-jre")
+    //Glide
+    implementation ("com.github.bumptech.glide:glide:4.12.0")
+    implementation ("com.github.bumptech.glide:recyclerview-integration:4.12.0")
+    // Skip this if you don't want to use integration libraries or configure Glide.
+//    kapt "com.github.bumptech.glide:compiler:4.12.0"
+//    implementation ('com.github.bumptech.glide:recyclerview-integration:4.12.0') {
+//        // Excludes the support library because it's already included by Glide.
+//        transitive = false
+//    }
 }

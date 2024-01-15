@@ -1,22 +1,20 @@
 package com.example.bulletin_board.utils
 
 import android.graphics.Bitmap
-import android.hardware.camera2.CameraCaptureSession
 import android.net.Uri
 import android.os.Build
 import android.util.Log
 import android.view.View
 import android.view.WindowManager
 import androidx.core.view.WindowCompat
-import androidx.fragment.app.Fragment
 import com.example.bulletin_board.R
 import com.example.bulletin_board.act.EditAdsActivity
 import io.ak1.pix.helpers.PixEventCallback
 import io.ak1.pix.helpers.addPixToActivity
 import io.ak1.pix.helpers.showStatusBar
-import io.ak1.pix.models.Mode
-import io.ak1.pix.models.Options
-import io.ak1.pix.models.Ratio
+import com.example.bulletin_board.pix.models.Mode
+import com.example.bulletin_board.pix.models.Options
+import com.example.bulletin_board.pix.models.Ratio
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -41,11 +39,6 @@ object ImagePicker {
             when (result.status) {
                 PixEventCallback.Status.SUCCESS -> {
                     getMultiSelectImages(edAct, result.data)
-                    WindowCompat.setDecorFitsSystemWindows(edAct.window, true)
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                        edAct.window.attributes.layoutInDisplayCutoutMode =
-                            WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_DEFAULT
-                    }
                     edAct.showStatusBar()
                 }
 
@@ -60,6 +53,7 @@ object ImagePicker {
                 PixEventCallback.Status.SUCCESS -> {
                     openChooseImageFrag(edAct)
                     edAct.chooseImageFrag?.updateAdapter(result.data as ArrayList<Uri>, edAct)
+                    edAct.showStatusBar()
                 }
 
                 else -> {}
@@ -73,6 +67,7 @@ object ImagePicker {
                 PixEventCallback.Status.SUCCESS -> {
                     openChooseImageFrag(edAct)
                     singleImage(edAct, result.data[0])
+                    edAct.showStatusBar()
                 }
 
                 else -> {}

@@ -20,7 +20,7 @@ import com.example.bulletin_board.fragments.ImageListFrag
 import com.example.bulletin_board.utils.CityHelper
 import com.example.bulletin_board.utils.ImagePicker
 import com.google.android.gms.tasks.OnCompleteListener
-import io.ak1.pix.helpers.setupScreen
+import io.ak1.pix.helpers.showStatusBar
 import java.io.ByteArrayOutputStream
 import java.io.Serializable
 import kotlin.collections.ArrayList
@@ -204,6 +204,7 @@ class EditAdsActivity : AppCompatActivity(), FragmentCloseInterface {
         val fm = supportFragmentManager.beginTransaction()
         fm.replace(R.id.place_holder, chooseImageFrag!!)
         fm.commit()
+        showStatusBar()
     }
 
     private fun uploadImages() {

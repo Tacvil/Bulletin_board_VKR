@@ -20,4 +20,3 @@ dependencyResolutionManagement {
 
 rootProject.name = "Bulletin_board"
 include(":app")
-include(":pix")
