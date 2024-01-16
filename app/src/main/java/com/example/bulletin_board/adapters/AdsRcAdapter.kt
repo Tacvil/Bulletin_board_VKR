@@ -13,6 +13,7 @@ import com.bumptech.glide.load.resource.bitmap.CenterCrop
 import com.bumptech.glide.load.resource.bitmap.RoundedCorners
 import com.bumptech.glide.request.RequestOptions
 import com.example.bulletin_board.R
+import com.example.bulletin_board.act.DescriptionActivity
 import com.example.bulletin_board.act.EditAdsActivity
 import com.example.bulletin_board.act.MainActivity
 import com.example.bulletin_board.application.MyApplication
@@ -32,7 +33,7 @@ class AdsRcAdapter(val act: MainActivity) : RecyclerView.Adapter<AdsRcAdapter.Ad
             textViewTitle.text = ad.title
             textViewViewCounter.text = ad.viewsCounter
             textViewFav.text = ad.favCounter
-
+            imageButtonFav1.isClickable = true
             //val roundedCorners = RoundedCorners(20)
             //val centerCrop = CenterCrop()
             //val requestOptions = RequestOptions().transform(centerCrop, roundedCorners)
@@ -45,40 +46,43 @@ class AdsRcAdapter(val act: MainActivity) : RecyclerView.Adapter<AdsRcAdapter.Ad
             //Picasso.get().load(ad.mainImage).into(imageViewMainImage)
 
 //            if (ad.isFav) imageButtonFav.setImageResource(R.drawable.ic_favorite_pressed) else imageButtonFav.setImageResource(R.drawable.ic_favorite_normal)
-            if (ad.isFav){
-                imageButtonFav1.setMinAndMaxProgress(0.5f, 0.5f)
-                imageButtonFav1.playAnimation()
-            } else {
-                imageButtonFav1.setMinAndMaxProgress(1.0f, 1.0f)
-                imageButtonFav1.playAnimation()
-            }
 
             showEditPanel(isOwner(ad))
+             if (ad.isFav){
+                 imageButtonFav1.pauseAnimation()
+                 imageButtonFav1.cancelAnimation()
+                 imageButtonFav1.setMinAndMaxProgress(0.38f, 0.38f)
+            } else{
+                 imageButtonFav1.pauseAnimation()
+                 imageButtonFav1.cancelAnimation()
+                 imageButtonFav1.setMinAndMaxProgress(0.87f, 0.87f)
 
+             }
             imageButtonFav1.setOnClickListener {
                 // Обработка клика
                 if (!ad.isFav){
+                    imageButtonFav1.pauseAnimation()
+                    imageButtonFav1.cancelAnimation()
                     imageButtonFav1.setMinAndMaxProgress(0.0f, 0.38f)
                     imageButtonFav1.speed = 1.5f
                 } else {
+                    imageButtonFav1.pauseAnimation()
+                    imageButtonFav1.cancelAnimation()
                     imageButtonFav1.setMinAndMaxProgress(0.6f, 0.87f)
                     imageButtonFav1.speed = 1.5f
                 }
-
-                imageButtonFav1.playAnimation()
-
                 //(act.application as MyApplication).isAnimationRunning = true
-
                 imageButtonFav1.addAnimatorListener(object : Animator.AnimatorListener {
                     override fun onAnimationStart(animation: Animator) {
+                        imageButtonFav1.isClickable = false
                         // Можно добавить логику при начале анимации, если необходимо
                     }
 
                     override fun onAnimationEnd(animation: Animator) {
                         // Вызов метода по завершению анимации
                         //if(act.mAuth.currentUser?.isAnonymous == false)act.onFavClicked(ad)
-                        act.onFavClicked(ad)
-                       // (act.application as MyApplication).isAnimationRunning = false
+                        //act.onFavClicked(ad)
+                        //(act.application as MyApplication).isAnimationRunning = false
                         // Удаление слушателя, чтобы избежать многократного вызова
                         imageButtonFav1.removeAnimatorListener(this)
                     }
@@ -92,6 +96,8 @@ class AdsRcAdapter(val act: MainActivity) : RecyclerView.Adapter<AdsRcAdapter.Ad
                         // Можно добавить логику при повторении анимации, если необходимо
                     }
                 })
+                imageButtonFav1.playAnimation()
+                act.onFavClicked(ad)
             }
             itemView.setOnClickListener {
                 act.onAdViewed(ad)
@@ -99,6 +105,11 @@ class AdsRcAdapter(val act: MainActivity) : RecyclerView.Adapter<AdsRcAdapter.Ad
             imageButtonEditAd.setOnClickListener(onClickEdit(ad))
             imageButtonDeleteAd.setOnClickListener {
                 act.onDeleteItem(ad)
+            }
+            itemView.setOnClickListener {
+                val i =Intent(binding.root.context, DescriptionActivity::class.java)
+                i.putExtra("AD", ad)
+                binding.root.context.startActivity(i)
             }
         }
 
