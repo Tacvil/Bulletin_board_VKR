@@ -12,6 +12,7 @@ data class Announcement(
     val category: String? = null,
     val price: String? = null,
     val description: String? = null,
+    val email: String? = null,
     var mainImage: String? = null,
     var image2: String? = null,
     var image3: String? = null,

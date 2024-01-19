@@ -28,9 +28,9 @@ class AdsRcAdapter(val act: MainActivity) : RecyclerView.Adapter<AdsRcAdapter.Ad
     class AdHolder(val binding: AdListItemBinding, val act: MainActivity) :
         RecyclerView.ViewHolder(binding.root) {
         fun setData(ad: Announcement) = with(binding) {
-            textViewDescription.text = ad.description
+            textViewDescription.setText(ad.description)
             textViewPrice.text = ad.price
-            textViewTitle.text = ad.title
+            textViewTitleD.setText(ad.title)
             textViewViewCounter.text = ad.viewsCounter
             textViewFav.text = ad.favCounter
             imageButtonFav1.isClickable = true
@@ -105,11 +105,6 @@ class AdsRcAdapter(val act: MainActivity) : RecyclerView.Adapter<AdsRcAdapter.Ad
             imageButtonEditAd.setOnClickListener(onClickEdit(ad))
             imageButtonDeleteAd.setOnClickListener {
                 act.onDeleteItem(ad)
-            }
-            itemView.setOnClickListener {
-                val i =Intent(binding.root.context, DescriptionActivity::class.java)
-                i.putExtra("AD", ad)
-                binding.root.context.startActivity(i)
             }
         }
 

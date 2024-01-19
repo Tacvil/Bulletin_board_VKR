@@ -8,8 +8,10 @@
     tools:context=".act.LauncherActivity">
 
     <com.airbnb.lottie.LottieAnimationView
+        android:id="@+id/launcherAnim"
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="match_parent"
+        app:lottie_fileName="nothink_white.json">
 
     </com.airbnb.lottie.LottieAnimationView>
 

@@ -21,10 +21,14 @@ import androidx.core.net.toUri
 import androidx.exifinterface.media.ExifInterface
 import com.bumptech.glide.Glide
 import com.example.bulletin_board.R
+import com.example.bulletin_board.adapters.ImageAdapter
+import com.example.bulletin_board.model.Announcement
 import com.squareup.picasso.Picasso
 import com.squareup.picasso.Transformation
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 import java.io.File
@@ -121,7 +125,7 @@ object ImageManager {
         return@withContext bitmapList
     }
 
-    suspend fun getBitmapFromUris(uris: List<String?>) : List<Bitmap> = withContext(Dispatchers.IO) {
+    private suspend fun getBitmapFromUris(uris: List<String?>) : List<Bitmap> = withContext(Dispatchers.IO) {
         val bitmapList = ArrayList<Bitmap>()
 
         for (i in uris.indices){
@@ -132,6 +136,14 @@ object ImageManager {
         }
 
         return@withContext bitmapList
+    }
+
+    fun fillImageArray(ad: Announcement, adapter: ImageAdapter) {
+        val listUris = listOf(ad.mainImage, ad.image2, ad.image3)
+        CoroutineScope(Dispatchers.Main).launch {
+            val bitMapList = getBitmapFromUris(listUris)
+            adapter.update(bitMapList as ArrayList<Bitmap>)
+        }
     }
 
 }

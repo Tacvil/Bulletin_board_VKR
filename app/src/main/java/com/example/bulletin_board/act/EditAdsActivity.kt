@@ -18,6 +18,7 @@ import com.example.bulletin_board.dialogs.DialogSpinnerHelper
 import com.example.bulletin_board.fragments.FragmentCloseInterface
 import com.example.bulletin_board.fragments.ImageListFrag
 import com.example.bulletin_board.utils.CityHelper
+import com.example.bulletin_board.utils.ImageManager.fillImageArray
 import com.example.bulletin_board.utils.ImagePicker
 import com.google.android.gms.tasks.OnCompleteListener
 import io.ak1.pix.helpers.showStatusBar
@@ -79,6 +80,7 @@ class EditAdsActivity : AppCompatActivity(), FragmentCloseInterface {
         checkBoxWithSend.isChecked = ad.withSend.toBoolean()
         textViewPrice.setText(ad.price)
         textViewDescription.setText(ad.description)
+        fillImageArray(ad, imageAdapter)
     }
 
     private fun init() {
@@ -169,6 +171,7 @@ class EditAdsActivity : AppCompatActivity(), FragmentCloseInterface {
                 textViewSelectCategory.text.toString(),
                 textViewPrice.text.toString(),
                 textViewDescription.text.toString(),
+                textViewSelectEmail.text.toString(),
                 "empty",
                 "empty",
                 "empty",

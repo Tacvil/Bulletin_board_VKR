@@ -22,40 +22,61 @@
             android:layout_height="match_parent"
             android:orientation="vertical">
 
-            <TextView
+            <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/text_view_title"
+                style="@style/Widget.MaterialComponents.TextInputLayout.FilledBox"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-
-                android:layout_marginStart="5dp"
-                android:layout_marginTop="5dp"
-                android:gravity="start"
-                android:text="TextView"
-                android:textSize="16sp"
+                android:layout_height="match_parent"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent" />
+                app:layout_constraintTop_toTopOf="parent"
+                android:padding="5dp">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/textViewTitleD"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:clickable="false"
+                    android:focusable="false"
+                    android:inputType="none"
+                    android:cursorVisible="false"
+                    android:focusableInTouchMode="false"
+                    android:gravity="center"
+                    android:maxLines="2"
+                    android:ellipsize="end"
+                    android:hint="Название объявления"
+                    android:text="Example name ads"/>
+            </com.google.android.material.textfield.TextInputLayout>
 
             <ImageView
                 android:id="@+id/image_view_main_image"
                 android:layout_width="match_parent"
                 android:layout_height="200dp"
-                android:layout_margin="5dp"
+                android:layout_marginStart="5dp"
+                android:layout_marginEnd="5dp"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@+id/text_view_title"
                 app:srcCompat="@drawable/ic_def_image" />
 
-            <TextView
-                android:id="@+id/text_view_description"
+            <com.google.android.material.textfield.TextInputLayout
                 android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:padding="5dp">
 
-                android:layout_height="wrap_content"
-                android:layout_marginStart="5dp"
-                android:layout_marginEnd="5dp"
-                android:layout_marginBottom="5dp"
-                android:gravity="center_horizontal"
-                android:text="TextView" />
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/text_view_description"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:clickable="false"
+                    android:focusable="false"
+                    android:inputType="none"
+                    android:cursorVisible="false"
+                    android:focusableInTouchMode="false"
+                    android:ellipsize="end"
+                    android:hint="Описание"
+                    android:maxLines="3"/>
+            </com.google.android.material.textfield.TextInputLayout>
 
 
             <LinearLayout
@@ -91,7 +112,9 @@
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:layout_margin="5dp"
+                android:layout_marginStart="5dp"
+                android:layout_marginEnd="5dp"
+                android:layout_marginBottom="5dp"
                 android:orientation="horizontal">
 
                 <LinearLayout
@@ -152,15 +175,15 @@
                     </androidx.constraintlayout.widget.ConstraintLayout>
 
                     <!--                    <ImageButton-->
-<!--                        android:id="@+id/image_button_fav"-->
-<!--                        android:layout_width="wrap_content"-->
-<!--                        android:layout_height="wrap_content"-->
-<!--                        android:layout_marginStart="6dp"-->
-<!--                        android:layout_marginTop="2dp"-->
-<!--                        android:layout_marginEnd="2dp"-->
-<!--                        android:layout_marginBottom="2dp"-->
-<!--                        android:background="@android:color/transparent"-->
-<!--                        android:src="@drawable/ic_favorite_normal" />-->
+                    <!--                        android:id="@+id/image_button_fav"-->
+                    <!--                        android:layout_width="wrap_content"-->
+                    <!--                        android:layout_height="wrap_content"-->
+                    <!--                        android:layout_marginStart="6dp"-->
+                    <!--                        android:layout_marginTop="2dp"-->
+                    <!--                        android:layout_marginEnd="2dp"-->
+                    <!--                        android:layout_marginBottom="2dp"-->
+                    <!--                        android:background="@android:color/transparent"-->
+                    <!--                        android:src="@drawable/ic_favorite_normal" />-->
 
                 </LinearLayout>
 
