@@ -9,6 +9,7 @@ import android.util.Log
 import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.viewpager2.widget.ViewPager2
 import com.example.bulletin_board.R
 import com.example.bulletin_board.adapters.ImageAdapter
 import com.example.bulletin_board.model.Announcement
@@ -47,6 +48,7 @@ class EditAdsActivity : AppCompatActivity(), FragmentCloseInterface {
         onClickSelectCountryCity()
         onClickSelectCategory()
         onClickPublish()
+        imageChangeCounter()
     }
 
     private fun checkEditState() {
@@ -252,5 +254,16 @@ class EditAdsActivity : AppCompatActivity(), FragmentCloseInterface {
             task -> imStorageRef.downloadUrl
         }.addOnCompleteListener(listener)
 
+    }
+
+    private fun imageChangeCounter() {
+        binding.viewPagerImages.registerOnPageChangeCallback(object :
+            ViewPager2.OnPageChangeCallback() {
+            override fun onPageSelected(position: Int) {
+                super.onPageSelected(position)
+                val imageCounter = "${position + 1}/${binding.viewPagerImages.adapter?.itemCount}"
+                binding.textViewImageCounter.text = imageCounter
+            }
+        })
     }
 }

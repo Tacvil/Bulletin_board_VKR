@@ -3,17 +3,28 @@ package com.example.bulletin_board.act
 import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.text.Spannable
+import android.text.SpannableString
+import android.text.style.ForegroundColorSpan
 import android.util.Log
+import android.util.TypedValue
 import android.view.MenuItem
 import android.view.View
+import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 
 import androidx.appcompat.app.ActionBarDrawerToggle
+import androidx.core.content.ContextCompat
 import androidx.core.view.GravityCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.airbnb.lottie.LottieDrawable
+import com.bumptech.glide.Glide
+import com.bumptech.glide.load.resource.bitmap.RoundedCorners
+import com.bumptech.glide.request.RequestOptions
 import com.example.bulletin_board.R
 import com.example.bulletin_board.accounthelper.AccountHelper
 import com.example.bulletin_board.accounthelper.AccountHelper.Companion.RESULT_CODE_SUCCESS
@@ -29,14 +40,18 @@ import com.google.android.material.navigation.NavigationView.OnNavigationItemSel
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
+import com.squareup.picasso.Picasso
+import jp.wasabeef.glide.transformations.RoundedCornersTransformation
 
-class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener, AdsRcAdapter.Listener{
+class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener, AdsRcAdapter.Listener {
 
     private lateinit var textViewAccount: TextView
+    private lateinit var imageViewAccount: ImageView
     private lateinit var binding: ActivityMainBinding
     private val dialogHelper = DialogHelper(this)
     val mAuth = Firebase.auth
     val adapter = AdsRcAdapter(this)
+    lateinit var googleSignInLauncher: ActivityResultLauncher<Intent>
     private val firebaseViewModel: FirebaseViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -59,12 +74,11 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener, AdsR
         binding.mainContent.bNavView.selectedItemId = R.id.id_home
     }
 
-    @Deprecated("Deprecated in Java")
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        if (requestCode == RESULT_CODE_SUCCESS) {
-            // Обработка успешного результата
-            val task = GoogleSignIn.getSignedInAccountFromIntent(data)
-            //Log.d("MyLog", "Sign in result ")
+    private fun onActivityResult() {
+        googleSignInLauncher = registerForActivityResult(
+            ActivityResultContracts.StartActivityForResult()
+        ){
+            val task = GoogleSignIn.getSignedInAccountFromIntent(it.data)
 
             try {
                 val account = task.getResult(ApiException::class.java)
@@ -74,8 +88,6 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener, AdsR
             } catch (e: ApiException) {
                 Log.d("MyLog", "Api exception: ${e.message} ")
             }
-
-            super.onActivityResult(requestCode, resultCode, data)
         }
     }
 
@@ -104,25 +116,28 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener, AdsR
         uiUpdate(mAuth.currentUser)
     }
 
-    private fun initViewModel(){
+    private fun initViewModel() {
         firebaseViewModel.liveAdsData.observe(this) {
-            it?.let { content -> adapter.updateAdapter(content)
-            if (content.isEmpty()){
-                binding.mainContent.recyclerViewMainContent.visibility = View.INVISIBLE
-                binding.mainContent.nothinkWhiteAnim.visibility = View.VISIBLE
-                binding.mainContent.nothinkWhiteAnim.repeatCount = LottieDrawable.INFINITE
-                binding.mainContent.nothinkWhiteAnim.playAnimation()
-            } else{
-                binding.mainContent.recyclerViewMainContent.visibility = View.VISIBLE
-                binding.mainContent.nothinkWhiteAnim.cancelAnimation()
-                binding.mainContent.nothinkWhiteAnim.visibility = View.GONE
-            }
+            it?.let { content ->
+                adapter.updateAdapter(content)
+                if (content.isEmpty()) {
+                    binding.mainContent.recyclerViewMainContent.visibility = View.INVISIBLE
+                    binding.mainContent.nothinkWhiteAnim.visibility = View.VISIBLE
+                    binding.mainContent.nothinkWhiteAnim.repeatCount = LottieDrawable.INFINITE
+                    binding.mainContent.nothinkWhiteAnim.playAnimation()
+                } else {
+                    binding.mainContent.recyclerViewMainContent.visibility = View.VISIBLE
+                    binding.mainContent.nothinkWhiteAnim.cancelAnimation()
+                    binding.mainContent.nothinkWhiteAnim.visibility = View.GONE
+                }
             }
         }
     }
 
     private fun init() {
         setSupportActionBar(binding.mainContent.toolbar)
+        onActivityResult()
+        navViewSetting()
         val toggle = ActionBarDrawerToggle(
             this,
             binding.drawerLayout,
@@ -133,38 +148,42 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener, AdsR
         binding.drawerLayout.addDrawerListener(toggle)
         toggle.syncState()
         binding.navigationView.setNavigationItemSelectedListener(this)
-        textViewAccount =
-            binding.navigationView.getHeaderView(0).findViewById(R.id.text_view_account_email)
+        textViewAccount = binding.navigationView.getHeaderView(0).findViewById(R.id.text_view_account_email)
+        imageViewAccount = binding.navigationView.getHeaderView(0).findViewById(R.id.image_view_account_image)
     }
 
-    private fun bottomMenuOnClick() = with(binding){
+    private fun bottomMenuOnClick() = with(binding) {
         mainContent.bNavView.setOnNavigationItemSelectedListener { item ->
-        when(item.itemId) {
-        R.id.id_new_ad -> {
-            val i = Intent(this@MainActivity, EditAdsActivity::class.java)
-            startActivity(i)
-        }
-        R.id.id_my_ads -> {
-            firebaseViewModel.loadMyAnnouncement()
-            mainContent.toolbar.title = getString(R.string.ad_my_ads)
-        }
-        R.id.id_favs -> {
-            firebaseViewModel.loadMyFavs()
-            mainContent.toolbar.title = getString(R.string.favs)
-        }
-        R.id.id_home -> {
-            firebaseViewModel.loadAllAnnouncement()
-            mainContent.toolbar.title = getString(R.string.def)
-        }
-        }
+            when (item.itemId) {
+                R.id.id_new_ad -> {
+                    val i = Intent(this@MainActivity, EditAdsActivity::class.java)
+                    startActivity(i)
+                }
+
+                R.id.id_my_ads -> {
+                    firebaseViewModel.loadMyAnnouncement()
+                    mainContent.toolbar.title = getString(R.string.ad_my_ads)
+                }
+
+                R.id.id_favs -> {
+                    firebaseViewModel.loadMyFavs()
+                    mainContent.toolbar.title = getString(R.string.favs)
+                }
+
+                R.id.id_home -> {
+                    firebaseViewModel.loadAllAnnouncement()
+                    mainContent.toolbar.title = getString(R.string.def)
+                }
+            }
             true
 
         }
     }
 
-    private fun initRecyclerView(){
+    private fun initRecyclerView() {
         binding.apply {
-            mainContent.recyclerViewMainContent.layoutManager = LinearLayoutManager(this@MainActivity)
+            mainContent.recyclerViewMainContent.layoutManager =
+                LinearLayoutManager(this@MainActivity)
             mainContent.recyclerViewMainContent.adapter = adapter
         }
     }
@@ -201,7 +220,7 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener, AdsR
             }
 
             R.id.id_sign_out -> {
-                if (mAuth.currentUser?.isAnonymous == true){
+                if (mAuth.currentUser?.isAnonymous == true) {
                     binding.drawerLayout.closeDrawer(GravityCompat.START)
                     return true
                 }
@@ -216,20 +235,26 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener, AdsR
 
     fun uiUpdate(user: FirebaseUser?) {
         if (user == null) {
-            dialogHelper.accHelper.signInAnonymously(object: AccountHelper.Listener{
+            dialogHelper.accHelper.signInAnonymously(object : AccountHelper.Listener {
                 override fun onComplete() {
                     textViewAccount.text = "Гость"
+                    imageViewAccount.setImageResource(R.drawable.ic_my_ads)
                 }
 
             })
         } else if (user.isAnonymous) {
             textViewAccount.text = "Гость"
-        }else if (!user.isAnonymous){
+            imageViewAccount.setImageResource(R.drawable.ic_my_ads)
+        } else if (!user.isAnonymous) {
             textViewAccount.text = user.email
+            Glide.with(this)
+                .load(user.photoUrl)
+                .apply(RequestOptions().transform(RoundedCorners(20)))
+                .into(imageViewAccount)
         }
     }
 
-    companion object{
+    companion object {
         const val EDIT_STATE = "edit_state"
         const val ADS_DATA = "ads_data"
     }
@@ -240,12 +265,28 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener, AdsR
 
     override fun onAdViewed(ad: Announcement) {
         firebaseViewModel.adViewed(ad)
-        val i =Intent(this, DescriptionActivity::class.java)
+        val i = Intent(this, DescriptionActivity::class.java)
         i.putExtra("AD", ad)
         startActivity(i)
     }
 
     override fun onFavClicked(ad: Announcement) {
         firebaseViewModel.onFavClick(ad)
+    }
+
+    private fun navViewSetting() = with(binding){
+        val menu = navigationView.menu
+        val adsCat = menu.findItem(R.id.adsCat)
+        val spanAdsCat = SpannableString(adsCat.title)
+
+        val colorPrimary = R.color.md_theme_light_primary
+
+        adsCat.title?.let { spanAdsCat.setSpan(ForegroundColorSpan(ContextCompat.getColor(this@MainActivity, colorPrimary)), 0, it.length, 0) }
+        adsCat.title = spanAdsCat
+
+        val accCat = menu.findItem(R.id.accCat)
+        val spanAccCat = SpannableString(accCat.title)
+        accCat.title?.let { spanAccCat.setSpan(ForegroundColorSpan(ContextCompat.getColor(this@MainActivity, colorPrimary)), 0, it.length, 0) }
+        accCat.title = spanAccCat
     }
 }

@@ -2,10 +2,12 @@ package com.example.bulletin_board.adapters
 
 import android.animation.Animator
 import android.content.Intent
+import android.os.Build
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.annotation.RequiresApi
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
@@ -27,6 +29,7 @@ class AdsRcAdapter(val act: MainActivity) : RecyclerView.Adapter<AdsRcAdapter.Ad
 
     class AdHolder(val binding: AdListItemBinding, val act: MainActivity) :
         RecyclerView.ViewHolder(binding.root) {
+        @RequiresApi(Build.VERSION_CODES.O)
         fun setData(ad: Announcement) = with(binding) {
             textViewDescription.setText(ad.description)
             textViewPrice.text = ad.price
