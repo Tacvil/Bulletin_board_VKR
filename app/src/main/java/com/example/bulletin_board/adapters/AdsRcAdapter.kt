@@ -159,6 +159,13 @@ class AdsRcAdapter(val act: MainActivity) : RecyclerView.Adapter<AdsRcAdapter.Ad
         adArray.addAll(tempArray)
     }
 
+    fun updateAdapterWithClear(newList: List<Announcement>) {
+        val diffResult = DiffUtil.calculateDiff(DiffUtilHelper(adArray, newList))
+        diffResult.dispatchUpdatesTo(this)
+        adArray.clear()
+        adArray.addAll(newList)
+    }
+
     interface Listener{
         fun onDeleteItem(ad: Announcement)
         fun onAdViewed(ad: Announcement)
