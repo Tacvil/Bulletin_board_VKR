@@ -8,8 +8,8 @@ import com.example.bulletin_board.model.DbManager
 class FirebaseViewModel: ViewModel() {
     private val dbManager = DbManager()
     val liveAdsData = MutableLiveData<ArrayList<Announcement>?>()
-    fun loadAllAnnouncement(){
-        dbManager.getAllAnnouncement(object : DbManager.ReadDataCallback{
+    fun loadAllAnnouncement(lastTime: String){
+        dbManager.getAllAnnouncement(lastTime, object : DbManager.ReadDataCallback{
             override fun readData(list: ArrayList<Announcement>) {
                 liveAdsData.value = list
             }

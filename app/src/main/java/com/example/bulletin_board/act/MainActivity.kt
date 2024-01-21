@@ -21,6 +21,7 @@ import androidx.appcompat.app.ActionBarDrawerToggle
 import androidx.core.content.ContextCompat
 import androidx.core.view.GravityCompat
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.airbnb.lottie.LottieDrawable
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.resource.bitmap.RoundedCorners
@@ -65,8 +66,8 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener, AdsR
         init()
         initRecyclerView()
         initViewModel()
-        firebaseViewModel.loadAllAnnouncement()
         bottomMenuOnClick()
+        scrollListener()
     }
 
     override fun onResume() {
@@ -77,7 +78,7 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener, AdsR
     private fun onActivityResult() {
         googleSignInLauncher = registerForActivityResult(
             ActivityResultContracts.StartActivityForResult()
-        ){
+        ) {
             val task = GoogleSignIn.getSignedInAccountFromIntent(it.data)
 
             try {
@@ -148,8 +149,10 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener, AdsR
         binding.drawerLayout.addDrawerListener(toggle)
         toggle.syncState()
         binding.navigationView.setNavigationItemSelectedListener(this)
-        textViewAccount = binding.navigationView.getHeaderView(0).findViewById(R.id.text_view_account_email)
-        imageViewAccount = binding.navigationView.getHeaderView(0).findViewById(R.id.image_view_account_image)
+        textViewAccount =
+            binding.navigationView.getHeaderView(0).findViewById(R.id.text_view_account_email)
+        imageViewAccount =
+            binding.navigationView.getHeaderView(0).findViewById(R.id.image_view_account_image)
     }
 
     private fun bottomMenuOnClick() = with(binding) {
@@ -171,7 +174,7 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener, AdsR
                 }
 
                 R.id.id_home -> {
-                    firebaseViewModel.loadAllAnnouncement()
+                    firebaseViewModel.loadAllAnnouncement("0")
                     mainContent.toolbar.title = getString(R.string.def)
                 }
             }
@@ -254,11 +257,6 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener, AdsR
         }
     }
 
-    companion object {
-        const val EDIT_STATE = "edit_state"
-        const val ADS_DATA = "ads_data"
-    }
-
     override fun onDeleteItem(ad: Announcement) {
         firebaseViewModel.deleteItem(ad)
     }
@@ -274,19 +272,57 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener, AdsR
         firebaseViewModel.onFavClick(ad)
     }
 
-    private fun navViewSetting() = with(binding){
+    private fun navViewSetting() = with(binding) {
         val menu = navigationView.menu
         val adsCat = menu.findItem(R.id.adsCat)
         val spanAdsCat = SpannableString(adsCat.title)
 
         val colorPrimary = R.color.md_theme_light_primary
 
-        adsCat.title?.let { spanAdsCat.setSpan(ForegroundColorSpan(ContextCompat.getColor(this@MainActivity, colorPrimary)), 0, it.length, 0) }
+        adsCat.title?.let {
+            spanAdsCat.setSpan(
+                ForegroundColorSpan(
+                    ContextCompat.getColor(
+                        this@MainActivity,
+                        colorPrimary
+                    )
+                ), 0, it.length, 0
+            )
+        }
         adsCat.title = spanAdsCat
 
         val accCat = menu.findItem(R.id.accCat)
         val spanAccCat = SpannableString(accCat.title)
-        accCat.title?.let { spanAccCat.setSpan(ForegroundColorSpan(ContextCompat.getColor(this@MainActivity, colorPrimary)), 0, it.length, 0) }
+        accCat.title?.let {
+            spanAccCat.setSpan(
+                ForegroundColorSpan(
+                    ContextCompat.getColor(
+                        this@MainActivity,
+                        colorPrimary
+                    )
+                ), 0, it.length, 0
+            )
+        }
         accCat.title = spanAccCat
+    }
+
+    private fun scrollListener() = with(binding.mainContent) {
+        recyclerViewMainContent.addOnScrollListener(object : RecyclerView.OnScrollListener() {
+            override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
+                super.onScrollStateChanged(recyclerView, newState)
+                if (!recyclerView.canScrollVertically(SCROLL_DOWN) && newState == RecyclerView.SCROLL_STATE_IDLE) {
+                    val adsList = firebaseViewModel.liveAdsData.value!!
+                    if (adsList.isNotEmpty()) {
+                        adsList[adsList.size - 1].let { firebaseViewModel.loadAllAnnouncement(it.time) }
+                    }
+                }
+            }
+        })
+    }
+
+    companion object {
+        const val EDIT_STATE = "edit_state"
+        const val ADS_DATA = "ads_data"
+        const val SCROLL_DOWN = 1
     }
 }

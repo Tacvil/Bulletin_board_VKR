@@ -18,6 +18,8 @@ data class Announcement(
     var image3: String? = null,
     val key: String? = null,
     val uid: String? = null,
+    val time: String = "0",
+
     var isFav: Boolean = false,
 
     var favCounter: String = "0",

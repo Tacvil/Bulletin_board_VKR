@@ -178,7 +178,8 @@ class EditAdsActivity : AppCompatActivity(), FragmentCloseInterface {
                 "empty",
                 "empty",
                 dbManager.database.push().key,
-                dbManager.auth.uid
+                dbManager.auth.uid,
+                System.currentTimeMillis().toString()
             )
         }
         return announcement
