@@ -1,5 +1,6 @@
 package com.example.bulletin_board.model
 
+import com.example.bulletin_board.utils.FilterManager
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
@@ -18,7 +19,7 @@ class DbManager {
         if (auth.uid != null) database.child(announcement.key ?: "empty").child(auth.uid!!)
             .child(AD_NODE)
             .setValue(announcement).addOnCompleteListener {
-                val adFilter = AdFilter(announcement.time, "${announcement.category}_${announcement.time}")
+                val adFilter = FilterManager.createFilter(announcement)
                 database.child(announcement.key ?: "empty")
                     .child(FILTER_NODE)
                     .setValue(adFilter).addOnCompleteListener {
@@ -84,13 +85,13 @@ class DbManager {
     }
 
     fun getAllAnnouncementFromCatFirstPage(cat: String, readDataCallback: ReadDataCallback?) {
-        val query = database.orderByChild( "/adFilter/catTime").startAt(cat).endAt(cat + "_\uf8ff").limitToLast(
+        val query = database.orderByChild( "/adFilter/cat_time").startAt(cat).endAt(cat + "_\uf8ff").limitToLast(
             ADS_LIMIT)
         readDataFromDb(query, readDataCallback)
     }
 
     fun getAllAnnouncementFromCatNextPage(catTime: String, readDataCallback: ReadDataCallback?) {
-        val query = database.orderByChild( "/adFilter/catTime").endBefore(catTime).limitToLast(
+        val query = database.orderByChild( "/adFilter/cat_time").endBefore(catTime).limitToLast(
             ADS_LIMIT)
         readDataFromDb(query, readDataCallback)
     }

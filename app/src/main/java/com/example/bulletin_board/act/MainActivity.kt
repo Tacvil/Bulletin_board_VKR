@@ -32,6 +32,7 @@ import com.example.bulletin_board.databinding.ActivityMainBinding
 import com.example.bulletin_board.dialoghelper.DialogConst
 import com.example.bulletin_board.dialoghelper.DialogHelper
 import com.example.bulletin_board.model.Announcement
+import com.example.bulletin_board.utils.FilterManager
 import com.example.bulletin_board.viewmodel.FirebaseViewModel
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.common.api.ApiException
@@ -49,9 +50,11 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener, AdsR
     val mAuth = Firebase.auth
     val adapter = AdsRcAdapter(this)
     lateinit var googleSignInLauncher: ActivityResultLauncher<Intent>
+    lateinit var filterLauncher: ActivityResultLauncher<Intent>
     private val firebaseViewModel: FirebaseViewModel by viewModels()
     private var clearUpdate: Boolean = true
     private var currentCategory: String? = null
+    private var filter: String = "empty"
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -66,6 +69,7 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener, AdsR
         initViewModel()
         bottomMenuOnClick()
         scrollListener()
+        onActivityResultFilter()
     }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
@@ -74,7 +78,12 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener, AdsR
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        if (item.itemId == R.id.id_filter) startActivity(Intent(this@MainActivity, FilterActivity::class.java))
+        if (item.itemId == R.id.id_filter){
+            val i =Intent(this@MainActivity, FilterActivity::class.java).apply {
+                putExtra(FilterActivity.FILTER_KEY, filter)
+            }
+            filterLauncher.launch(i)
+        }
         return super.onOptionsItemSelected(item)
     }
 
@@ -96,6 +105,17 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener, AdsR
                 }
             } catch (e: ApiException) {
                 Log.d("MyLog", "Api exception: ${e.message} ")
+            }
+        }
+    }
+
+    private fun onActivityResultFilter(){
+        filterLauncher = registerForActivityResult(
+            ActivityResultContracts.StartActivityForResult()
+        ){
+            if (it.resultCode == RESULT_OK){
+                filter = it.data?.getStringExtra(FilterActivity.FILTER_KEY)!!
+                Log.d("MyLogMainAct", "getFilter: ${FilterManager.getFilter(filter)}")
             }
         }
     }
