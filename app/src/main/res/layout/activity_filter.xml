@@ -238,8 +238,18 @@
                 android:id="@+id/button_done"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_margin="5dp"
+                android:layout_marginStart="5dp"
+                android:layout_marginEnd="5dp"
                 android:text="Применить фильтр" />
+
+            <Button
+                android:id="@+id/button_clear_filter"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="5dp"
+                android:layout_marginEnd="5dp"
+                android:layout_marginBottom="5dp"
+                android:text="Очистить фильтр" />
 
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>

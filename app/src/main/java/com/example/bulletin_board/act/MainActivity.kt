@@ -55,6 +55,7 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener, AdsR
     private var clearUpdate: Boolean = true
     private var currentCategory: String? = null
     private var filter: String = "empty"
+    private var filterDb: String = ""
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -78,8 +79,8 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener, AdsR
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        if (item.itemId == R.id.id_filter){
-            val i =Intent(this@MainActivity, FilterActivity::class.java).apply {
+        if (item.itemId == R.id.id_filter) {
+            val i = Intent(this@MainActivity, FilterActivity::class.java).apply {
                 putExtra(FilterActivity.FILTER_KEY, filter)
             }
             filterLauncher.launch(i)
@@ -109,13 +110,17 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener, AdsR
         }
     }
 
-    private fun onActivityResultFilter(){
+    private fun onActivityResultFilter() {
         filterLauncher = registerForActivityResult(
             ActivityResultContracts.StartActivityForResult()
-        ){
-            if (it.resultCode == RESULT_OK){
+        ) {
+            if (it.resultCode == RESULT_OK) {
                 filter = it.data?.getStringExtra(FilterActivity.FILTER_KEY)!!
                 Log.d("MyLogMainAct", "getFilter: ${FilterManager.getFilter(filter)}")
+                filterDb = FilterManager.getFilter(filter)
+            }else if (it.resultCode == RESULT_CANCELED){
+                filterDb = ""
+                filter = "empty"
             }
         }
     }
@@ -149,7 +154,9 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener, AdsR
         firebaseViewModel.liveAdsData.observe(this) {
             it?.let { content ->
                 val list = getAdsByCategory(content)
-                if (!clearUpdate) adapter.updateAdapter(list) else adapter.updateAdapterWithClear(list)
+                if (!clearUpdate) adapter.updateAdapter(list) else adapter.updateAdapterWithClear(
+                    list
+                )
                 if (adapter.itemCount == 0) {
                     binding.mainContent.recyclerViewMainContent.visibility = View.INVISIBLE
                     binding.mainContent.nothinkWhiteAnim.visibility = View.VISIBLE
@@ -164,12 +171,12 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener, AdsR
         }
     }
 
-    private fun getAdsByCategory(list: ArrayList<Announcement>): ArrayList<Announcement>{
+    private fun getAdsByCategory(list: ArrayList<Announcement>): ArrayList<Announcement> {
         val tempList = ArrayList<Announcement>()
         tempList.addAll(list)
-        if (currentCategory != getString(R.string.def)){
+        if (currentCategory != getString(R.string.def)) {
             tempList.clear()
-            list.forEach{
+            list.forEach {
                 if (currentCategory == it.category) tempList.add(it)
             }
         }
@@ -219,7 +226,7 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener, AdsR
 
                 R.id.id_home -> {
                     currentCategory = getString(R.string.def)
-                    firebaseViewModel.loadAllAnnouncementFirstPage()
+                    firebaseViewModel.loadAllAnnouncementFirstPage(filterDb)
                     mainContent.toolbar.title = getString(R.string.def)
                 }
             }
@@ -282,9 +289,9 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener, AdsR
         return true
     }
 
-    private fun getAdsFromCat(cat: String){
+    private fun getAdsFromCat(cat: String) {
         currentCategory = cat
-        firebaseViewModel.loadAllAnnouncementFromCatFirstPage(cat)
+        firebaseViewModel.loadAllAnnouncementFromCatFirstPage(cat, filterDb)
     }
 
     fun uiUpdate(user: FirebaseUser?) {
@@ -372,11 +379,11 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener, AdsR
         })
     }
 
-    private fun getAdsFromCat(adsList: ArrayList<Announcement>){
-        adsList[0].let{
-            if (currentCategory == getString(R.string.def)){
+    private fun getAdsFromCat(adsList: ArrayList<Announcement>) {
+        adsList[0].let {
+            if (currentCategory == getString(R.string.def)) {
                 firebaseViewModel.loadAllAnnouncementNextPage(it.time)
-            }else{
+            } else {
                 val catTime = "${it.category}_${it.time}"
                 firebaseViewModel.loadAllAnnouncementFromCatNextPage(catTime)
             }

@@ -8,8 +8,8 @@ import com.example.bulletin_board.model.DbManager
 class FirebaseViewModel: ViewModel() {
     private val dbManager = DbManager()
     val liveAdsData = MutableLiveData<ArrayList<Announcement>?>()
-    fun loadAllAnnouncementFirstPage(){
-        dbManager.getAllAnnouncementFirstPage(object : DbManager.ReadDataCallback{
+    fun loadAllAnnouncementFirstPage(filter: String){
+        dbManager.getAllAnnouncementFirstPage(filter, object : DbManager.ReadDataCallback{
             override fun readData(list: ArrayList<Announcement>) {
                 liveAdsData.value = list
             }
@@ -24,8 +24,8 @@ class FirebaseViewModel: ViewModel() {
         })
     }
 
-    fun loadAllAnnouncementFromCatFirstPage(cat: String){
-        dbManager.getAllAnnouncementFromCatFirstPage(cat, object : DbManager.ReadDataCallback{
+    fun loadAllAnnouncementFromCatFirstPage(cat: String, filter: String){
+        dbManager.getAllAnnouncementFromCatFirstPage(cat, filter, object : DbManager.ReadDataCallback{
             override fun readData(list: ArrayList<Announcement>) {
                 liveAdsData.value = list
             }

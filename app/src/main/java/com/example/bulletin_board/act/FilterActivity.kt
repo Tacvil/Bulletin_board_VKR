@@ -20,6 +20,7 @@ class FilterActivity : AppCompatActivity() {
         setContentView(binding.root)
         onClickSelectCountryCity()
         onClickDone()
+        onClickClear()
         actionBarSettings()
         getFilter()
     }
@@ -69,6 +70,16 @@ class FilterActivity : AppCompatActivity() {
             }
             setResult(RESULT_OK, i)
             finish()
+        }
+    }
+
+    private fun onClickClear() = with(binding) {
+        buttonClearFilter.setOnClickListener {
+            textViewSelectCountry.setText(getString(R.string.select_country))
+            textViewSelectCity.setText(getString(R.string.select_city))
+            textViewIndex.setText("")
+            checkBoxWithSend.isChecked = false
+            setResult(RESULT_CANCELED)
         }
     }
 
