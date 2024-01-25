@@ -16,8 +16,8 @@ class FirebaseViewModel: ViewModel() {
         })
     }
 
-    fun loadAllAnnouncementNextPage(time: String){
-        dbManager.getAllAnnouncementNextPage(time, object : DbManager.ReadDataCallback{
+    fun loadAllAnnouncementNextPage(time: String, filter: String){
+        dbManager.getAllAnnouncementNextPage(time, filter, object : DbManager.ReadDataCallback{
             override fun readData(list: ArrayList<Announcement>) {
                 liveAdsData.value = list
             }
@@ -32,8 +32,8 @@ class FirebaseViewModel: ViewModel() {
         })
     }
 
-    fun loadAllAnnouncementFromCatNextPage(catTime: String){
-        dbManager.getAllAnnouncementFromCatNextPage(catTime, object : DbManager.ReadDataCallback{
+    fun loadAllAnnouncementFromCatNextPage(cat: String, time: String, filter: String){
+        dbManager.getAllAnnouncementFromCatNextPage(cat, time, filter, object : DbManager.ReadDataCallback{
             override fun readData(list: ArrayList<Announcement>) {
                 liveAdsData.value = list
             }

@@ -382,10 +382,9 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener, AdsR
     private fun getAdsFromCat(adsList: ArrayList<Announcement>) {
         adsList[0].let {
             if (currentCategory == getString(R.string.def)) {
-                firebaseViewModel.loadAllAnnouncementNextPage(it.time)
+                firebaseViewModel.loadAllAnnouncementNextPage(it.time, filterDb)
             } else {
-                val catTime = "${it.category}_${it.time}"
-                firebaseViewModel.loadAllAnnouncementFromCatNextPage(catTime)
+                firebaseViewModel.loadAllAnnouncementFromCatNextPage(it.category!!, it.time, filterDb)
             }
         }
     }
