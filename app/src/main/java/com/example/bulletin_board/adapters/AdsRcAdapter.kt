@@ -22,12 +22,20 @@ import com.example.bulletin_board.application.MyApplication
 import com.example.bulletin_board.model.Announcement
 import com.example.bulletin_board.databinding.AdListItemBinding
 import com.squareup.picasso.Picasso
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Locale
 
 class AdsRcAdapter(val act: MainActivity) : RecyclerView.Adapter<AdsRcAdapter.AdHolder>() {
 
     val adArray = ArrayList<Announcement>()
+    private var timeFormatter: SimpleDateFormat? = null
 
-    class AdHolder(val binding: AdListItemBinding, val act: MainActivity) :
+    init {
+        timeFormatter = SimpleDateFormat("dd/MM/yyyy - hh:mm", Locale.getDefault())
+    }
+
+    class AdHolder(val binding: AdListItemBinding, val act: MainActivity, val formatter: SimpleDateFormat) :
         RecyclerView.ViewHolder(binding.root) {
         @RequiresApi(Build.VERSION_CODES.O)
         fun setData(ad: Announcement) = with(binding) {
@@ -37,6 +45,8 @@ class AdsRcAdapter(val act: MainActivity) : RecyclerView.Adapter<AdsRcAdapter.Ad
             textViewViewCounter.text = ad.viewsCounter
             textViewFav.text = ad.favCounter
             imageButtonFav1.isClickable = true
+            val publishTime = "Время публикации: ${getTimeFromMillis(ad.time)}"
+            textViewData.text = publishTime
             //val roundedCorners = RoundedCorners(20)
             //val centerCrop = CenterCrop()
             //val requestOptions = RequestOptions().transform(centerCrop, roundedCorners)
@@ -111,6 +121,12 @@ class AdsRcAdapter(val act: MainActivity) : RecyclerView.Adapter<AdsRcAdapter.Ad
             }
         }
 
+        private fun getTimeFromMillis(timeMillis: String): String{
+            val c = Calendar.getInstance()
+            c.timeInMillis = timeMillis.toLong()
+            return formatter.format(c.time)
+        }
+
         private fun onClickEdit(ad: Announcement): View.OnClickListener{
             return View.OnClickListener {
                 val editIntent = Intent(act, EditAdsActivity::class.java).apply {
@@ -137,7 +153,7 @@ class AdsRcAdapter(val act: MainActivity) : RecyclerView.Adapter<AdsRcAdapter.Ad
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): AdHolder {
         val binding = AdListItemBinding.inflate(LayoutInflater.from(parent.context), parent, false)
-        return AdHolder(binding, act)
+        return AdHolder(binding, act, timeFormatter!!)
     }
 
     override fun getItemCount(): Int {
