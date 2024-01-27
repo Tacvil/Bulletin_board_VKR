@@ -1,11 +1,13 @@
 package com.example.bulletin_board.fragments
 
 import android.app.Activity
+import android.content.SharedPreferences
 import android.os.Bundle
 import android.util.Log
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
+import com.example.bulletin_board.utils.BillingManager
 import com.yandex.mobile.ads.banner.AdSize
 import com.yandex.mobile.ads.banner.BannerAdView
 import com.yandex.mobile.ads.common.AdRequest
@@ -26,11 +28,18 @@ open class BaseAdsFrag: Fragment(), InterstitialAdListener {
     //private var _adInfoFragment: ImageListFrag? = null
     //
     lateinit var mBannerAdView: BannerAdView
-
+    private var pref: SharedPreferences? =null
+    private var isPremiumUser:Boolean =false
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        initAds()
+        pref = activity?.getSharedPreferences(BillingManager.MAIN_PREF, AppCompatActivity.MODE_PRIVATE)
+        isPremiumUser = pref?.getBoolean(BillingManager.REMOVE_ADS_PREF, false)!!
+        if (!isPremiumUser){
+            initAds()
+        }else{
+            mBannerAdView.visibility = View.GONE
+        }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {

@@ -33,6 +33,10 @@
     <item android:title="@string/ad_cat2" android:id="@+id/accCat">
 
         <menu>
+            <item
+                android:id="@+id/remove_ads"
+                android:icon="@drawable/ic_sign_up"
+                android:title="Убрать рекламу" />
 
             <item
                 android:id="@+id/id_sign_up"

@@ -1,6 +1,7 @@
 package com.example.bulletin_board.act
 
 import android.content.Intent
+import android.content.SharedPreferences
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.text.SpannableString
@@ -32,6 +33,8 @@ import com.example.bulletin_board.databinding.ActivityMainBinding
 import com.example.bulletin_board.dialoghelper.DialogConst
 import com.example.bulletin_board.dialoghelper.DialogHelper
 import com.example.bulletin_board.model.Announcement
+import com.example.bulletin_board.utils.BillingManager
+import com.example.bulletin_board.utils.BillingManager.Companion.REMOVE_ADS_PREF
 import com.example.bulletin_board.utils.FilterManager
 import com.example.bulletin_board.viewmodel.FirebaseViewModel
 import com.google.android.gms.auth.api.signin.GoogleSignIn
@@ -56,12 +59,16 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener, AdsR
     private var currentCategory: String? = null
     private var filter: String = "empty"
     private var filterDb: String = ""
+    private var pref: SharedPreferences? =null
+    private var isPremiumUser:Boolean =false
+    private var bManager:BillingManager? =null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
-
+        pref = getSharedPreferences(BillingManager.MAIN_PREF, MODE_PRIVATE)
+        isPremiumUser = pref?.getBoolean(REMOVE_ADS_PREF, false)!!
 //        val toolbar: Toolbar = findViewById(R.id.toolbar)
 //        setSupportActionBar(toolbar)
 
@@ -267,6 +274,11 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener, AdsR
                 getAdsFromCat(getString(R.string.ad_dm))
             }
 
+            R.id.remove_ads -> {
+                bManager = BillingManager(this)
+                bManager?.startConnection()
+            }
+
             R.id.id_sign_up -> {
                 dialogHelper.createSignDialog(DialogConst.SIGN_UP_STATE)
             }
@@ -387,6 +399,11 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener, AdsR
                 firebaseViewModel.loadAllAnnouncementFromCatNextPage(it.category!!, it.time, filterDb)
             }
         }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        bManager?.closeConnection()
     }
 
     companion object {
