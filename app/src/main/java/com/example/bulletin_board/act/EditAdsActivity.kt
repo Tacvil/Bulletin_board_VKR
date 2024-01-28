@@ -82,6 +82,7 @@ class EditAdsActivity : AppCompatActivity(), FragmentCloseInterface {
         checkBoxWithSend.isChecked = ad.withSend.toBoolean()
         textViewPrice.setText(ad.price)
         textViewDescription.setText(ad.description)
+        updateImageCounter(0)
         fillImageArray(ad, imageAdapter)
     }
 
@@ -142,12 +143,7 @@ class EditAdsActivity : AppCompatActivity(), FragmentCloseInterface {
     fun onClickPublish() {
         binding.buttonPublish.setOnClickListener {
             ad = fillAnnouncement()
-            if (isEditState) {
-                ad?.copy(key = ad?.key)?.let { dbManager.publishAnnouncement(it, onPublishFinish()) }
-            } else {
-                //dbManager.publishAnnouncement(adTemp, onPublishFinish())
-                uploadImages()
-            }
+            uploadImages()
         }
     }
 
@@ -161,9 +157,9 @@ class EditAdsActivity : AppCompatActivity(), FragmentCloseInterface {
     }
 
     private fun fillAnnouncement(): Announcement {
-        val announcement: Announcement
+        val announcementTemp: Announcement
         binding.apply {
-            announcement = Announcement(
+            announcementTemp = Announcement(
                 textViewTitle.text.toString(),
                 textViewSelectCountry.text.toString(),
                 textViewSelectCity.text.toString(),
@@ -174,15 +170,15 @@ class EditAdsActivity : AppCompatActivity(), FragmentCloseInterface {
                 textViewPrice.text.toString(),
                 textViewDescription.text.toString(),
                 textViewSelectEmail.text.toString(),
-                "empty",
-                "empty",
-                "empty",
-                dbManager.database.push().key,
+                ad?.mainImage ?: "empty",
+                ad?.image2 ?: "empty",
+                ad?.image3 ?: "empty",
+                ad?.key ?: dbManager.database.push().key,
                 dbManager.auth.uid,
-                System.currentTimeMillis().toString()
+                ad?.time ?: System.currentTimeMillis().toString()
             )
         }
-        return announcement
+        return announcementTemp
     }
 
     fun onClickSelectCategory() {
@@ -200,6 +196,7 @@ class EditAdsActivity : AppCompatActivity(), FragmentCloseInterface {
         binding.scrollViewMain.visibility = View.VISIBLE
         imageAdapter.update(list)
         chooseImageFrag = null
+        updateImageCounter(binding.viewPagerImages.currentItem)
 
     }
 
@@ -214,30 +211,51 @@ class EditAdsActivity : AppCompatActivity(), FragmentCloseInterface {
     }
 
     private fun uploadImages() {
-        Log.d("index", "$imageIndex")
-        if (imageAdapter.mainArray.size == imageIndex){
+        //Log.d("index", "$imageIndex")
+        if (imageIndex == 3) {
             dbManager.publishAnnouncement(ad!!, onPublishFinish())
             return
         }
-        val byteArray = prepareImageByteArray(imageAdapter.mainArray[imageIndex])
-        uploadImage(byteArray){
-            //dbManager.publishAnnouncement(ad!!, onPublishFinish())
-            nextImage(it.result.toString())
+        val oldUrl = getUrlFromAd()
+        if (imageAdapter.mainArray.size > imageIndex) {
+            val byteArray = prepareImageByteArray(imageAdapter.mainArray[imageIndex])
+            if (oldUrl.startsWith("http")) {
+                updateImage(byteArray, oldUrl) {
+                    nextImage(it.result.toString())
+                }
+            } else {
+                uploadImage(byteArray) {
+                    //dbManager.publishAnnouncement(ad!!, onPublishFinish())
+                    nextImage(it.result.toString())
+                }
+            }
+        } else {
+            if (oldUrl.startsWith("http")) {
+                deleteImageByUrl(oldUrl) {
+                    nextImage("empty")
+                }
+            } else {
+                nextImage("empty")
+            }
         }
     }
 
-    private fun nextImage(uri: String){
+    private fun nextImage(uri: String) {
         setImageUriToAd(uri)
         imageIndex++
         uploadImages()
     }
 
-    private fun setImageUriToAd(uri: String){
-        when(imageIndex){
+    private fun setImageUriToAd(uri: String) {
+        when (imageIndex) {
             0 -> ad = ad?.copy(mainImage = uri)
             1 -> ad = ad?.copy(image2 = uri)
             2 -> ad = ad?.copy(image3 = uri)
         }
+    }
+
+    private fun getUrlFromAd(): String {
+        return listOf(ad?.mainImage!!, ad?.image2!!, ad?.image3!!)[imageIndex]
     }
 
     private fun prepareImageByteArray(bitmap: Bitmap): ByteArray {
@@ -251,10 +269,24 @@ class EditAdsActivity : AppCompatActivity(), FragmentCloseInterface {
             .child(dbManager.auth.uid!!)
             .child("image_${System.currentTimeMillis()}")
         val upTask = imStorageRef.putBytes(byteArray)
-        upTask.continueWithTask {
-            task -> imStorageRef.downloadUrl
+        upTask.continueWithTask { task ->
+            imStorageRef.downloadUrl
         }.addOnCompleteListener(listener)
 
+    }
+
+    private fun updateImage(byteArray: ByteArray, url: String, listener: OnCompleteListener<Uri>) {
+        val imStorageRef = dbManager.dbStorage.storage.getReferenceFromUrl(url)
+        val upTask = imStorageRef.putBytes(byteArray)
+        upTask.continueWithTask { task ->
+            imStorageRef.downloadUrl
+        }.addOnCompleteListener(listener)
+
+    }
+
+    private fun deleteImageByUrl(oldUrl: String, listener: OnCompleteListener<Void>) {
+        dbManager.dbStorage.storage
+            .getReferenceFromUrl(oldUrl).delete().addOnCompleteListener(listener)
     }
 
     private fun imageChangeCounter() {
@@ -262,9 +294,16 @@ class EditAdsActivity : AppCompatActivity(), FragmentCloseInterface {
             ViewPager2.OnPageChangeCallback() {
             override fun onPageSelected(position: Int) {
                 super.onPageSelected(position)
-                val imageCounter = "${position + 1}/${binding.viewPagerImages.adapter?.itemCount}"
-                binding.textViewImageCounter.text = imageCounter
+                updateImageCounter(position)
             }
         })
+    }
+
+    private fun updateImageCounter(counter: Int){
+        var index = 1
+        val itemCount = binding.viewPagerImages.adapter?.itemCount
+        if (itemCount == 0) index = 0
+        val imageCounter = "${counter + index}/$itemCount"
+        binding.textViewImageCounter.text = imageCounter
     }
 }

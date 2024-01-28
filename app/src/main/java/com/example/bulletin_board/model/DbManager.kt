@@ -182,9 +182,12 @@ class DbManager {
 
     fun deleteAnnouncement(ad: Announcement, listener: FinishWorkListener) {
         if (ad.key == null || ad.uid == null) return
-        database.child(ad.key).child(ad.uid).removeValue().addOnCompleteListener {
+        database.child(ad.key).removeValue().addOnCompleteListener {
             if (it.isSuccessful) listener.onFinish()
         }
+/*        database.child(ad.key).child(ad.uid).removeValue().addOnCompleteListener {
+            if (it.isSuccessful) listener.onFinish()
+        }*/
     }
 
     private fun readDataFromDb(query: Query, readDataCallback: ReadDataCallback?) {

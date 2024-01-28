@@ -187,12 +187,13 @@ class AccountHelper(private val activity: MainActivity) {
         val credential = GoogleAuthProvider.getCredential(token, null)
         activity.mAuth.currentUser?.delete()?.addOnCompleteListener { task ->
             if (task.isSuccessful) {
-                activity.mAuth.signInWithCredential(credential).addOnCompleteListener { task ->
-                    if (task.isSuccessful) {
+                activity.mAuth.signInWithCredential(credential).addOnCompleteListener { task2 ->
+                    if (task2.isSuccessful) {
                         Toast.makeText(activity, "Sign is done", Toast.LENGTH_SHORT).show()
-                        activity.uiUpdate(task.result.user)
+                        activity.uiUpdate(task2.result.user)
                     } else {
-                        Log.d("MyLog", "Google Sign In Exception: ${task.exception}")
+                        Toast.makeText(activity, "Google Sign In Exception: ${task2.exception}", Toast.LENGTH_SHORT).show()
+                        Log.d("MyLog", "Google Sign In Exception: ${task2.exception}")
                     }
                 }
             }

@@ -8,6 +8,16 @@ android {
     namespace = "com.example.bulletin_board"
     compileSdk = 34
 
+    signingConfigs {
+        create("config") {
+            keyAlias = "BulBord"
+            keyPassword = "Esdes337"
+            storeFile = file("F:\\KeyStore\\key.jks")
+            storePassword = "Esdes337"
+        }
+    }
+
+
     defaultConfig {
         applicationId = "com.example.bulletin_board"
         minSdk = 21
@@ -26,6 +36,7 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            signingConfig = signingConfigs.getByName("config")
         }
     }
     compileOptions {

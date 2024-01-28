@@ -112,6 +112,7 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener, AdsR
                     dialogHelper.accHelper.signInFirebaseWithGoogle(account.idToken!!)
                 }
             } catch (e: ApiException) {
+                Toast.makeText(this, "Api exception: ${e.message}", Toast.LENGTH_SHORT).show()
                 Log.d("MyLog", "Api exception: ${e.message} ")
             }
         }
@@ -217,8 +218,12 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener, AdsR
             clearUpdate = true
             when (item.itemId) {
                 R.id.id_new_ad -> {
-                    val i = Intent(this@MainActivity, EditAdsActivity::class.java)
-                    startActivity(i)
+                    if (mAuth.currentUser?.isAnonymous == true){
+                        Toast.makeText(this@MainActivity, "Чтобы создавать объявления - зарегистрируйтесь!", Toast.LENGTH_SHORT).show()
+                    }else{
+                        val i = Intent(this@MainActivity, EditAdsActivity::class.java)
+                        startActivity(i)
+                    }
                 }
 
                 R.id.id_my_ads -> {
@@ -382,9 +387,12 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener, AdsR
                 super.onScrollStateChanged(recyclerView, newState)
                 if (!recyclerView.canScrollVertically(SCROLL_DOWN) && newState == RecyclerView.SCROLL_STATE_IDLE) {
                     clearUpdate = false
-                    val adsList = firebaseViewModel.liveAdsData.value!!
-                    if (adsList.isNotEmpty()) {
-                        getAdsFromCat(adsList)
+                    val adsList = firebaseViewModel.liveAdsData.value
+                    Log.d("MyLog", "adsList: $adsList")
+                    if (adsList != null) {
+                        if (adsList.isNotEmpty()) {
+                            getAdsFromCat(adsList)
+                        }
                     }
                 }
             }

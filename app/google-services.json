@@ -1,6 +1,7 @@
 {
   "project_info": {
     "project_number": "350331282707",
+    "firebase_url": "https://bulletin-board-cf5c2-default-rtdb.firebaseio.com",
     "project_id": "bulletin-board-cf5c2",
     "storage_bucket": "bulletin-board-cf5c2.appspot.com"
   },
@@ -14,11 +15,11 @@
       },
       "oauth_client": [
         {
-          "client_id": "350331282707-l3fnudidjccg3scm0c95pn970vk9q3p1.apps.googleusercontent.com",
+          "client_id": "350331282707-e37ig4me0e1nl6sv7nll9up7htqq9ibd.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
             "package_name": "com.example.bulletin_board",
-            "certificate_hash": "219c6580b36987fa6e4edee25b8c5b84a6237452"
+            "certificate_hash": "8a5d48d4b77610bc24c20d723e895def4b61b57c"
           }
         },
         {
