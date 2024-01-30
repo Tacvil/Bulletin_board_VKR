@@ -46,7 +46,7 @@ class ImageListFrag(
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        binding = ListImageFragBinding.inflate(layoutInflater)
+        binding = ListImageFragBinding.inflate(layoutInflater, container, false)
         mBannerAdView = binding.adView
         return binding.root
     }

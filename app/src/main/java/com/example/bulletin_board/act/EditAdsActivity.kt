@@ -142,15 +142,37 @@ class EditAdsActivity : AppCompatActivity(), FragmentCloseInterface {
 
     fun onClickPublish() {
         binding.buttonPublish.setOnClickListener {
+            if (isFieldsEmpty()) {
+                Toast.makeText(
+                    this,
+                    "Внимание! Все поля должны быть заполнены!",
+                    Toast.LENGTH_SHORT
+                ).show()
+                return@setOnClickListener
+            }
+            binding.progressLayout.visibility = View.VISIBLE
             ad = fillAnnouncement()
             uploadImages()
         }
     }
 
+    private fun isFieldsEmpty(): Boolean = with(binding) {
+        return textViewSelectCountry.text.toString() == getString(R.string.select_country) ||
+                textViewSelectCity.text.toString() == getString(R.string.select_city) ||
+                textViewSelectCategory.text.toString() == getString(R.string.select_category) ||
+                textViewTitle.text?.isEmpty() ?: true ||
+                textViewPrice.text?.isEmpty() ?: true ||
+                textViewIndex.text?.isEmpty() ?: true ||
+                textViewDescription.text?.isEmpty() ?: true ||
+                textViewSelectTelNumb.text?.isEmpty() ?: true
+
+    }
+
     private fun onPublishFinish(): DbManager.FinishWorkListener {
         return object : DbManager.FinishWorkListener {
-            override fun onFinish() {
-                finish()
+            override fun onFinish(isDone: Boolean) {
+                binding.progressLayout.visibility = View.GONE
+                if (isDone) finish()
             }
 
         }
@@ -299,7 +321,7 @@ class EditAdsActivity : AppCompatActivity(), FragmentCloseInterface {
         })
     }
 
-    private fun updateImageCounter(counter: Int){
+    private fun updateImageCounter(counter: Int) {
         var index = 1
         val itemCount = binding.viewPagerImages.adapter?.itemCount
         if (itemCount == 0) index = 0

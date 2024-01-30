@@ -23,7 +23,7 @@ class DbManager {
                 database.child(announcement.key ?: "empty")
                     .child(FILTER_NODE)
                     .setValue(adFilter).addOnCompleteListener {
-                        finishListener.onFinish()
+                        finishListener.onFinish(it.isSuccessful)
                     }
             }
     }
@@ -45,7 +45,7 @@ class DbManager {
             auth.uid?.let { uid ->
                 database.child(it).child(FAVS_NODE)
                     .child(uid).setValue(uid).addOnCompleteListener {
-                        if (it.isSuccessful) listener.onFinish()
+                        if (it.isSuccessful) listener.onFinish(true)
                     }
             }
         }
@@ -56,7 +56,7 @@ class DbManager {
             auth.uid?.let { uid ->
                 database.child(it).child(FAVS_NODE)
                     .child(uid).removeValue().addOnCompleteListener {
-                        if (it.isSuccessful) listener.onFinish()
+                        if (it.isSuccessful) listener.onFinish(true)
                     }
             }
         }
@@ -183,7 +183,7 @@ class DbManager {
     fun deleteAnnouncement(ad: Announcement, listener: FinishWorkListener) {
         if (ad.key == null || ad.uid == null) return
         database.child(ad.key).removeValue().addOnCompleteListener {
-            if (it.isSuccessful) listener.onFinish()
+            if (it.isSuccessful) listener.onFinish(true)
         }
 /*        database.child(ad.key).child(ad.uid).removeValue().addOnCompleteListener {
             if (it.isSuccessful) listener.onFinish()
@@ -271,7 +271,7 @@ class DbManager {
     }
 
     interface FinishWorkListener {
-        fun onFinish()
+        fun onFinish(isDone: Boolean)
     }
 
     companion object {
