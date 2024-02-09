@@ -1,5 +1,6 @@
 package com.example.bulletin_board.model
 
+import android.util.Log
 import com.example.bulletin_board.utils.FilterManager
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.database.DataSnapshot
@@ -7,6 +8,7 @@ import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.Query
 import com.google.firebase.database.ValueEventListener
 import com.google.firebase.database.ktx.database
+import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.storage.ktx.storage
 
@@ -76,7 +78,8 @@ class DbManager {
         val query = if (filter.isEmpty()) {
             database.orderByChild("/adFilter/time").limitToLast(
                 ADS_LIMIT
-            )
+            ) // последние 2 элемента в бд по времени потом реверс делаю (1 2 3 4 5 6 ) - берем 5 и 6 последних по времени
+
         } else {
             getAllAnnouncementByFilterFirstPage(filter)
         }
@@ -86,10 +89,21 @@ class DbManager {
     private fun getAllAnnouncementByFilterFirstPage(filter: String): Query {
         val orderBy = filter.split("|")[0]
         val filterAds = filter.split("|")[1]
-        return database.orderByChild("/adFilter/$orderBy").startAt(filterAds)
-            .endAt(filterAds + "\uf8ff").limitToLast(
-            ADS_LIMIT
+        val db = FirebaseFirestore.getInstance()
+        val data = hashMapOf(
+            "название_поля1" to "значение1",
+            "название_поля2" to "значение2",
+            // добавьте другие поля и значения, как необходимо
         )
+
+        db.collection("ваша_коллекция").add(data)
+            .addOnSuccessListener { documentReference ->
+                Log.d("TAG", "Данные успешно добавлены с ID: ${documentReference.id}")
+            }
+            .addOnFailureListener { e ->
+                Log.w("TAG", "Ошибка при добавлении данных", e)
+            }
+        return database.orderByChild("/adFilter/$orderBy").startAt(filterAds).endAt("$filterAds\uf8ff")
     }
 
     fun getAllAnnouncementNextPage(
@@ -97,6 +111,7 @@ class DbManager {
         filter: String,
         readDataCallback: ReadDataCallback?
     ) {
+        Log.d("DbManagerGAABFNP", "time: $time")
         if (filter.isEmpty()) {
             val query = database.orderByChild("/adFilter/time").endBefore(time).limitToLast(
                 ADS_LIMIT
@@ -114,8 +129,11 @@ class DbManager {
     ) {
         val orderBy = filter.split("|")[0]
         val filterAds = filter.split("|")[1]
+        Log.d("DbManagerGAABFNP", "orderBy: $orderBy")
+        Log.d("DbManagerGAABFNP", "filterAds: $filterAds")
+        Log.d("DbManagerGAABFNP", "time: $time")
         val query =
-            database.orderByChild("/adFilter/$orderBy").endBefore(filterAds + "_$time").limitToLast(
+            database.orderByChild("/adFilter/$orderBy").endBefore("${filterAds}_$time").limitToLast(
                 ADS_LIMIT
             )
 
@@ -255,6 +273,8 @@ class DbManager {
                     ad?.callsCounter = infoItem?.callsCounter ?: "0"
 
                     if (ad != null && filterNodeValue.startsWith(filter)) adArray.add(ad!!)
+                    Log.d("DbManager", "adArray: $adArray")
+                    Log.d("DbManager", "filter: $filter")
                 }
                 readDataCallback?.readData(adArray)
             }

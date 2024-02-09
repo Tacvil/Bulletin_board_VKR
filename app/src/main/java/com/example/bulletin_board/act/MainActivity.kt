@@ -59,9 +59,9 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener, AdsR
     private var currentCategory: String? = null
     private var filter: String = "empty"
     private var filterDb: String = ""
-    private var pref: SharedPreferences? =null
-    private var isPremiumUser:Boolean =false
-    private var bManager:BillingManager? =null
+    private var pref: SharedPreferences? = null
+    private var isPremiumUser: Boolean = false
+    private var bManager: BillingManager? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -124,9 +124,9 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener, AdsR
         ) {
             if (it.resultCode == RESULT_OK) {
                 filter = it.data?.getStringExtra(FilterActivity.FILTER_KEY)!!
-                Log.d("MyLogMainAct", "getFilter: ${FilterManager.getFilter(filter)}")
+                Log.d("MyLogMainAct", "getFilter: $filter , ${FilterManager.getFilter(filter)}")
                 filterDb = FilterManager.getFilter(filter)
-            }else if (it.resultCode == RESULT_CANCELED){
+            } else if (it.resultCode == RESULT_CANCELED) {
                 filterDb = ""
                 filter = "empty"
             }
@@ -162,9 +162,14 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener, AdsR
         firebaseViewModel.liveAdsData.observe(this) {
             it?.let { content ->
                 val list = getAdsByCategory(content)
-                if (!clearUpdate) adapter.updateAdapter(list) else adapter.updateAdapterWithClear(
-                    list
-                )
+                Log.d("MainActInitViewModel", "clearUpdate: $clearUpdate")
+                if (!clearUpdate) {
+                    adapter.updateAdapter(list)
+                } else {
+                    adapter.updateAdapterWithClear(
+                        list
+                    )
+                }
                 if (adapter.itemCount == 0) {
                     binding.mainContent.recyclerViewMainContent.visibility = View.INVISIBLE
                     binding.mainContent.nothinkWhiteAnim.visibility = View.VISIBLE
@@ -218,9 +223,13 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener, AdsR
             clearUpdate = true
             when (item.itemId) {
                 R.id.id_new_ad -> {
-                    if (mAuth.currentUser?.isAnonymous == true){
-                        Toast.makeText(this@MainActivity, "Чтобы создавать объявления - зарегистрируйтесь!", Toast.LENGTH_SHORT).show()
-                    }else{
+                    if (mAuth.currentUser?.isAnonymous == true) {
+                        Toast.makeText(
+                            this@MainActivity,
+                            "Чтобы создавать объявления - зарегистрируйтесь!",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    } else {
                         val i = Intent(this@MainActivity, EditAdsActivity::class.java)
                         startActivity(i)
                     }
@@ -387,8 +396,8 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener, AdsR
                 super.onScrollStateChanged(recyclerView, newState)
                 if (!recyclerView.canScrollVertically(SCROLL_DOWN) && newState == RecyclerView.SCROLL_STATE_IDLE) {
                     clearUpdate = false
-                    val adsList = firebaseViewModel.liveAdsData.value
-                    Log.d("MyLog", "adsList: $adsList")
+                    val adsList = firebaseViewModel.liveAdsData.value // Получает текущий список объявлений из liveAdsData в FirebaseViewModel
+                    Log.d("MainAct_scrollListener", "adsList: $adsList")
                     if (adsList != null) {
                         if (adsList.isNotEmpty()) {
                             getAdsFromCat(adsList)
@@ -404,7 +413,11 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener, AdsR
             if (currentCategory == getString(R.string.def)) {
                 firebaseViewModel.loadAllAnnouncementNextPage(it.time, filterDb)
             } else {
-                firebaseViewModel.loadAllAnnouncementFromCatNextPage(it.category!!, it.time, filterDb)
+                firebaseViewModel.loadAllAnnouncementFromCatNextPage(
+                    it.category!!,
+                    it.time,
+                    filterDb
+                )
             }
         }
     }

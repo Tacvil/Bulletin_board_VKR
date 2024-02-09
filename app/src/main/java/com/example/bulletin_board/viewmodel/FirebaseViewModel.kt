@@ -1,5 +1,6 @@
 package com.example.bulletin_board.viewmodel
 
+import android.util.Log
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import com.example.bulletin_board.model.Announcement
@@ -12,6 +13,7 @@ class FirebaseViewModel: ViewModel() {
         dbManager.getAllAnnouncementFirstPage(filter, object : DbManager.ReadDataCallback{
             override fun readData(list: ArrayList<Announcement>) {
                 liveAdsData.value = list
+                Log.d("FBVM", "liveAdsData1: ${liveAdsData.value}")
             }
         })
     }
@@ -20,6 +22,7 @@ class FirebaseViewModel: ViewModel() {
         dbManager.getAllAnnouncementNextPage(time, filter, object : DbManager.ReadDataCallback{
             override fun readData(list: ArrayList<Announcement>) {
                 liveAdsData.value = list
+                Log.d("FBVM", "liveAdsData2: ${liveAdsData.value}")
             }
         })
     }
@@ -42,7 +45,7 @@ class FirebaseViewModel: ViewModel() {
 
     fun onFavClick(ad: Announcement){
         dbManager.onFavClick(ad, object: DbManager.FinishWorkListener{
-            override fun onFinish() {
+            override fun onFinish(isDone: Boolean) {
                 val updateList = liveAdsData.value
                 val pos = updateList?.indexOf(ad)
 
@@ -79,7 +82,7 @@ class FirebaseViewModel: ViewModel() {
 
     fun deleteItem(ad: Announcement){
         dbManager.deleteAnnouncement(ad, object: DbManager.FinishWorkListener{
-            override fun onFinish() {
+            override fun onFinish(isDone: Boolean) {
                 val updatedList = liveAdsData.value
                 updatedList?.remove(ad)
                 liveAdsData.postValue(updatedList)

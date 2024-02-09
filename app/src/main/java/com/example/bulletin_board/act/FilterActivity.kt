@@ -85,10 +85,10 @@ class FilterActivity : AppCompatActivity() {
 
     private fun createFilter(): String = with(binding){
         val sBuilder = StringBuilder()
-        val arrayTempFilter = listOf(textViewSelectCountry.text,
+        val arrayTempFilter = listOf(textViewTitle.text,
+            textViewSelectCountry.text,
             textViewSelectCity.text,
-            textViewIndex.text,
-            checkBoxWithSend.isChecked.toString())
+            textViewIndex.text.toString())
         for ((i, s) in arrayTempFilter.withIndex()){
             if (s != null) {
                 if (s != getString(R.string.select_country) && s!= getString(R.string.select_city) && s.isNotEmpty()){

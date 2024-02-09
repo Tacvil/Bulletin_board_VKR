@@ -68,6 +68,8 @@ dependencies {
 //    implementation  ("io.ak1.pix:piximagepicker:1.6.3")
 
     //firebase
+    implementation("com.google.firebase:firebase-firestore:24.0.0")
+
     implementation(platform("com.google.firebase:firebase-bom:32.7.1"))
     implementation("com.google.firebase:firebase-auth-ktx")
     implementation("com.google.firebase:firebase-database-ktx")
