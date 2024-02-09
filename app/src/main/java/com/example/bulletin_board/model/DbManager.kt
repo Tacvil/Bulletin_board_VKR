@@ -14,6 +14,7 @@ import com.google.firebase.storage.ktx.storage
 
 class DbManager {
     val database = Firebase.database.getReference(MAIN_NODE)
+    val firestore = FirebaseFirestore.getInstance()
     val dbStorage = Firebase.storage.getReference(MAIN_NODE)
     val auth = Firebase.auth
 
@@ -28,6 +29,26 @@ class DbManager {
                         finishListener.onFinish(it.isSuccessful)
                     }
             }
+    }
+
+    fun publishAnnouncement1(announcement: Announcement, finishListener: FinishWorkListener) {
+        if (auth.uid != null) {
+            val userRef = firestore.collection(MAIN_NODE).document(announcement.key ?: "empty")
+            userRef.collection(auth.uid!!).document(AD_NODE)
+                .set(announcement)
+                .addOnCompleteListener { task ->
+                    if (task.isSuccessful) {
+                        val adFilter = FilterManager.createFilter(announcement)
+                        userRef.collection(FILTER_NODE).document("addFilterDocument")
+                            .set(adFilter)
+                            .addOnCompleteListener { filterTask ->
+                                finishListener.onFinish(filterTask.isSuccessful)
+                            }
+                    } else {
+                        finishListener.onFinish(false)
+                    }
+                }
+        }
     }
 
     fun adViewed(ad: Announcement) {

@@ -235,7 +235,8 @@ class EditAdsActivity : AppCompatActivity(), FragmentCloseInterface {
     private fun uploadImages() {
         //Log.d("index", "$imageIndex")
         if (imageIndex == 3) {
-            dbManager.publishAnnouncement(ad!!, onPublishFinish())
+            //dbManager.publishAnnouncement(ad!!, onPublishFinish())
+            dbManager.publishAnnouncement1(ad!!, onPublishFinish())
             return
         }
         val oldUrl = getUrlFromAd()
