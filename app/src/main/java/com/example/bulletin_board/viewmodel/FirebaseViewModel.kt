@@ -10,7 +10,7 @@ class FirebaseViewModel: ViewModel() {
     private val dbManager = DbManager()
     val liveAdsData = MutableLiveData<ArrayList<Announcement>?>()
     fun loadAllAnnouncementFirstPage(filter: String){
-        dbManager.getAllAnnouncementFirstPage(filter, object : DbManager.ReadDataCallback{
+        dbManager.getAllAnnouncementFirstPage1(filter, object : DbManager.ReadDataCallback{
             override fun readData(list: ArrayList<Announcement>) {
                 liveAdsData.value = list
                 Log.d("FBVM", "liveAdsData1: ${liveAdsData.value}")
@@ -19,7 +19,7 @@ class FirebaseViewModel: ViewModel() {
     }
 
     fun loadAllAnnouncementNextPage(time: String, filter: String){
-        dbManager.getAllAnnouncementNextPage(time, filter, object : DbManager.ReadDataCallback{
+        dbManager.getAllAnnouncementNextPage1(time, filter, object : DbManager.ReadDataCallback{
             override fun readData(list: ArrayList<Announcement>) {
                 liveAdsData.value = list
                 Log.d("FBVM", "liveAdsData2: ${liveAdsData.value}")
@@ -28,19 +28,19 @@ class FirebaseViewModel: ViewModel() {
     }
 
     fun loadAllAnnouncementFromCatFirstPage(cat: String, filter: String){
-        dbManager.getAllAnnouncementFromCatFirstPage(cat, filter, object : DbManager.ReadDataCallback{
-            override fun readData(list: ArrayList<Announcement>) {
-                liveAdsData.value = list
-            }
-        })
+//        dbManager.getAllAnnouncementFromCatFirstPage(cat, filter, object : DbManager.ReadDataCallback{
+//            override fun readData(list: ArrayList<Announcement>) {
+//                liveAdsData.value = list
+//            }
+//        })
     }
 
     fun loadAllAnnouncementFromCatNextPage(cat: String, time: String, filter: String){
-        dbManager.getAllAnnouncementFromCatNextPage(cat, time, filter, object : DbManager.ReadDataCallback{
-            override fun readData(list: ArrayList<Announcement>) {
-                liveAdsData.value = list
-            }
-        })
+//        dbManager.getAllAnnouncementFromCatNextPage(cat, time, filter, object : DbManager.ReadDataCallback{
+//            override fun readData(list: ArrayList<Announcement>) {
+//                liveAdsData.value = list
+//            }
+//        })
     }
 
     fun onFavClick(ad: Announcement){
@@ -65,19 +65,19 @@ class FirebaseViewModel: ViewModel() {
     }
 
     fun loadMyAnnouncement(){
-        dbManager.getMyAnnouncement(object : DbManager.ReadDataCallback{
-            override fun readData(list: ArrayList<Announcement>) {
-                liveAdsData.value = list
-            }
-        })
+//        dbManager.getMyAnnouncement(object : DbManager.ReadDataCallback{
+//            override fun readData(list: ArrayList<Announcement>) {
+//                liveAdsData.value = list
+//            }
+//        })
     }
 
     fun loadMyFavs(){
-        dbManager.getMyFavs(object : DbManager.ReadDataCallback{
-            override fun readData(list: ArrayList<Announcement>) {
-                liveAdsData.value = list
-            }
-        })
+//        dbManager.getMyFavs(object : DbManager.ReadDataCallback{
+//            override fun readData(list: ArrayList<Announcement>) {
+//                liveAdsData.value = list
+//            }
+//        })
     }
 
     fun deleteItem(ad: Announcement){

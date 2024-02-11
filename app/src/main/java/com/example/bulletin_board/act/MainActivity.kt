@@ -193,7 +193,7 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener, AdsR
                 if (currentCategory == it.category) tempList.add(it)
             }
         }
-        tempList.reverse()
+        //tempList.reverse()
         return tempList
     }
 
@@ -409,7 +409,29 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener, AdsR
     }
 
     private fun getAdsFromCat(adsList: ArrayList<Announcement>) {
-        adsList[0].let {
+        adsList.getOrNull(1)?.let { secondAd ->
+            Log.d("MainAct", "adsList: 1")
+            if (currentCategory == getString(R.string.def)) {
+                firebaseViewModel.loadAllAnnouncementNextPage(secondAd.time, filterDb)
+            } else {
+                secondAd.category?.let { category ->
+                    firebaseViewModel.loadAllAnnouncementFromCatNextPage(category, secondAd.time, filterDb)
+                }
+            }
+        } ?: adsList.firstOrNull()?.let { firstAd ->
+            Log.d("MainAct", "adsList: 0")
+            if (currentCategory == getString(R.string.def)) {
+                firebaseViewModel.loadAllAnnouncementNextPage(firstAd.time, filterDb)
+            } else {
+                firstAd.category?.let { category ->
+                    firebaseViewModel.loadAllAnnouncementFromCatNextPage(category, firstAd.time, filterDb)
+                }
+            }
+        } ?: run{
+            Log.d("MainAct", "adsList: adsList.clear()")
+            adsList.clear()
+        }
+/*        adsList[0].let {
             if (currentCategory == getString(R.string.def)) {
                 firebaseViewModel.loadAllAnnouncementNextPage(it.time, filterDb)
             } else {
@@ -419,7 +441,7 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener, AdsR
                     filterDb
                 )
             }
-        }
+        }*/
     }
 
     override fun onDestroy() {
