@@ -3,11 +3,7 @@ package com.example.bulletin_board.model
 import android.util.Log
 import com.example.bulletin_board.utils.FilterManager
 import com.google.firebase.auth.ktx.auth
-import com.google.firebase.database.DataSnapshot
-import com.google.firebase.database.DatabaseError
-import com.google.firebase.database.ValueEventListener
 import com.google.firebase.database.ktx.database
-import com.google.firebase.firestore.FieldPath
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.storage.ktx.storage
@@ -90,7 +86,7 @@ class DbManager {
             readDataFromDb(query, readDataCallback)
         }*/
 
-    fun getAllAnnouncementFirstPage1(filter: String, readDataCallback: ReadDataCallback?) {
+    fun getAllAnnouncementFirstPage1(filter: MutableMap<String, String>, readDataCallback: ReadDataCallback?) {
         val query = if (filter.isEmpty()) {
             firestore.collection(MAIN_NODE).orderBy("time", Query.Direction.ASCENDING)
                 .limit(ADS_LIMIT.toLong())
@@ -102,12 +98,28 @@ class DbManager {
         readDataFromDb1(query, readDataCallback)
     }
 
-    private fun getAllAnnouncementByFilterFirstPage1(filter: String): Query {
-        val orderBy = filter.split("|")[0] //time:
-        val filterAds = filter.split("|")[1] //123123123
+    private fun getAllAnnouncementByFilterFirstPage1(filter: MutableMap<String, String>): Query {
 
-        return firestore.collection("/adFilter/$orderBy").startAt(filterAds)
-            .endAt("$filterAds\uf8ff")
+        var queryDB: Query = firestore.collection(MAIN_NODE)
+
+        if (filter["keyWords"]?.isNotEmpty() == true) {
+            queryDB = queryDB.whereArrayContains("keyWords", filter["keyWords"]!!)
+        }
+        if (filter["country"]?.isNotEmpty() == true) {
+            queryDB = queryDB.whereEqualTo("country", filter["country"])
+        }
+        if (filter["city"]?.isNotEmpty() == true) {
+            queryDB = queryDB.whereEqualTo("city", filter["city"])
+        }
+        if (filter["price"]?.isNotEmpty() == true) {
+            Log.d("DbManager", "price not empty")
+        }else{
+            queryDB = queryDB.orderBy("time", Query.Direction.ASCENDING).limit(ADS_LIMIT.toLong())
+        }
+
+        return queryDB
+/*        return firestore.collection(MAIN_NODE).whereArrayContains("keyWords", value).orderBy("time", Query.Direction.ASCENDING).limit(
+            ADS_LIMIT.toLong())*/
     }
 
     /*    fun getAllAnnouncementFirstPage(filter: String, readDataCallback: ReadDataCallback?) {
@@ -143,23 +155,46 @@ class DbManager {
         }*/
 
         fun getAllAnnouncementNextPage1(
-        time: String,
-        filter: String,
-        readDataCallback: ReadDataCallback?
+            time: String,
+            filter: MutableMap<String, String>,
+            readDataCallback: ReadDataCallback?
     ) {
-/*        if (filter.isEmpty()) {
-            val query = database.orderByChild("/adFilter/time").endBefore(time).limitToLast(
-                ADS_LIMIT
-            )
-            readDataFromDb(query, readDataCallback)
-        } else {
-            getAllAnnouncementByFilterNextPage(filter, time, readDataCallback)
-        }*/
-            Log.d("DbManager", "time: $time")
+        if (filter.isEmpty()) {
             val query = firestore.collection(MAIN_NODE).whereGreaterThan("time", time).limit(
                 ADS_LIMIT.toLong())
             readDataFromDb1(query, readDataCallback)
+        } else {
+            getAllAnnouncementByFilterNextPage1(filter, time, readDataCallback)
+        }
     }
+
+        private fun getAllAnnouncementByFilterNextPage1(
+            filter: MutableMap<String, String>,
+            time: String,
+            readDataCallback: ReadDataCallback?
+        ) {
+            var queryDB: Query = firestore.collection(MAIN_NODE)
+
+            if (filter["keyWords"]?.isNotEmpty() == true) {
+                queryDB = queryDB.whereArrayContains("keyWords", filter["keyWords"]!!)
+            }
+            if (filter["country"]?.isNotEmpty() == true) {
+                queryDB = queryDB.whereEqualTo("country", filter["country"])
+            }
+            if (filter["city"]?.isNotEmpty() == true) {
+                queryDB = queryDB.whereEqualTo("city", filter["city"])
+            }
+            if (filter["price"]?.isNotEmpty() == true) {
+                Log.d("DbManager", "price not empty")
+            }else{
+                queryDB = queryDB.whereGreaterThan("time", time).limit(ADS_LIMIT.toLong())
+            }
+
+/*            val query = firestore.collection(MAIN_NODE).whereArrayContains("keyWords", value).whereGreaterThan("time", time).limit(
+                    ADS_LIMIT.toLong())*/
+
+            readDataFromDb1(queryDB, readDataCallback)
+        }
 
     /*    fun getAllAnnouncementNextPage(
             time: String,

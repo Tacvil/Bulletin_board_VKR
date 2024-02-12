@@ -4,6 +4,7 @@ import java.io.Serializable
 
 data class Announcement(
     val title: String? = null,
+    val keyWords: ArrayList<String>? = null,
     val country: String? = null,
     val city: String? = null,
     val index: String? = null,

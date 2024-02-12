@@ -9,7 +9,7 @@ import com.example.bulletin_board.model.DbManager
 class FirebaseViewModel: ViewModel() {
     private val dbManager = DbManager()
     val liveAdsData = MutableLiveData<ArrayList<Announcement>?>()
-    fun loadAllAnnouncementFirstPage(filter: String){
+    fun loadAllAnnouncementFirstPage(filter: MutableMap<String, String>){
         dbManager.getAllAnnouncementFirstPage1(filter, object : DbManager.ReadDataCallback{
             override fun readData(list: ArrayList<Announcement>) {
                 liveAdsData.value = list
@@ -18,7 +18,7 @@ class FirebaseViewModel: ViewModel() {
         })
     }
 
-    fun loadAllAnnouncementNextPage(time: String, filter: String){
+    fun loadAllAnnouncementNextPage(time: String, filter: MutableMap<String, String>){
         dbManager.getAllAnnouncementNextPage1(time, filter, object : DbManager.ReadDataCallback{
             override fun readData(list: ArrayList<Announcement>) {
                 liveAdsData.value = list
@@ -27,7 +27,7 @@ class FirebaseViewModel: ViewModel() {
         })
     }
 
-    fun loadAllAnnouncementFromCatFirstPage(cat: String, filter: String){
+    fun loadAllAnnouncementFromCatFirstPage(cat: String, filter: MutableMap<String, String>){
 //        dbManager.getAllAnnouncementFromCatFirstPage(cat, filter, object : DbManager.ReadDataCallback{
 //            override fun readData(list: ArrayList<Announcement>) {
 //                liveAdsData.value = list
@@ -35,7 +35,7 @@ class FirebaseViewModel: ViewModel() {
 //        })
     }
 
-    fun loadAllAnnouncementFromCatNextPage(cat: String, time: String, filter: String){
+    fun loadAllAnnouncementFromCatNextPage(cat: String, time: String, filter: MutableMap<String, String>){
 //        dbManager.getAllAnnouncementFromCatNextPage(cat, time, filter, object : DbManager.ReadDataCallback{
 //            override fun readData(list: ArrayList<Announcement>) {
 //                liveAdsData.value = list

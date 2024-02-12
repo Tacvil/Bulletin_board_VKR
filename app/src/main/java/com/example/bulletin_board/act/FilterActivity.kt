@@ -5,24 +5,94 @@ import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
 import android.view.MenuItem
+import android.view.View
 import android.widget.Toast
 import com.example.bulletin_board.R
 import com.example.bulletin_board.databinding.ActivityFilterBinding
 import com.example.bulletin_board.dialogs.DialogSpinnerHelper
+import com.example.bulletin_board.model.DbManager
 import com.example.bulletin_board.utils.CityHelper
+import com.google.android.gms.tasks.Task
+import com.google.android.gms.tasks.Tasks
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.Query
+import com.google.firebase.firestore.QuerySnapshot
+import java.io.Serializable
 
 class FilterActivity : AppCompatActivity() {
     lateinit var binding: ActivityFilterBinding
     private val dialog = DialogSpinnerHelper()
+    private var minPrice: Int? = null
+    private var maxPrice: Int? = null
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityFilterBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        val db = FirebaseFirestore.getInstance()
+        val collectionReference = db.collection(DbManager.MAIN_NODE)
+
+        val queryMinPrice: Query = collectionReference
+            .orderBy("price", Query.Direction.ASCENDING)
+            .limit(1)
+
+        val queryMaxPrice: Query = collectionReference
+            .orderBy("price", Query.Direction.DESCENDING)
+            .limit(1)
+
+        queryMinPrice.get().addOnSuccessListener { minPriceSnapshot ->
+            if (!minPriceSnapshot.isEmpty) {
+                val minPriceDocument = minPriceSnapshot.documents[0]
+                minPrice = minPriceDocument.getString("price")?.toInt()
+
+                binding.textViewPriceFromLayout.hint = "от $minPrice"
+            }
+        }
+
+        queryMaxPrice.get().addOnSuccessListener { maxPriceSnapshot ->
+            if (!maxPriceSnapshot.isEmpty) {
+                val maxPriceDocument = maxPriceSnapshot.documents[0]
+                maxPrice = maxPriceDocument.getString("price")?.toInt()
+
+                binding.textViewPriceToLayout.hint = "до $maxPrice"
+                focusChangeLstener(minPrice, maxPrice)
+            }
+        }
         onClickSelectCountryCity()
         onClickDone()
         onClickClear()
         actionBarSettings()
         getFilter()
+    }
+
+    private fun focusChangeLstener(minPrice: Int?, maxPrice: Int?) = with(binding) {
+        textViewPriceFromLayout.editText?.onFocusChangeListener = View.OnFocusChangeListener { _, hasFocus ->
+            Log.d("sdsdsdwewe", hasFocus.toString())
+            if (hasFocus) {
+                // Фокус получен, убираем из хинта лишние слова
+                textViewPriceFromLayout.hint = "от"
+            } else {
+                Log.d("minPrice", minPrice.toString())
+                if (minPrice != null){
+                    textViewPriceFromLayout.hint = "от $minPrice"
+                }else{
+                    textViewPriceFromLayout.hint = "от"
+                }
+            }
+        }
+
+        textViewPriceToLayout.editText?.onFocusChangeListener = View.OnFocusChangeListener { _, hasFocus ->
+            if (hasFocus) {
+                // Фокус получен, убираем из хинта лишние слова
+                textViewPriceToLayout.hint = "до"
+            } else {
+                if (maxPrice != null){
+                    textViewPriceToLayout.hint = "до $maxPrice"
+                }else{
+                    textViewPriceToLayout.hint = "до"
+                }
+            }
+        }
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
@@ -31,13 +101,14 @@ class FilterActivity : AppCompatActivity() {
     }
 
     private fun getFilter() = with(binding){
-        val filter = intent.getStringExtra(FILTER_KEY)
-        if (filter != null && filter != "empty"){
-            val filterArray = filter.split("_")
-            if (filterArray[0] != "empty") textViewSelectCountry.setText(filterArray[0])
-            if (filterArray[1] != "empty") textViewSelectCity.setText(filterArray[1])
-            if (filterArray[2] != "empty") textViewIndex.setText(filterArray[2])
-            checkBoxWithSend.isChecked = filterArray[3].toBoolean()
+        val filter = intent.getSerializableExtra(FILTER_KEY) as? MutableMap<String, String>
+        if (!filter.isNullOrEmpty()){
+
+            if (!filter["keyWords"].isNullOrEmpty()) textViewTitle.setText(filter["keyWords"])
+            if (!filter["country"].isNullOrEmpty()) textViewSelectCountry.setText(filter["country"])
+            if (!filter["city"].isNullOrEmpty()) textViewSelectCity.setText(filter["city"])
+
+            //checkBoxWithSend.isChecked = filterArray[3].toBoolean()
         }
     }
 
@@ -66,7 +137,7 @@ class FilterActivity : AppCompatActivity() {
         buttonDone.setOnClickListener {
             Log.d("MyLogFilterActivity", "Filter: ${createFilter()}")
             val i = Intent().apply {
-                putExtra(FILTER_KEY, createFilter())
+                putExtra(FILTER_KEY, createFilter() as Serializable)
             }
             setResult(RESULT_OK, i)
             finish()
@@ -83,9 +154,21 @@ class FilterActivity : AppCompatActivity() {
         }
     }
 
-    private fun createFilter(): String = with(binding){
+    private fun createFilter(): MutableMap<String, String> = with(binding){
         val sBuilder = StringBuilder()
-        val arrayTempFilter = listOf(textViewTitle.text,
+        val filters = mutableMapOf<String, String>()
+
+        val titleValidate = textViewTitle.text?.split(" ")?.joinToString("-")
+
+        filters["keyWords"] = titleValidate.toString()
+        filters["country"] = textViewSelectCountry.text.toString()
+        filters["city"] = textViewSelectCity.text.toString()
+        filters["index"] = textViewIndex.text.toString()
+        filters["withSend"] = checkBoxWithSend.isChecked.toString()
+        filters["price_from"] = textViewPriceFrom.text.toString()
+        filters["price_to"] = textViewPriceTo.text.toString()
+
+/*        val arrayTempFilter = listOf(textViewTitle.text,
             textViewSelectCountry.text,
             textViewSelectCity.text,
             textViewIndex.text.toString())
@@ -101,7 +184,8 @@ class FilterActivity : AppCompatActivity() {
 
             }
         }
-        return sBuilder.toString()
+        return sBuilder.toString()*/
+        return filters
     }
 
     fun actionBarSettings(){

@@ -32,7 +32,7 @@ object FilterManager {
         val tempArray = filter.split("_")
         Log.d("FilterManager", "tempArray: $tempArray")
         if (tempArray[0] != "empty"){
-            sBuilderNode.append("title_")
+            sBuilderNode.append("keyWords")
             sBuilderFilter.append("${tempArray[0]}")
         }
         if (tempArray[1] != "empty"){
@@ -48,7 +48,7 @@ object FilterManager {
             sBuilderFilter.append("${tempArray[3]}_")
         }
 //        sBuilderFilter.append(tempArray[4])
-        sBuilderNode.append("time")
+        //sBuilderNode.append("time")
 
         return "$sBuilderNode|$sBuilderFilter"
     }

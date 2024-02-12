@@ -183,6 +183,7 @@ class EditAdsActivity : AppCompatActivity(), FragmentCloseInterface {
         binding.apply {
             announcementTemp = Announcement(
                 textViewTitle.text.toString(),
+                createKeyWords(textViewTitle.text.toString()),
                 textViewSelectCountry.text.toString(),
                 textViewSelectCity.text.toString(),
                 textViewIndex.text.toString(),
@@ -201,6 +202,38 @@ class EditAdsActivity : AppCompatActivity(), FragmentCloseInterface {
             )
         }
         return announcementTemp
+    }
+
+    private fun createKeyWords(title:String) : ArrayList<String>{
+        Log.d("EdAdsAct title", title)
+        val words = title.split(" ")
+        Log.d("EdAdsAct words", "$words")
+        val combinations = generateCombinations(words)
+        Log.d("EdAdsAct combinations ", "$combinations")
+        return combinations as ArrayList<String>
+    }
+
+    private fun generateCombinations(words: List<String>, memo: MutableMap<List<String>, List<String>> = mutableMapOf()): List<String> {
+        if (words.isEmpty()) {
+            return emptyList()
+        }
+
+        if (memo.containsKey(words)) {
+            return memo[words]!!
+        }
+
+        val result = mutableListOf<String>()
+
+        for ((index, currentWord) in words.withIndex()) {
+            val remainingWords = words.toMutableList().apply { removeAt(index) }
+            val subCombinations = generateCombinations(remainingWords, memo)
+
+            result.add(currentWord)
+            result.addAll(subCombinations.map { "$currentWord-$it" })
+        }
+
+        memo[words] = result
+        return result
     }
 
     fun onClickSelectCategory() {

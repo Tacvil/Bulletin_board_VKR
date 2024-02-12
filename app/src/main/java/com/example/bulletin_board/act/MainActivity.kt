@@ -35,7 +35,6 @@ import com.example.bulletin_board.dialoghelper.DialogHelper
 import com.example.bulletin_board.model.Announcement
 import com.example.bulletin_board.utils.BillingManager
 import com.example.bulletin_board.utils.BillingManager.Companion.REMOVE_ADS_PREF
-import com.example.bulletin_board.utils.FilterManager
 import com.example.bulletin_board.viewmodel.FirebaseViewModel
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.common.api.ApiException
@@ -43,6 +42,7 @@ import com.google.android.material.navigation.NavigationView.OnNavigationItemSel
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
+import java.io.Serializable
 
 class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener, AdsRcAdapter.Listener {
 
@@ -57,8 +57,7 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener, AdsR
     private val firebaseViewModel: FirebaseViewModel by viewModels()
     private var clearUpdate: Boolean = true
     private var currentCategory: String? = null
-    private var filter: String = "empty"
-    private var filterDb: String = ""
+    private var filterDb: MutableMap<String, String> = mutableMapOf()
     private var pref: SharedPreferences? = null
     private var isPremiumUser: Boolean = false
     private var bManager: BillingManager? = null
@@ -88,7 +87,7 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener, AdsR
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         if (item.itemId == R.id.id_filter) {
             val i = Intent(this@MainActivity, FilterActivity::class.java).apply {
-                putExtra(FilterActivity.FILTER_KEY, filter)
+                putExtra(FilterActivity.FILTER_KEY, filterDb as Serializable)
             }
             filterLauncher.launch(i)
         }
@@ -123,12 +122,18 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener, AdsR
             ActivityResultContracts.StartActivityForResult()
         ) {
             if (it.resultCode == RESULT_OK) {
-                filter = it.data?.getStringExtra(FilterActivity.FILTER_KEY)!!
-                Log.d("MyLogMainAct", "getFilter: $filter , ${FilterManager.getFilter(filter)}")
-                filterDb = FilterManager.getFilter(filter)
+                filterDb = (it.data?.getSerializableExtra(FilterActivity.FILTER_KEY) as? MutableMap<String, String>)!!
+/*                val serializableExtra = it.data?.getSerializableExtra(FilterActivity.FILTER_KEY)
+                filterDb = if (serializableExtra is MutableMap<*, *>) {
+                    @Suppress("UNCHECKED_CAST")
+                    serializableExtra as MutableMap<String, String>
+                } else {
+                    mutableMapOf()
+                }*/
+                Log.d("MyLogMainAct", "filterDb: $filterDb")
+                //filterDb = FilterManager.getFilter(filter)
             } else if (it.resultCode == RESULT_CANCELED) {
-                filterDb = ""
-                filter = "empty"
+                filterDb = mutableMapOf()
             }
         }
     }
