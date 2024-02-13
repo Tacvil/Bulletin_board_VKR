@@ -67,7 +67,7 @@ class DescriptionActivity : AppCompatActivity() {
         textViewTitleD.setText(ad.title)
         textViewDescription.setText(ad.description)
         textViewEmailDescription.setText(ad.email)
-        textViewPriceDescription.setText(ad.price)
+        textViewPriceDescription.setText(ad.price.toString())
         textViewTelDescription.setText(ad.tel)
         textViewCountryDescription.setText(ad.country)
         textViewCityDescription.setText(ad.city)

@@ -5,23 +5,33 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import com.example.bulletin_board.model.Announcement
 import com.example.bulletin_board.model.DbManager
+import com.google.firebase.firestore.QueryDocumentSnapshot
 
 class FirebaseViewModel: ViewModel() {
     private val dbManager = DbManager()
     val liveAdsData = MutableLiveData<ArrayList<Announcement>?>()
+    var lastDocumentAds: QueryDocumentSnapshot? = null
     fun loadAllAnnouncementFirstPage(filter: MutableMap<String, String>){
         dbManager.getAllAnnouncementFirstPage1(filter, object : DbManager.ReadDataCallback{
-            override fun readData(list: ArrayList<Announcement>) {
+            override fun readData(
+                list: ArrayList<Announcement>,
+                lastDocument: QueryDocumentSnapshot?
+            ) {
                 liveAdsData.value = list
+                lastDocumentAds = lastDocument
                 Log.d("FBVM", "liveAdsData1: ${liveAdsData.value}")
             }
         })
     }
 
-    fun loadAllAnnouncementNextPage(time: String, filter: MutableMap<String, String>){
-        dbManager.getAllAnnouncementNextPage1(time, filter, object : DbManager.ReadDataCallback{
-            override fun readData(list: ArrayList<Announcement>) {
+    fun loadAllAnnouncementNextPage(time: String, price: Int?, filter: MutableMap<String, String>){
+        dbManager.getAllAnnouncementNextPage1(time, price, lastDocumentAds, filter, object : DbManager.ReadDataCallback{
+            override fun readData(
+                list: ArrayList<Announcement>,
+                lastDocument: QueryDocumentSnapshot?
+            ) {
                 liveAdsData.value = list
+                lastDocumentAds = lastDocument
                 Log.d("FBVM", "liveAdsData2: ${liveAdsData.value}")
             }
         })

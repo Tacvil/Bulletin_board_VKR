@@ -17,6 +17,7 @@ import com.google.android.gms.tasks.Tasks
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.QuerySnapshot
+import com.google.firebase.firestore.getField
 import java.io.Serializable
 
 class FilterActivity : AppCompatActivity() {
@@ -43,7 +44,7 @@ class FilterActivity : AppCompatActivity() {
         queryMinPrice.get().addOnSuccessListener { minPriceSnapshot ->
             if (!minPriceSnapshot.isEmpty) {
                 val minPriceDocument = minPriceSnapshot.documents[0]
-                minPrice = minPriceDocument.getString("price")?.toInt()
+                minPrice = minPriceDocument.getField<Int?>("price")?.toInt()
 
                 binding.textViewPriceFromLayout.hint = "от $minPrice"
             }
@@ -52,7 +53,7 @@ class FilterActivity : AppCompatActivity() {
         queryMaxPrice.get().addOnSuccessListener { maxPriceSnapshot ->
             if (!maxPriceSnapshot.isEmpty) {
                 val maxPriceDocument = maxPriceSnapshot.documents[0]
-                maxPrice = maxPriceDocument.getString("price")?.toInt()
+                maxPrice = maxPriceDocument.getField<Int?>("price")?.toInt()
 
                 binding.textViewPriceToLayout.hint = "до $maxPrice"
                 focusChangeLstener(minPrice, maxPrice)
@@ -107,8 +108,10 @@ class FilterActivity : AppCompatActivity() {
             if (!filter["keyWords"].isNullOrEmpty()) textViewTitle.setText(filter["keyWords"])
             if (!filter["country"].isNullOrEmpty()) textViewSelectCountry.setText(filter["country"])
             if (!filter["city"].isNullOrEmpty()) textViewSelectCity.setText(filter["city"])
-
-            //checkBoxWithSend.isChecked = filterArray[3].toBoolean()
+            if (!filter["index"].isNullOrEmpty()) textViewIndex.setText(filter["index"])
+            if (!filter["price_from"].isNullOrEmpty()) textViewPriceFrom.setText(filter["price_from"])
+            if (!filter["price_to"].isNullOrEmpty()) textViewPriceTo.setText(filter["price_to"])
+            if (!filter["withSend"].isNullOrEmpty()) textViewSelectWithSend.setText(filter["withSend"])
         }
     }
 
@@ -130,6 +133,11 @@ class FilterActivity : AppCompatActivity() {
             } else {
                 Toast.makeText(this@FilterActivity, "No country selected", Toast.LENGTH_LONG).show()
             }
+        }
+
+        textViewSelectWithSend.setOnClickListener{
+            val listVariant = arrayListOf("Не важно", "С отправкой", "Без отправки")
+            dialog.showSpinnerDialog(this@FilterActivity, listVariant, textViewSelectWithSend)
         }
     }
 
@@ -164,7 +172,7 @@ class FilterActivity : AppCompatActivity() {
         filters["country"] = textViewSelectCountry.text.toString()
         filters["city"] = textViewSelectCity.text.toString()
         filters["index"] = textViewIndex.text.toString()
-        filters["withSend"] = checkBoxWithSend.isChecked.toString()
+        filters["withSend"] = textViewSelectWithSend.text.toString()
         filters["price_from"] = textViewPriceFrom.text.toString()
         filters["price_to"] = textViewPriceTo.text.toString()
 

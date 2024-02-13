@@ -5,9 +5,10 @@ import com.example.bulletin_board.utils.FilterManager
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.database.ktx.database
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.Query
+import com.google.firebase.firestore.QueryDocumentSnapshot
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.storage.ktx.storage
-import com.google.firebase.firestore.Query
 
 class DbManager {
     val database = Firebase.database.getReference(MAIN_NODE)
@@ -111,8 +112,29 @@ class DbManager {
         if (filter["city"]?.isNotEmpty() == true) {
             queryDB = queryDB.whereEqualTo("city", filter["city"])
         }
-        if (filter["price"]?.isNotEmpty() == true) {
-            Log.d("DbManager", "price not empty")
+        if (filter["index"]?.isNotEmpty() == true) {
+            queryDB = queryDB.whereEqualTo("index", filter["index"])
+        }
+        when (filter["withSend"]?.isNotEmpty() == true){
+            (filter["withSend"] == "Не важно") -> {}
+            (filter["withSend"] == "С отправкой") -> {
+                queryDB = queryDB.whereEqualTo("withSend", filter["withSend"])
+            }
+            (filter["withSend"] == "Без отправки") -> {
+                queryDB = queryDB.whereEqualTo("withSend", filter["withSend"])
+            }
+            else -> {Log.d("DbManager_GAABFFP", "when -> else")}
+        }
+        if (filter["price_from"]?.isNotEmpty() == true || filter["price_to"]?.isNotEmpty() == true) {
+            if (filter["price_from"]?.isNotEmpty() == true && filter["price_to"]?.isNotEmpty() == true){
+                queryDB = queryDB.whereGreaterThanOrEqualTo("price", filter["price_from"]?.toInt()!!).whereLessThanOrEqualTo("price", filter["price_to"]?.toInt()!!).limit(ADS_LIMIT.toLong())
+            }else {
+                if (filter["price_from"]?.isNotEmpty() == true){
+                    queryDB = queryDB.whereGreaterThanOrEqualTo("price", filter["price_from"]?.toInt()!!).limit(ADS_LIMIT.toLong())
+                }else{
+                    queryDB = queryDB.whereLessThanOrEqualTo("price", filter["price_to"]?.toInt()!!).limit(ADS_LIMIT.toLong())
+                }
+            }
         }else{
             queryDB = queryDB.orderBy("time", Query.Direction.ASCENDING).limit(ADS_LIMIT.toLong())
         }
@@ -156,21 +178,25 @@ class DbManager {
 
         fun getAllAnnouncementNextPage1(
             time: String,
+            price: Int?,
+            lastDocumentAds: QueryDocumentSnapshot?,
             filter: MutableMap<String, String>,
             readDataCallback: ReadDataCallback?
-    ) {
+        ) {
         if (filter.isEmpty()) {
             val query = firestore.collection(MAIN_NODE).whereGreaterThan("time", time).limit(
                 ADS_LIMIT.toLong())
             readDataFromDb1(query, readDataCallback)
         } else {
-            getAllAnnouncementByFilterNextPage1(filter, time, readDataCallback)
+            getAllAnnouncementByFilterNextPage1(filter, time, price, lastDocumentAds, readDataCallback)
         }
     }
 
         private fun getAllAnnouncementByFilterNextPage1(
             filter: MutableMap<String, String>,
             time: String,
+            price: Int?,
+            lastDocumentAds: QueryDocumentSnapshot?,
             readDataCallback: ReadDataCallback?
         ) {
             var queryDB: Query = firestore.collection(MAIN_NODE)
@@ -184,10 +210,32 @@ class DbManager {
             if (filter["city"]?.isNotEmpty() == true) {
                 queryDB = queryDB.whereEqualTo("city", filter["city"])
             }
-            if (filter["price"]?.isNotEmpty() == true) {
-                Log.d("DbManager", "price not empty")
+            if (filter["index"]?.isNotEmpty() == true) {
+                queryDB = queryDB.whereEqualTo("index", filter["index"])
+            }
+            when (filter["withSend"]?.isNotEmpty() == true){
+                (filter["withSend"] == "Не важно") -> {}
+                (filter["withSend"] == "С отправкой") -> {
+                    queryDB = queryDB.whereEqualTo("withSend", filter["withSend"])
+                }
+                (filter["withSend"] == "Без отправки") -> {
+                    queryDB = queryDB.whereEqualTo("withSend", filter["withSend"])
+                }
+                else -> {Log.d("DbManager_GAABFFP", "when -> else")}
+            }
+            if (filter["price_from"]?.isNotEmpty() == true || filter["price_to"]?.isNotEmpty() == true) {
+                if (filter["price_from"]?.isNotEmpty() == true && filter["price_to"]?.isNotEmpty() == true){
+                    Log.d("DbManager", "lastDocumentAds - $lastDocumentAds")
+                    queryDB = queryDB.whereGreaterThanOrEqualTo("price", price!!).orderBy("price", Query.Direction.ASCENDING).orderBy("key", Query.Direction.ASCENDING).startAfter(lastDocumentAds?.get("price") ?: "", lastDocumentAds?.get("key") ?: "").limit(ADS_LIMIT.toLong())
+                }else {
+                    if (filter["price_from"]?.isNotEmpty() == true){
+                        queryDB = queryDB.whereGreaterThanOrEqualTo("price", filter["price_from"]!!).limit(ADS_LIMIT.toLong())
+                    }else{
+                        queryDB = queryDB.whereLessThanOrEqualTo("price", filter["price_to"]!!).limit(ADS_LIMIT.toLong())
+                    }
+                }
             }else{
-                queryDB = queryDB.whereGreaterThan("time", time).limit(ADS_LIMIT.toLong())
+                queryDB = queryDB.orderBy("time", Query.Direction.ASCENDING).limit(ADS_LIMIT.toLong())
             }
 
 /*            val query = firestore.collection(MAIN_NODE).whereArrayContains("keyWords", value).whereGreaterThan("time", time).limit(
@@ -318,8 +366,9 @@ class DbManager {
                         Log.d("DbManager", "Результат запроса пуст.")
                     }
 
-                    for (document in task.result!!) {
+                    val lastDocument = task.result!!.lastOrNull()
 
+                    for (document in task.result!!) {
                         val adData = document.data as Map<*, *>?
                         val ad = adData?.let {
                             document.toObject(Announcement::class.java)
@@ -343,7 +392,7 @@ class DbManager {
                         ad?.let { adArray.add(it) }
                     }
 
-                    readDataCallback?.readData(adArray)
+                    readDataCallback?.readData(adArray, lastDocument)
                 } else {
                     Log.e("DbManager", "Ошибка при получении данных: ${task.exception}")
                     // Обработка ошибки
@@ -432,7 +481,7 @@ class DbManager {
     */
 
     interface ReadDataCallback {
-        fun readData(list: ArrayList<Announcement>)
+        fun readData(list: ArrayList<Announcement>, lastDocument:  QueryDocumentSnapshot?)
     }
 
     interface FinishWorkListener {

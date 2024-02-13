@@ -417,7 +417,7 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener, AdsR
         adsList.getOrNull(1)?.let { secondAd ->
             Log.d("MainAct", "adsList: 1")
             if (currentCategory == getString(R.string.def)) {
-                firebaseViewModel.loadAllAnnouncementNextPage(secondAd.time, filterDb)
+                firebaseViewModel.loadAllAnnouncementNextPage(secondAd.time, secondAd.price, filterDb)
             } else {
                 secondAd.category?.let { category ->
                     firebaseViewModel.loadAllAnnouncementFromCatNextPage(category, secondAd.time, filterDb)
@@ -426,7 +426,7 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener, AdsR
         } ?: adsList.firstOrNull()?.let { firstAd ->
             Log.d("MainAct", "adsList: 0")
             if (currentCategory == getString(R.string.def)) {
-                firebaseViewModel.loadAllAnnouncementNextPage(firstAd.time, filterDb)
+                firebaseViewModel.loadAllAnnouncementNextPage(firstAd.time, firstAd.price, filterDb)
             } else {
                 firstAd.category?.let { category ->
                     firebaseViewModel.loadAllAnnouncementFromCatNextPage(category, firstAd.time, filterDb)

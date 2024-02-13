@@ -40,7 +40,7 @@ class AdsRcAdapter(val act: MainActivity) : RecyclerView.Adapter<AdsRcAdapter.Ad
         @RequiresApi(Build.VERSION_CODES.O)
         fun setData(ad: Announcement) = with(binding) {
             textViewDescription.setText(ad.description)
-            textViewPrice.text = ad.price
+            textViewPrice.text = ad.price.toString()
             textViewTitleD.setText(ad.title)
             textViewViewCounter.text = ad.viewsCounter
             textViewFav.text = ad.favCounter

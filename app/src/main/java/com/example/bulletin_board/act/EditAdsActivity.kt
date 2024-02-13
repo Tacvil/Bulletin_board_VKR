@@ -80,7 +80,7 @@ class EditAdsActivity : AppCompatActivity(), FragmentCloseInterface {
         textViewSelectTelNumb.setText(ad.tel)
         textViewSelectCategory.setText(ad.category)
         checkBoxWithSend.isChecked = ad.withSend.toBoolean()
-        textViewPrice.setText(ad.price)
+        textViewPrice.setText(ad.price.toString())
         textViewDescription.setText(ad.description)
         updateImageCounter(0)
         fillImageArray(ad, imageAdapter)
@@ -190,7 +190,7 @@ class EditAdsActivity : AppCompatActivity(), FragmentCloseInterface {
                 textViewSelectTelNumb.text.toString(),
                 checkBoxWithSend.isChecked.toString(),
                 textViewSelectCategory.text.toString(),
-                textViewPrice.text.toString(),
+                textViewPrice.text.toString().toInt(),
                 textViewDescription.text.toString(),
                 textViewSelectEmail.text.toString(),
                 ad?.mainImage ?: "empty",
