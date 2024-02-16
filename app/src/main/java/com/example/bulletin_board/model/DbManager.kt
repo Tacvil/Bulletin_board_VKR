@@ -1,6 +1,8 @@
 package com.example.bulletin_board.model
 
+import android.content.Context
 import android.util.Log
+import com.example.bulletin_board.R
 import com.example.bulletin_board.utils.FilterManager
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.database.ktx.database
@@ -87,19 +89,26 @@ class DbManager {
             readDataFromDb(query, readDataCallback)
         }*/
 
-    fun getAllAnnouncementFirstPage1(filter: MutableMap<String, String>, readDataCallback: ReadDataCallback?) {
+    fun getAllAnnouncementFirstPage1(
+        context: Context,
+        filter: MutableMap<String, String>,
+        readDataCallback: ReadDataCallback?
+    ) {
         val query = if (filter.isEmpty()) {
             firestore.collection(MAIN_NODE).orderBy("time", Query.Direction.ASCENDING)
                 .limit(ADS_LIMIT.toLong())
         } else {
-            getAllAnnouncementByFilterFirstPage1(filter)
+            getAllAnnouncementByFilterFirstPage1(context,filter)
         }
         //val query = firestore.collection(MAIN_NODE).orderBy("time", Query.Direction.ASCENDING)
 
         readDataFromDb1(query, readDataCallback)
     }
 
-    private fun getAllAnnouncementByFilterFirstPage1(filter: MutableMap<String, String>): Query {
+    private fun getAllAnnouncementByFilterFirstPage1(
+        context: Context,
+        filter: MutableMap<String, String>
+    ): Query {
 
         var queryDB: Query = firestore.collection(MAIN_NODE)
 
@@ -114,6 +123,9 @@ class DbManager {
         }
         if (filter["index"]?.isNotEmpty() == true) {
             queryDB = queryDB.whereEqualTo("index", filter["index"])
+        }
+        if (filter["category"]?.isNotEmpty() == true && filter["category"] != context.getString(R.string.def)) {
+            queryDB = queryDB.whereEqualTo("category", filter["category"])
         }
         when (filter["withSend"]?.isNotEmpty() == true){
             (filter["withSend"] == "Не важно") -> {}
@@ -177,6 +189,7 @@ class DbManager {
         }*/
 
         fun getAllAnnouncementNextPage1(
+            context: Context,
             time: String,
             price: Int?,
             lastDocumentAds: QueryDocumentSnapshot?,
@@ -188,11 +201,12 @@ class DbManager {
                 ADS_LIMIT.toLong())
             readDataFromDb1(query, readDataCallback)
         } else {
-            getAllAnnouncementByFilterNextPage1(filter, time, price, lastDocumentAds, readDataCallback)
+            getAllAnnouncementByFilterNextPage1(context, filter, time, price, lastDocumentAds, readDataCallback)
         }
     }
 
         private fun getAllAnnouncementByFilterNextPage1(
+            context: Context,
             filter: MutableMap<String, String>,
             time: String,
             price: Int?,
@@ -213,6 +227,9 @@ class DbManager {
             if (filter["index"]?.isNotEmpty() == true) {
                 queryDB = queryDB.whereEqualTo("index", filter["index"])
             }
+            if (filter["category"]?.isNotEmpty() == true && filter["category"] != context.getString(R.string.def)) {
+                queryDB = queryDB.whereEqualTo("category", filter["category"])
+            }
             when (filter["withSend"]?.isNotEmpty() == true){
                 (filter["withSend"] == "Не важно") -> {}
                 (filter["withSend"] == "С отправкой") -> {
@@ -226,16 +243,16 @@ class DbManager {
             if (filter["price_from"]?.isNotEmpty() == true || filter["price_to"]?.isNotEmpty() == true) {
                 if (filter["price_from"]?.isNotEmpty() == true && filter["price_to"]?.isNotEmpty() == true){
                     Log.d("DbManager", "lastDocumentAds - $lastDocumentAds")
-                    queryDB = queryDB.whereGreaterThanOrEqualTo("price", price!!).orderBy("price", Query.Direction.ASCENDING).orderBy("key", Query.Direction.ASCENDING).startAfter(lastDocumentAds?.get("price") ?: "", lastDocumentAds?.get("key") ?: "").limit(ADS_LIMIT.toLong())
+                    queryDB = queryDB.whereGreaterThanOrEqualTo("price", price!!).whereLessThanOrEqualTo("price", filter["price_to"]?.toInt()!!).orderBy("price", Query.Direction.ASCENDING).orderBy("key", Query.Direction.ASCENDING).startAfter(lastDocumentAds?.get("price") ?: "", lastDocumentAds?.get("key") ?: "").limit(ADS_LIMIT.toLong())
                 }else {
                     if (filter["price_from"]?.isNotEmpty() == true){
-                        queryDB = queryDB.whereGreaterThanOrEqualTo("price", filter["price_from"]!!).limit(ADS_LIMIT.toLong())
+                        queryDB = queryDB.whereGreaterThanOrEqualTo("price", price!!).orderBy("price", Query.Direction.ASCENDING).orderBy("key", Query.Direction.ASCENDING).startAfter(lastDocumentAds?.get("price") ?: "", lastDocumentAds?.get("key") ?: "").limit(ADS_LIMIT.toLong())
                     }else{
-                        queryDB = queryDB.whereLessThanOrEqualTo("price", filter["price_to"]!!).limit(ADS_LIMIT.toLong())
+                        queryDB = queryDB.whereGreaterThanOrEqualTo("price", price!!).whereLessThanOrEqualTo("price", filter["price_to"]!!).orderBy("price", Query.Direction.ASCENDING).orderBy("key", Query.Direction.ASCENDING).startAfter(lastDocumentAds?.get("price") ?: "", lastDocumentAds?.get("key") ?: "").limit(ADS_LIMIT.toLong())
                     }
                 }
             }else{
-                queryDB = queryDB.orderBy("time", Query.Direction.ASCENDING).limit(ADS_LIMIT.toLong())
+                queryDB = queryDB.whereGreaterThan("time", time).orderBy("time", Query.Direction.ASCENDING).limit(ADS_LIMIT.toLong())
             }
 
 /*            val query = firestore.collection(MAIN_NODE).whereArrayContains("keyWords", value).whereGreaterThan("time", time).limit(

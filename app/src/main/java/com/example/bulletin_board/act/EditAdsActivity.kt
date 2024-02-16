@@ -97,7 +97,7 @@ class EditAdsActivity : AppCompatActivity(), FragmentCloseInterface {
 
     private fun onClickSelectCountryCity() {
 
-        binding.textViewSelectCountry.setOnClickListener {
+/*        binding.textViewSelectCountry.setOnClickListener {
             val listCountry = CityHelper.getAllCountries(this)
             dialog.showSpinnerDialog(this, listCountry, binding.textViewSelectCountry)
             if (binding.textViewSelectCity.text.toString() != "") {   //getString(R.string.select_city)
@@ -113,7 +113,7 @@ class EditAdsActivity : AppCompatActivity(), FragmentCloseInterface {
             } else {
                 Toast.makeText(this, "No country selected", Toast.LENGTH_LONG).show()
             }
-        }
+        }*/
 
 //        binding.textViewSelectCity.setOnClickListener {
 //            val selectedCountry = binding.textViewSelectCountry.text.toString()
@@ -238,13 +238,13 @@ class EditAdsActivity : AppCompatActivity(), FragmentCloseInterface {
 
     fun onClickSelectCategory() {
 
-        binding.textViewSelectCategory.setOnClickListener {
+/*        binding.textViewSelectCategory.setOnClickListener {
 
             val listCategory =
                 resources.getStringArray(R.array.category).toMutableList() as ArrayList
             dialog.showSpinnerDialog(this, listCategory, binding.textViewSelectCategory)
 
-        }
+        }*/
     }
 
     override fun onFragClose(list: ArrayList<Bitmap>) {

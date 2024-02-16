@@ -1,5 +1,6 @@
 package com.example.bulletin_board.viewmodel
 
+import android.content.Context
 import android.util.Log
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -11,8 +12,8 @@ class FirebaseViewModel: ViewModel() {
     private val dbManager = DbManager()
     val liveAdsData = MutableLiveData<ArrayList<Announcement>?>()
     var lastDocumentAds: QueryDocumentSnapshot? = null
-    fun loadAllAnnouncementFirstPage(filter: MutableMap<String, String>){
-        dbManager.getAllAnnouncementFirstPage1(filter, object : DbManager.ReadDataCallback{
+    fun loadAllAnnouncementFirstPage(context: Context, filter: MutableMap<String, String>){
+        dbManager.getAllAnnouncementFirstPage1(context, filter, object : DbManager.ReadDataCallback{
             override fun readData(
                 list: ArrayList<Announcement>,
                 lastDocument: QueryDocumentSnapshot?
@@ -24,8 +25,8 @@ class FirebaseViewModel: ViewModel() {
         })
     }
 
-    fun loadAllAnnouncementNextPage(time: String, price: Int?, filter: MutableMap<String, String>){
-        dbManager.getAllAnnouncementNextPage1(time, price, lastDocumentAds, filter, object : DbManager.ReadDataCallback{
+    fun loadAllAnnouncementNextPage(context: Context, time: String, price: Int?, filter: MutableMap<String, String>){
+        dbManager.getAllAnnouncementNextPage1(context, time, price, lastDocumentAds, filter, object : DbManager.ReadDataCallback{
             override fun readData(
                 list: ArrayList<Announcement>,
                 lastDocument: QueryDocumentSnapshot?
@@ -37,7 +38,7 @@ class FirebaseViewModel: ViewModel() {
         })
     }
 
-    fun loadAllAnnouncementFromCatFirstPage(cat: String, filter: MutableMap<String, String>){
+    fun loadAllAnnouncementFromCatFirstPage(filter: MutableMap<String, String>){
 //        dbManager.getAllAnnouncementFromCatFirstPage(cat, filter, object : DbManager.ReadDataCallback{
 //            override fun readData(list: ArrayList<Announcement>) {
 //                liveAdsData.value = list

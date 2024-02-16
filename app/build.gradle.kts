@@ -67,6 +67,7 @@ dependencies {
 
 //    implementation  ("io.ak1.pix:piximagepicker:1.6.3")
 
+    
     //firebase
     implementation("com.google.firebase:firebase-firestore:24.10.2")
 

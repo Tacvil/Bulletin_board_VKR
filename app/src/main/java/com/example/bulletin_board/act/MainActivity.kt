@@ -32,6 +32,8 @@ import com.example.bulletin_board.adapters.AdsRcAdapter
 import com.example.bulletin_board.databinding.ActivityMainBinding
 import com.example.bulletin_board.dialoghelper.DialogConst
 import com.example.bulletin_board.dialoghelper.DialogHelper
+import com.example.bulletin_board.dialogs.DialogSpinnerHelper
+import com.example.bulletin_board.dialogs.RcViewDialogSpinnerAdapter
 import com.example.bulletin_board.model.Announcement
 import com.example.bulletin_board.utils.BillingManager
 import com.example.bulletin_board.utils.BillingManager.Companion.REMOVE_ADS_PREF
@@ -50,13 +52,13 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener, AdsR
     private lateinit var imageViewAccount: ImageView
     private lateinit var binding: ActivityMainBinding
     private val dialogHelper = DialogHelper(this)
+    private val dialog = DialogSpinnerHelper()
     val mAuth = Firebase.auth
     val adapter = AdsRcAdapter(this)
     lateinit var googleSignInLauncher: ActivityResultLauncher<Intent>
     lateinit var filterLauncher: ActivityResultLauncher<Intent>
     private val firebaseViewModel: FirebaseViewModel by viewModels()
     private var clearUpdate: Boolean = true
-    private var currentCategory: String? = null
     private var filterDb: MutableMap<String, String> = mutableMapOf()
     private var pref: SharedPreferences? = null
     private var isPremiumUser: Boolean = false
@@ -72,11 +74,34 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener, AdsR
 //        setSupportActionBar(toolbar)
 
         init()
+        onClickSelectOrderBy()
         initRecyclerView()
         initViewModel()
         bottomMenuOnClick()
         scrollListener()
         onActivityResultFilter()
+    }
+
+    private fun onClickSelectOrderBy() = with(binding) {
+/*        val listVariant = arrayListOf("По новинкам", "По популярности", "По возрастанию цены", "По убыванию цены")
+        val adapter = ArrayAdapter(this@MainActivity, R.layout.spinner_list_item, listVariant )
+        mainContent.autoComplete.setAdapter(adapter)
+        mainContent.autoComplete.onItemClickListener = AdapterView.OnItemClickListener { parent, view, position, id ->
+            val itemSelected = parent.getItemAtPosition(position)
+            Toast.makeText(this@MainActivity, "Item: $itemSelected" , Toast.LENGTH_SHORT).show()
+        }*/
+        mainContent.autoComplete.setOnClickListener {
+            val listVariant = arrayListOf("По новинкам", "По популярности", "По возрастанию цены", "По убыванию цены")
+
+            val onItemSelectedListener = object : RcViewDialogSpinnerAdapter.OnItemSelectedListener {
+                override fun onItemSelected(item: String) {
+                    Toast.makeText(this@MainActivity, "Item: $item" , Toast.LENGTH_SHORT).show()
+                    mainContent.autoComplete.setText(item)
+                }
+            }
+
+            dialog.showSpinnerPopup(this@MainActivity,mainContent.autoComplete, listVariant,mainContent.autoComplete, onItemSelectedListener)
+        }
     }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
@@ -122,14 +147,15 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener, AdsR
             ActivityResultContracts.StartActivityForResult()
         ) {
             if (it.resultCode == RESULT_OK) {
-                filterDb = (it.data?.getSerializableExtra(FilterActivity.FILTER_KEY) as? MutableMap<String, String>)!!
-/*                val serializableExtra = it.data?.getSerializableExtra(FilterActivity.FILTER_KEY)
-                filterDb = if (serializableExtra is MutableMap<*, *>) {
-                    @Suppress("UNCHECKED_CAST")
-                    serializableExtra as MutableMap<String, String>
-                } else {
-                    mutableMapOf()
-                }*/
+                filterDb =
+                    (it.data?.getSerializableExtra(FilterActivity.FILTER_KEY) as? MutableMap<String, String>)!!
+                /*                val serializableExtra = it.data?.getSerializableExtra(FilterActivity.FILTER_KEY)
+                                filterDb = if (serializableExtra is MutableMap<*, *>) {
+                                    @Suppress("UNCHECKED_CAST")
+                                    serializableExtra as MutableMap<String, String>
+                                } else {
+                                    mutableMapOf()
+                                }*/
                 Log.d("MyLogMainAct", "filterDb: $filterDb")
                 //filterDb = FilterManager.getFilter(filter)
             } else if (it.resultCode == RESULT_CANCELED) {
@@ -166,13 +192,13 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener, AdsR
     private fun initViewModel() {
         firebaseViewModel.liveAdsData.observe(this) {
             it?.let { content ->
-                val list = getAdsByCategory(content)
+                //val list = getAdsByCategory(content)
                 Log.d("MainActInitViewModel", "clearUpdate: $clearUpdate")
                 if (!clearUpdate) {
-                    adapter.updateAdapter(list)
+                    adapter.updateAdapter(content)
                 } else {
                     adapter.updateAdapterWithClear(
-                        list
+                        content
                     )
                 }
                 if (adapter.itemCount == 0) {
@@ -189,7 +215,7 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener, AdsR
         }
     }
 
-    private fun getAdsByCategory(list: ArrayList<Announcement>): ArrayList<Announcement> {
+/*    private fun getAdsByCategory(list: ArrayList<Announcement>): ArrayList<Announcement> {
         val tempList = ArrayList<Announcement>()
         tempList.addAll(list)
         if (currentCategory != getString(R.string.def)) {
@@ -200,10 +226,10 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener, AdsR
         }
         //tempList.reverse()
         return tempList
-    }
+    }*/
 
     private fun init() {
-        currentCategory = getString(R.string.def)
+        filterDb["category"] = getString(R.string.def)
         setSupportActionBar(binding.mainContent.toolbar)
         onActivityResult()
         navViewSetting()
@@ -251,9 +277,7 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener, AdsR
                 }
 
                 R.id.id_home -> {
-                    currentCategory = getString(R.string.def)
-                    firebaseViewModel.loadAllAnnouncementFirstPage(filterDb)
-                    mainContent.toolbar.title = getString(R.string.def)
+                    getAdsFromCat(getString(R.string.def))
                 }
             }
             true
@@ -267,6 +291,25 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener, AdsR
                 LinearLayoutManager(this@MainActivity)
             mainContent.recyclerViewMainContent.adapter = adapter
         }
+
+/*        binding.mainContent.recyclerViewMainContent.addOnScrollListener(object : RecyclerView.OnScrollListener() {
+            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                super.onScrolled(recyclerView, dx, dy)
+                val scrollY = recyclerView.computeVerticalScrollOffset()
+                val offset = 200 // Ваш порог прокрутки для скрытия тулбара
+
+                if (scrollY > offset) {
+                    binding.mainContent.collapsingToolbarLayout.title = "Title"
+                    binding.mainContent.appBarLayout.setExpanded(false, true)
+                } else {
+                    binding.mainContent.collapsingToolbarLayout.title = ""
+                    binding.mainContent.appBarLayout.setExpanded(true, true)
+                }
+
+                val colorRes = if (scrollY > offset) R.color.md_theme_light_primary else android.R.color.transparent
+                binding.mainContent.toolbar.setBackgroundColor(ContextCompat.getColor(this@MainActivity, colorRes))
+            }
+        })*/
     }
 
     override fun onNavigationItemSelected(item: MenuItem): Boolean {
@@ -321,8 +364,10 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener, AdsR
     }
 
     private fun getAdsFromCat(cat: String) {
-        currentCategory = cat
-        firebaseViewModel.loadAllAnnouncementFromCatFirstPage(cat, filterDb)
+        filterDb["category"] = cat
+        binding.mainContent.toolbar.title = cat
+        //currentCategory = cat
+        firebaseViewModel.loadAllAnnouncementFirstPage(this, filterDb)
     }
 
     fun uiUpdate(user: FirebaseUser?) {
@@ -401,7 +446,8 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener, AdsR
                 super.onScrollStateChanged(recyclerView, newState)
                 if (!recyclerView.canScrollVertically(SCROLL_DOWN) && newState == RecyclerView.SCROLL_STATE_IDLE) {
                     clearUpdate = false
-                    val adsList = firebaseViewModel.liveAdsData.value // Получает текущий список объявлений из liveAdsData в FirebaseViewModel
+                    val adsList =
+                        firebaseViewModel.liveAdsData.value // Получает текущий список объявлений из liveAdsData в FirebaseViewModel
                     Log.d("MainAct_scrollListener", "adsList: $adsList")
                     if (adsList != null) {
                         if (adsList.isNotEmpty()) {
@@ -416,37 +462,27 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener, AdsR
     private fun getAdsFromCat(adsList: ArrayList<Announcement>) {
         adsList.getOrNull(1)?.let { secondAd ->
             Log.d("MainAct", "adsList: 1")
-            if (currentCategory == getString(R.string.def)) {
-                firebaseViewModel.loadAllAnnouncementNextPage(secondAd.time, secondAd.price, filterDb)
-            } else {
-                secondAd.category?.let { category ->
-                    firebaseViewModel.loadAllAnnouncementFromCatNextPage(category, secondAd.time, filterDb)
-                }
-            }
+
+            firebaseViewModel.loadAllAnnouncementNextPage(this, secondAd.time, secondAd.price, filterDb)
+
         } ?: adsList.firstOrNull()?.let { firstAd ->
             Log.d("MainAct", "adsList: 0")
-            if (currentCategory == getString(R.string.def)) {
-                firebaseViewModel.loadAllAnnouncementNextPage(firstAd.time, firstAd.price, filterDb)
-            } else {
-                firstAd.category?.let { category ->
-                    firebaseViewModel.loadAllAnnouncementFromCatNextPage(category, firstAd.time, filterDb)
-                }
-            }
-        } ?: run{
+            firebaseViewModel.loadAllAnnouncementNextPage(this, firstAd.time, firstAd.price, filterDb)
+        } ?: run {
             Log.d("MainAct", "adsList: adsList.clear()")
             adsList.clear()
         }
-/*        adsList[0].let {
-            if (currentCategory == getString(R.string.def)) {
-                firebaseViewModel.loadAllAnnouncementNextPage(it.time, filterDb)
-            } else {
-                firebaseViewModel.loadAllAnnouncementFromCatNextPage(
-                    it.category!!,
-                    it.time,
-                    filterDb
-                )
-            }
-        }*/
+        /*        adsList[0].let {
+                    if (currentCategory == getString(R.string.def)) {
+                        firebaseViewModel.loadAllAnnouncementNextPage(it.time, filterDb)
+                    } else {
+                        firebaseViewModel.loadAllAnnouncementFromCatNextPage(
+                            it.category!!,
+                            it.time,
+                            filterDb
+                        )
+                    }
+                }*/
     }
 
     override fun onDestroy() {

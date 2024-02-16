@@ -25,21 +25,38 @@ class FilterActivity : AppCompatActivity() {
     private val dialog = DialogSpinnerHelper()
     private var minPrice: Int? = null
     private var maxPrice: Int? = null
+    private var filter: MutableMap<String, String> = mutableMapOf()
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityFilterBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        getFilter()
+
         val db = FirebaseFirestore.getInstance()
         val collectionReference = db.collection(DbManager.MAIN_NODE)
+        val queryMinPrice: Query = if (filter["category"] != getString(R.string.def)) {
+            collectionReference
+                .whereEqualTo("category", filter["category"])
+                .orderBy("price", Query.Direction.ASCENDING)
+                .limit(1)
+        }else{
+            collectionReference
+                .orderBy("price", Query.Direction.ASCENDING)
+                .limit(1)
+        }
 
-        val queryMinPrice: Query = collectionReference
-            .orderBy("price", Query.Direction.ASCENDING)
-            .limit(1)
+        val queryMaxPrice: Query = if (filter["category"] != getString(R.string.def)) {
+            collectionReference
+                .whereEqualTo("category", filter["category"])
+                .orderBy("price", Query.Direction.DESCENDING)
+                .limit(1)
+        }else{
+            collectionReference
+                .orderBy("price", Query.Direction.DESCENDING)
+                .limit(1)
+        }
 
-        val queryMaxPrice: Query = collectionReference
-            .orderBy("price", Query.Direction.DESCENDING)
-            .limit(1)
 
         queryMinPrice.get().addOnSuccessListener { minPriceSnapshot ->
             if (!minPriceSnapshot.isEmpty) {
@@ -63,7 +80,6 @@ class FilterActivity : AppCompatActivity() {
         onClickDone()
         onClickClear()
         actionBarSettings()
-        getFilter()
     }
 
     private fun focusChangeLstener(minPrice: Int?, maxPrice: Int?) = with(binding) {
@@ -102,7 +118,7 @@ class FilterActivity : AppCompatActivity() {
     }
 
     private fun getFilter() = with(binding){
-        val filter = intent.getSerializableExtra(FILTER_KEY) as? MutableMap<String, String>
+        filter = (intent.getSerializableExtra(FILTER_KEY) as? MutableMap<String, String>)!!
         if (!filter.isNullOrEmpty()){
 
             if (!filter["keyWords"].isNullOrEmpty()) textViewTitle.setText(filter["keyWords"])
@@ -117,7 +133,7 @@ class FilterActivity : AppCompatActivity() {
 
     private fun onClickSelectCountryCity() = with(binding) {
 
-        textViewSelectCountry.setOnClickListener {
+/*        textViewSelectCountry.setOnClickListener {
             val listCountry = CityHelper.getAllCountries(this@FilterActivity)
             dialog.showSpinnerDialog(this@FilterActivity, listCountry, textViewSelectCountry)
             if (textViewSelectCity.text.toString() != "") {   //getString(R.string.select_city)
@@ -138,7 +154,7 @@ class FilterActivity : AppCompatActivity() {
         textViewSelectWithSend.setOnClickListener{
             val listVariant = arrayListOf("Не важно", "С отправкой", "Без отправки")
             dialog.showSpinnerDialog(this@FilterActivity, listVariant, textViewSelectWithSend)
-        }
+        }*/
     }
 
     private fun onClickDone() = with(binding) {
@@ -163,7 +179,6 @@ class FilterActivity : AppCompatActivity() {
     }
 
     private fun createFilter(): MutableMap<String, String> = with(binding){
-        val sBuilder = StringBuilder()
         val filters = mutableMapOf<String, String>()
 
         val titleValidate = textViewTitle.text?.split(" ")?.joinToString("-")
