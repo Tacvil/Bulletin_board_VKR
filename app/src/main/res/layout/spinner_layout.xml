@@ -4,30 +4,55 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_margin="5dp"
-    app:cardBackgroundColor="#7A7474"
+    android:layout_margin="10dp"
+    app:cardBackgroundColor="?attr/colorSurfaceVariant"
     app:cardCornerRadius="10dp"
-    app:cardElevation="5dp">
-
-    <LinearLayout
+    android:id="@+id/card_view1"
+    app:cardElevation="0dp">
+    <androidx.coordinatorlayout.widget.CoordinatorLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:orientation="vertical">
+        android:layout_height="wrap_content">
 
-        <SearchView
+        <com.google.android.material.appbar.AppBarLayout
+            android:id="@+id/appBarLayout_spinner"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="?attr/colorSurfaceVariant"
+            android:visibility="gone">
+            <com.google.android.material.search.SearchBar
+                android:id="@+id/search_bar"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Enter" />
+        </com.google.android.material.appbar.AppBarLayout>
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:layout_behavior="@string/appbar_scrolling_view_behavior"
+            android:orientation="vertical">
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/recycler_view_spinner1"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                tools:listitem="@layout/spinner_list_item" />
+        </LinearLayout>
+
+        <com.google.android.material.search.SearchView
             android:id="@+id/search_view_spinner"
-            android:layout_width="match_parent"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:visibility="gone"
+            app:useDrawerArrowDrawable="true"
+            app:layout_anchor="@id/search_bar">
 
-            android:iconifiedByDefault="false">
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/recycler_view_spinner"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                tools:listitem="@layout/spinner_list_item" />
+        </com.google.android.material.search.SearchView>
 
-        </SearchView>
+    </androidx.coordinatorlayout.widget.CoordinatorLayout>
 
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/recycler_view_spinner"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            tools:listitem="@layout/spinner_list_item" />
-    </LinearLayout>
 </androidx.cardview.widget.CardView>
 

@@ -100,7 +100,7 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener, AdsR
                 }
             }
 
-            dialog.showSpinnerPopup(this@MainActivity,mainContent.autoComplete, listVariant,mainContent.autoComplete, onItemSelectedListener)
+            dialog.showSpinnerPopup(this@MainActivity,mainContent.autoComplete, listVariant,mainContent.autoComplete, onItemSelectedListener, false)
         }
     }
 

@@ -43,6 +43,7 @@
                         android:layout_weight="1"
                         app:boxStrokeWidthFocused="0dp"
                         android:layout_marginStart="10dp"
+                        android:focusable="true"
                         app:startIconTint="?attr/colorSurfaceVariant"
                         app:startIconDrawable="@drawable/ic_sort_24">
 
@@ -54,16 +55,38 @@
                             android:textColor="?attr/colorSurfaceVariant"
                             android:textSize="12sp"
                             android:inputType="none"
+                            android:clickable="false"
+                            android:focusableInTouchMode="false"
+                            android:focusable="false"
                             />
                     </com.google.android.material.textfield.TextInputLayout>
 
-                    <Button
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:id="@+id/textInputLayout4"
+                        style="?attr/textInputStyle"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
+                        app:boxStrokeWidth="0dp"
                         android:layout_weight="2"
-                        android:layout_marginEnd="10dp"
-                        android:text="Фильтры">
-                    </Button>
+                        app:boxStrokeWidthFocused="0dp"
+                        android:layout_marginStart="10dp"
+                        android:focusable="true"
+                        app:startIconTint="?attr/colorSurfaceVariant"
+                        app:startIconDrawable="@drawable/ic_sort_24">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/filter_button_main"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Фтльтры"
+                            android:textColor="?attr/colorSurfaceVariant"
+                            android:textSize="12sp"
+                            android:inputType="none"
+                            android:clickable="false"
+                            android:focusableInTouchMode="false"
+                            android:focusable="false"
+                            />
+                    </com.google.android.material.textfield.TextInputLayout>
 
                 </LinearLayout>
             </LinearLayout>

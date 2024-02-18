@@ -5,4 +5,7 @@
     <dimen name="margin_top_nve">0dp</dimen>
     <dimen name="small_thumb">62dp</dimen>
     <dimen name="fastscroll_bubble_size">38dp</dimen>
+
+    <dimen name="popup_offset_x">8dp</dimen>
+    <dimen name="popup_offset_y">8dp</dimen>
 </resources>

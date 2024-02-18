@@ -1,54 +1,148 @@
 package com.example.bulletin_board.dialogs
 
 import android.content.Context
+import android.graphics.Color
+import android.graphics.drawable.ColorDrawable
+import android.graphics.drawable.InsetDrawable
+import android.text.Editable
+import android.text.TextWatcher
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.PopupWindow
-import android.widget.SearchView
 import android.widget.TextView
+import android.widget.Toast
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.bulletin_board.R
 import com.example.bulletin_board.utils.CityHelper
+import com.google.android.material.appbar.AppBarLayout
+import com.google.android.material.search.SearchBar
+import com.google.android.material.search.SearchView.TransitionState
+
 
 class DialogSpinnerHelper {
 
-    fun showSpinnerPopup(context: Context, anchorView: View, list: ArrayList<String>, tvSelection: TextView, onItemSelectedListener: RcViewDialogSpinnerAdapter.OnItemSelectedListener? = null) {
+    fun showSpinnerPopup(
+        context: Context,
+        anchorView: View,
+        list: ArrayList<String>,
+        tvSelection: TextView,
+        onItemSelectedListener: RcViewDialogSpinnerAdapter.OnItemSelectedListener? = null,
+        isSearchable: Boolean
+    ) {
         val binding = LayoutInflater.from(context).inflate(R.layout.spinner_layout, null)
-        val popupWindow = PopupWindow(
-            binding,
-            ViewGroup.LayoutParams.WRAP_CONTENT,
-            ViewGroup.LayoutParams.WRAP_CONTENT,
-            true
-        )
-        val adapter = RcViewDialogSpinnerAdapter(tvSelection, popupWindow, onItemSelectedListener)
-        val rcView = binding.findViewById<RecyclerView>(R.id.recycler_view_spinner)
-        //val sv = binding.findViewById<SearchView>(R.id.search_view_spinner)
-        rcView.layoutManager = LinearLayoutManager(context)
-        rcView.adapter = adapter
 
-        popupWindow.isOutsideTouchable = true
+        if (isSearchable) {
+            val searchView =
+                binding.findViewById<com.google.android.material.search.SearchView>(R.id.search_view_spinner)
+            val appBarL = binding.findViewById<AppBarLayout>(R.id.appBarLayout_spinner)
 
-        //setSearchView(adapter, list, sv)
+            appBarL.visibility = View.VISIBLE
+            searchView.visibility = View.VISIBLE
 
-        anchorView.setOnClickListener {
-            popupWindow.showAsDropDown(anchorView)
-        }
+            val popupWindow = PopupWindow(
+                binding,
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+                true
+            )
 
-        adapter.updateAdapter(list)
-    }
+            val marginInPixels = context.resources.getDimensionPixelSize(R.dimen.popup_offset_x)
+            val inset = InsetDrawable(
+                ColorDrawable(Color.TRANSPARENT),
+                marginInPixels,
+                marginInPixels,
+                marginInPixels,
+                marginInPixels
+            )
+            popupWindow.setBackgroundDrawable(inset)
 
-    private fun setSearchView(adapter: RcViewDialogSpinnerAdapter, list: ArrayList<String>, sv: SearchView?) {
-        sv?.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
-            override fun onQueryTextSubmit(p0: String?): Boolean {
-                return false
+            val adapter =
+                RcViewDialogSpinnerAdapter(tvSelection, popupWindow, onItemSelectedListener)
+            val rcView = binding.findViewById<RecyclerView>(R.id.recycler_view_spinner)
+            val rcView1 = binding.findViewById<RecyclerView>(R.id.recycler_view_spinner1)
+
+            rcView.layoutManager = LinearLayoutManager(context)
+            rcView.adapter = adapter
+
+            rcView1.layoutManager = LinearLayoutManager(context)
+            rcView1.adapter = adapter
+
+            popupWindow.isOutsideTouchable = true
+
+            setSearchView(adapter, list, searchView)
+
+            searchView.addTransitionListener { _: com.google.android.material.search.SearchView?, _: TransitionState?, newState: TransitionState ->
+                if (newState == TransitionState.HIDDEN) {
+                    adapter.updateAdapter(list)
+                }
             }
 
-            override fun onQueryTextChange(newText: String?): Boolean {
-                val tempList = CityHelper.filterListData(list, newText)
+            val yOffset = anchorView.resources.getDimensionPixelSize(R.dimen.popup_offset_y)
+            val xOffset = 0
+
+            popupWindow.showAsDropDown(anchorView, xOffset, yOffset)
+
+            adapter.updateAdapter(list)
+
+        } else {
+            val popupWindow = PopupWindow(
+                binding,
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+                true
+            )
+
+            val adapter =
+                RcViewDialogSpinnerAdapter(tvSelection, popupWindow, onItemSelectedListener)
+            val rcView1 = binding.findViewById<RecyclerView>(R.id.recycler_view_spinner1)
+
+            rcView1.layoutManager = LinearLayoutManager(context)
+            rcView1.adapter = adapter
+
+            popupWindow.isOutsideTouchable = true
+
+            val yOffset = anchorView.resources.getDimensionPixelSize(R.dimen.popup_offset_y)
+            val xOffset = 0
+
+
+            popupWindow.showAsDropDown(anchorView, xOffset, yOffset)
+
+
+            adapter.updateAdapter(list)
+        }
+    }
+
+    private fun setSearchView(
+        adapter: RcViewDialogSpinnerAdapter,
+        list: ArrayList<String>,
+        sv: com.google.android.material.search.SearchView
+    ) {
+        sv.editText.addTextChangedListener(object : TextWatcher {
+            /*            override fun onQueryTextSubmit(p0: String?): Boolean {
+                            return false
+                        }
+
+                        override fun onQueryTextChange(newText: String?): Boolean {
+                            val tempList = CityHelper.filterListData(list, newText)
+                            adapter.updateAdapter(tempList)
+                            return true
+                        }*/
+
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {
+
+            }
+
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                val tempList = CityHelper.filterListData(list, s.toString())
+                Log.d("Dialog", "tempList: $s.toString()")
                 adapter.updateAdapter(tempList)
-                return true
+            }
+
+            override fun afterTextChanged(s: Editable?) {
+
             }
         })
     }
