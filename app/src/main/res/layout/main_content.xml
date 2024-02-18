@@ -36,14 +36,13 @@
 
                     <com.google.android.material.textfield.TextInputLayout
                         android:id="@+id/textInputLayout3"
-                        style="?attr/textInputStyle"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         app:boxStrokeWidth="0dp"
                         android:layout_weight="1"
                         app:boxStrokeWidthFocused="0dp"
                         android:layout_marginStart="10dp"
-                        android:focusable="true"
+                        android:focusable="false"
                         app:startIconTint="?attr/colorSurfaceVariant"
                         app:startIconDrawable="@drawable/ic_sort_24">
 
@@ -51,41 +50,42 @@
                             android:id="@+id/auto_complete"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
+                            android:layout_gravity="start|center_vertical"
+                            android:clickable="false"
+                            android:drawablePadding="-15dp"
+                            android:focusable="false"
+                            android:focusableInTouchMode="false"
+                            android:inputType="none"
                             android:text="weweertкекекеке"
                             android:textColor="?attr/colorSurfaceVariant"
-                            android:textSize="12sp"
-                            android:inputType="none"
-                            android:clickable="false"
-                            android:focusableInTouchMode="false"
-                            android:focusable="false"
-                            />
+                            android:textSize="12sp" />
                     </com.google.android.material.textfield.TextInputLayout>
 
                     <com.google.android.material.textfield.TextInputLayout
                         android:id="@+id/textInputLayout4"
-                        style="?attr/textInputStyle"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        app:boxStrokeWidth="0dp"
+                        android:layout_marginEnd="10dp"
                         android:layout_weight="2"
+                        android:focusable="false"
+                        app:boxStrokeWidth="0dp"
                         app:boxStrokeWidthFocused="0dp"
-                        android:layout_marginStart="10dp"
-                        android:focusable="true"
-                        app:startIconTint="?attr/colorSurfaceVariant"
-                        app:startIconDrawable="@drawable/ic_sort_24">
+                        app:startIconDrawable="@drawable/ic_sort_24"
+                        app:startIconTint="?attr/colorSurfaceVariant">
 
                         <com.google.android.material.textfield.TextInputEditText
                             android:id="@+id/filter_button_main"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Фтльтры"
-                            android:textColor="?attr/colorSurfaceVariant"
-                            android:textSize="12sp"
-                            android:inputType="none"
+                            android:layout_gravity="center_vertical|end"
                             android:clickable="false"
-                            android:focusableInTouchMode="false"
+                            android:drawablePadding="-15dp"
                             android:focusable="false"
-                            />
+                            android:focusableInTouchMode="false"
+                            android:inputType="none"
+                            android:text="Фильтры"
+                            android:textColor="?attr/colorSurfaceVariant"
+                            android:textSize="12sp" />
                     </com.google.android.material.textfield.TextInputLayout>
 
                 </LinearLayout>
