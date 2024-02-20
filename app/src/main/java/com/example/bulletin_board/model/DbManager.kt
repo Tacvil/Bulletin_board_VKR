@@ -48,9 +48,15 @@ class DbManager {
     fun adViewed(ad: Announcement) {
         var counter = ad.viewsCounter.toInt()
         counter++
-        if (auth.uid != null) database.child(ad.key ?: "empty")
-            .child(INFO_NODE)
-            .setValue(InfoItem(counter.toString(), ad.emailCounter, ad.callsCounter))
+
+        Log.d("DBCounter", "Counter = $counter")
+
+        val dataToUpdate = hashMapOf<String, Any>(
+            "viewsCounter" to counter.toString()
+        )
+
+        if (auth.uid != null) firestore.collection(MAIN_NODE).document(ad.key ?: "empty")
+            .update(dataToUpdate)
     }
 
     fun onFavClick(ad: Announcement, listener: FinishWorkListener) {
@@ -139,16 +145,34 @@ class DbManager {
         }
         if (filter["price_from"]?.isNotEmpty() == true || filter["price_to"]?.isNotEmpty() == true) {
             if (filter["price_from"]?.isNotEmpty() == true && filter["price_to"]?.isNotEmpty() == true){
-                queryDB = queryDB.whereGreaterThanOrEqualTo("price", filter["price_from"]?.toInt()!!).whereLessThanOrEqualTo("price", filter["price_to"]?.toInt()!!).limit(ADS_LIMIT.toLong())
+                queryDB = queryDB.whereGreaterThanOrEqualTo("price", filter["price_from"]?.toInt()!!).whereLessThanOrEqualTo("price", filter["price_to"]?.toInt()!!)
             }else {
                 if (filter["price_from"]?.isNotEmpty() == true){
-                    queryDB = queryDB.whereGreaterThanOrEqualTo("price", filter["price_from"]?.toInt()!!).limit(ADS_LIMIT.toLong())
+                    queryDB = queryDB.whereGreaterThanOrEqualTo("price", filter["price_from"]?.toInt()!!)
                 }else{
-                    queryDB = queryDB.whereLessThanOrEqualTo("price", filter["price_to"]?.toInt()!!).limit(ADS_LIMIT.toLong())
+                    queryDB = queryDB.whereLessThanOrEqualTo("price", filter["price_to"]?.toInt()!!)
                 }
             }
-        }else{
-            queryDB = queryDB.orderBy("time", Query.Direction.ASCENDING).limit(ADS_LIMIT.toLong())
+        }
+
+        when (filter["orderBy"]?.isNotEmpty() == true){
+            (filter["orderBy"] == "По новинкам") -> {
+                queryDB = queryDB.orderBy("time", Query.Direction.DESCENDING)
+                    .limit(ADS_LIMIT.toLong())
+            }
+            (filter["orderBy"] == "По популярности") -> {
+                queryDB = queryDB.orderBy("viewsCounter", Query.Direction.DESCENDING)
+                    .limit(ADS_LIMIT.toLong())
+            }
+            (filter["orderBy"] == "По возрастанию цены") -> {
+                queryDB = queryDB.orderBy("price", Query.Direction.ASCENDING)
+                    .limit(ADS_LIMIT.toLong())
+            }
+            (filter["orderBy"] == "По убыванию цены") -> {
+                queryDB = queryDB.orderBy("price", Query.Direction.DESCENDING)
+                    .limit(ADS_LIMIT.toLong())
+            }
+            else -> {Log.d("DbManager_GAABFFP", "when orderBy -> else")}
         }
 
         return queryDB
@@ -192,6 +216,7 @@ class DbManager {
             context: Context,
             time: String,
             price: Int?,
+            viewsCounter: String,
             lastDocumentAds: QueryDocumentSnapshot?,
             filter: MutableMap<String, String>,
             readDataCallback: ReadDataCallback?
@@ -201,7 +226,7 @@ class DbManager {
                 ADS_LIMIT.toLong())
             readDataFromDb1(query, readDataCallback)
         } else {
-            getAllAnnouncementByFilterNextPage1(context, filter, time, price, lastDocumentAds, readDataCallback)
+            getAllAnnouncementByFilterNextPage1(context, filter, time, price, viewsCounter, lastDocumentAds, readDataCallback)
         }
     }
 
@@ -210,6 +235,7 @@ class DbManager {
             filter: MutableMap<String, String>,
             time: String,
             price: Int?,
+            viewsCounter: String,
             lastDocumentAds: QueryDocumentSnapshot?,
             readDataCallback: ReadDataCallback?
         ) {
@@ -253,6 +279,28 @@ class DbManager {
                 }
             }else{
                 queryDB = queryDB.whereGreaterThan("time", time).orderBy("time", Query.Direction.ASCENDING).limit(ADS_LIMIT.toLong())
+            }
+
+            when (filter["orderBy"]?.isNotEmpty() == true){
+                (filter["orderBy"] == "По новинкам") -> {
+                    queryDB = queryDB.whereLessThan("time", time).orderBy("time", Query.Direction.DESCENDING).limit(ADS_LIMIT.toLong())
+                }
+                (filter["orderBy"] == "По популярности") -> {
+                    queryDB = queryDB.whereLessThanOrEqualTo("viewsCounter", viewsCounter)
+                        .orderBy("viewsCounter", Query.Direction.DESCENDING)
+                        .orderBy("key", Query.Direction.DESCENDING)
+                        .startAfter(lastDocumentAds?.get("viewsCounter") ?: "", lastDocumentAds?.get("key") ?: "")
+                        .limit(ADS_LIMIT.toLong())
+                }
+                (filter["orderBy"] == "По возрастанию цены") -> {
+                    queryDB = queryDB.orderBy("price", Query.Direction.ASCENDING)
+                        .limit(ADS_LIMIT.toLong())
+                }
+                (filter["orderBy"] == "По убыванию цены") -> {
+                    queryDB = queryDB.orderBy("price", Query.Direction.DESCENDING)
+                        .limit(ADS_LIMIT.toLong())
+                }
+                else -> {Log.d("DbManager_GAABFFP", "when orderBy -> else")}
             }
 
 /*            val query = firestore.collection(MAIN_NODE).whereArrayContains("keyWords", value).whereGreaterThan("time", time).limit(
@@ -395,16 +443,16 @@ class DbManager {
 
                         // Если есть дополнительные поля в вашем документе, вы можете получить их аналогичным образом
 
-                        val infoItem = document.data["info"] as InfoItem?
+                        //val infoItem = document.data["info"] as InfoItem?
                         /*                        val favCounter = document.reference.collection("favs").document().get().result
 
                                                 ad?.isFav = ad?.uid?.let {
                                                     document.reference.collection("favs").document(it).get().isSuccessful
                                                 } ?: false
                                                 ad?.favCounter = favCounter?.toString() ?: "0"*/
-                        ad?.viewsCounter = infoItem?.viewsCounter ?: "0"
+/*                        ad?.viewsCounter = infoItem?.viewsCounter ?: "0"
                         ad?.emailCounter = infoItem?.emailCounter ?: "0"
-                        ad?.callsCounter = infoItem?.callsCounter ?: "0"
+                        ad?.callsCounter = infoItem?.callsCounter ?: "0"*/
 
                         ad?.let { adArray.add(it) }
                     }

@@ -90,6 +90,7 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener, AdsR
             val itemSelected = parent.getItemAtPosition(position)
             Toast.makeText(this@MainActivity, "Item: $itemSelected" , Toast.LENGTH_SHORT).show()
         }*/
+        mainContent.autoComplete.setText(filterDb["orderBy"])
         mainContent.autoComplete.setOnClickListener {
             val listVariant = arrayListOf("По новинкам", "По популярности", "По возрастанию цены", "По убыванию цены")
 
@@ -97,6 +98,8 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener, AdsR
                 override fun onItemSelected(item: String) {
                     Toast.makeText(this@MainActivity, "Item: $item" , Toast.LENGTH_SHORT).show()
                     mainContent.autoComplete.setText(item)
+                    filterDb["orderBy"] = item
+                    firebaseViewModel.loadAllAnnouncementFirstPage(this@MainActivity, filterDb)
                 }
             }
 
@@ -230,6 +233,7 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener, AdsR
 
     private fun init() {
         filterDb["category"] = getString(R.string.def)
+        filterDb["orderBy"] = "По новинкам"
         setSupportActionBar(binding.mainContent.toolbar)
         onActivityResult()
         navViewSetting()
@@ -291,25 +295,6 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener, AdsR
                 LinearLayoutManager(this@MainActivity)
             mainContent.recyclerViewMainContent.adapter = adapter
         }
-
-/*        binding.mainContent.recyclerViewMainContent.addOnScrollListener(object : RecyclerView.OnScrollListener() {
-            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
-                super.onScrolled(recyclerView, dx, dy)
-                val scrollY = recyclerView.computeVerticalScrollOffset()
-                val offset = 200 // Ваш порог прокрутки для скрытия тулбара
-
-                if (scrollY > offset) {
-                    binding.mainContent.collapsingToolbarLayout.title = "Title"
-                    binding.mainContent.appBarLayout.setExpanded(false, true)
-                } else {
-                    binding.mainContent.collapsingToolbarLayout.title = ""
-                    binding.mainContent.appBarLayout.setExpanded(true, true)
-                }
-
-                val colorRes = if (scrollY > offset) R.color.md_theme_light_primary else android.R.color.transparent
-                binding.mainContent.toolbar.setBackgroundColor(ContextCompat.getColor(this@MainActivity, colorRes))
-            }
-        })*/
     }
 
     override fun onNavigationItemSelected(item: MenuItem): Boolean {
@@ -367,6 +352,7 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener, AdsR
         filterDb["category"] = cat
         binding.mainContent.toolbar.title = cat
         //currentCategory = cat
+        Log.d("MainActivityCAT", "filterDb = $filterDb")
         firebaseViewModel.loadAllAnnouncementFirstPage(this, filterDb)
     }
 
@@ -463,11 +449,11 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener, AdsR
         adsList.getOrNull(1)?.let { secondAd ->
             Log.d("MainAct", "adsList: 1")
 
-            firebaseViewModel.loadAllAnnouncementNextPage(this, secondAd.time, secondAd.price, filterDb)
+            firebaseViewModel.loadAllAnnouncementNextPage(this, secondAd.time, secondAd.price, secondAd.viewsCounter, filterDb)
 
         } ?: adsList.firstOrNull()?.let { firstAd ->
             Log.d("MainAct", "adsList: 0")
-            firebaseViewModel.loadAllAnnouncementNextPage(this, firstAd.time, firstAd.price, filterDb)
+            firebaseViewModel.loadAllAnnouncementNextPage(this, firstAd.time, firstAd.price, firstAd.viewsCounter, filterDb)
         } ?: run {
             Log.d("MainAct", "adsList: adsList.clear()")
             adsList.clear()

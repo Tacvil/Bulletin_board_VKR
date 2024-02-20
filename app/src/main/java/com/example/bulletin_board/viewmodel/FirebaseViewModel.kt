@@ -25,8 +25,8 @@ class FirebaseViewModel: ViewModel() {
         })
     }
 
-    fun loadAllAnnouncementNextPage(context: Context, time: String, price: Int?, filter: MutableMap<String, String>){
-        dbManager.getAllAnnouncementNextPage1(context, time, price, lastDocumentAds, filter, object : DbManager.ReadDataCallback{
+    fun loadAllAnnouncementNextPage(context: Context, time: String, price: Int?, viewsCounter: String, filter: MutableMap<String, String>){
+        dbManager.getAllAnnouncementNextPage1(context, time, price, viewsCounter, lastDocumentAds, filter, object : DbManager.ReadDataCallback{
             override fun readData(
                 list: ArrayList<Announcement>,
                 lastDocument: QueryDocumentSnapshot?
