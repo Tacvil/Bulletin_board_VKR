@@ -145,34 +145,78 @@ class DbManager {
         }
         if (filter["price_from"]?.isNotEmpty() == true || filter["price_to"]?.isNotEmpty() == true) {
             if (filter["price_from"]?.isNotEmpty() == true && filter["price_to"]?.isNotEmpty() == true){
-                queryDB = queryDB.whereGreaterThanOrEqualTo("price", filter["price_from"]?.toInt()!!).whereLessThanOrEqualTo("price", filter["price_to"]?.toInt()!!)
+                when (filter["orderBy"]?.isNotEmpty() == true){
+                    (filter["orderBy"] == "По возрастанию цены") -> {
+                        queryDB = queryDB
+                            .whereGreaterThanOrEqualTo("price", filter["price_from"]?.toInt()!!)
+                            .whereLessThanOrEqualTo("price", filter["price_to"]?.toInt()!!)
+                            .orderBy("price", Query.Direction.ASCENDING)
+                            .limit(ADS_LIMIT.toLong())
+                    }
+                    (filter["orderBy"] == "По убыванию цены") -> {
+                        queryDB = queryDB
+                            .whereGreaterThanOrEqualTo("price", filter["price_from"]?.toInt()!!)
+                            .whereLessThanOrEqualTo("price", filter["price_to"]?.toInt()!!)
+                            .orderBy("price", Query.Direction.DESCENDING)
+                            .limit(ADS_LIMIT.toLong())
+                    }
+                    else -> {Log.d("DbManager_GAABFFP", "when orderBy PRICE1 -> else")}
+                }
             }else {
                 if (filter["price_from"]?.isNotEmpty() == true){
-                    queryDB = queryDB.whereGreaterThanOrEqualTo("price", filter["price_from"]?.toInt()!!)
+                    when (filter["orderBy"]?.isNotEmpty() == true){
+                        (filter["orderBy"] == "По возрастанию цены") -> {
+                            queryDB = queryDB
+                                .whereGreaterThanOrEqualTo("price", filter["price_from"]?.toInt()!!)
+                                .orderBy("price", Query.Direction.ASCENDING)
+                                .limit(ADS_LIMIT.toLong())
+                        }
+                        (filter["orderBy"] == "По убыванию цены") -> {
+                            queryDB = queryDB
+                                .whereGreaterThanOrEqualTo("price", filter["price_from"]?.toInt()!!)
+                                .orderBy("price", Query.Direction.DESCENDING)
+                                .limit(ADS_LIMIT.toLong())
+                        }
+                        else -> {Log.d("DbManager_GAABFFP", "when orderBy PRICE2 -> else")}
+                    }
                 }else{
-                    queryDB = queryDB.whereLessThanOrEqualTo("price", filter["price_to"]?.toInt()!!)
+                    when (filter["orderBy"]?.isNotEmpty() == true){
+                        (filter["orderBy"] == "По возрастанию цены") -> {
+                            queryDB = queryDB
+                                .whereLessThanOrEqualTo("price", filter["price_to"]?.toInt()!!)
+                                .orderBy("price", Query.Direction.ASCENDING)
+                                .limit(ADS_LIMIT.toLong())
+                        }
+                        (filter["orderBy"] == "По убыванию цены") -> {
+                            queryDB = queryDB
+                                .whereLessThanOrEqualTo("price", filter["price_to"]?.toInt()!!)
+                                .orderBy("price", Query.Direction.DESCENDING)
+                                .limit(ADS_LIMIT.toLong())
+                        }
+                        else -> {Log.d("DbManager_GAABFFP", "when orderBy PRICE3 -> else")}
+                    }
                 }
             }
-        }
-
-        when (filter["orderBy"]?.isNotEmpty() == true){
-            (filter["orderBy"] == "По новинкам") -> {
-                queryDB = queryDB.orderBy("time", Query.Direction.DESCENDING)
-                    .limit(ADS_LIMIT.toLong())
+        }else{
+            when (filter["orderBy"]?.isNotEmpty() == true){
+                (filter["orderBy"] == "По новинкам") -> {
+                    queryDB = queryDB.orderBy("time", Query.Direction.DESCENDING)
+                        .limit(ADS_LIMIT.toLong())
+                }
+                (filter["orderBy"] == "По популярности") -> {
+                    queryDB = queryDB.orderBy("viewsCounter", Query.Direction.DESCENDING)
+                        .limit(ADS_LIMIT.toLong())
+                }
+                (filter["orderBy"] == "По возрастанию цены") -> {
+                    queryDB = queryDB.orderBy("price", Query.Direction.ASCENDING)
+                        .limit(ADS_LIMIT.toLong())
+                }
+                (filter["orderBy"] == "По убыванию цены") -> {
+                    queryDB = queryDB.orderBy("price", Query.Direction.DESCENDING)
+                        .limit(ADS_LIMIT.toLong())
+                }
+                else -> {Log.d("DbManager_GAABFFP", "when orderBy1 -> else")}
             }
-            (filter["orderBy"] == "По популярности") -> {
-                queryDB = queryDB.orderBy("viewsCounter", Query.Direction.DESCENDING)
-                    .limit(ADS_LIMIT.toLong())
-            }
-            (filter["orderBy"] == "По возрастанию цены") -> {
-                queryDB = queryDB.orderBy("price", Query.Direction.ASCENDING)
-                    .limit(ADS_LIMIT.toLong())
-            }
-            (filter["orderBy"] == "По убыванию цены") -> {
-                queryDB = queryDB.orderBy("price", Query.Direction.DESCENDING)
-                    .limit(ADS_LIMIT.toLong())
-            }
-            else -> {Log.d("DbManager_GAABFFP", "when orderBy -> else")}
         }
 
         return queryDB
@@ -268,39 +312,93 @@ class DbManager {
             }
             if (filter["price_from"]?.isNotEmpty() == true || filter["price_to"]?.isNotEmpty() == true) {
                 if (filter["price_from"]?.isNotEmpty() == true && filter["price_to"]?.isNotEmpty() == true){
-                    Log.d("DbManager", "lastDocumentAds - $lastDocumentAds")
-                    queryDB = queryDB.whereGreaterThanOrEqualTo("price", price!!).whereLessThanOrEqualTo("price", filter["price_to"]?.toInt()!!).orderBy("price", Query.Direction.ASCENDING).orderBy("key", Query.Direction.ASCENDING).startAfter(lastDocumentAds?.get("price") ?: "", lastDocumentAds?.get("key") ?: "").limit(ADS_LIMIT.toLong())
+                    when (filter["orderBy"]?.isNotEmpty() == true){
+                        (filter["orderBy"] == "По возрастанию цены") -> {
+                            queryDB = queryDB.whereGreaterThanOrEqualTo("price", price!!)
+                                .whereLessThanOrEqualTo("price", filter["price_to"]?.toInt()!!)
+                                .orderBy("price", Query.Direction.ASCENDING)
+                                .orderBy("key", Query.Direction.ASCENDING)
+                                .startAfter(lastDocumentAds?.get("price") ?: "", lastDocumentAds?.get("key") ?: "")
+                                .limit(ADS_LIMIT.toLong())
+                        }
+                        (filter["orderBy"] == "По убыванию цены") -> {
+                            queryDB = queryDB.whereGreaterThanOrEqualTo("price", price!!)
+                                .whereLessThanOrEqualTo("price", filter["price_to"]?.toInt()!!)
+                                .orderBy("price", Query.Direction.DESCENDING)
+                                .orderBy("key", Query.Direction.ASCENDING)
+                                .startAfter(lastDocumentAds?.get("price") ?: "", lastDocumentAds?.get("key") ?: "")
+                                .limit(ADS_LIMIT.toLong())
+                        }
+                        else -> {Log.d("DbManager_GAABFFP", "when orderBy PRICE4 -> else")}
+                    }
                 }else {
                     if (filter["price_from"]?.isNotEmpty() == true){
-                        queryDB = queryDB.whereGreaterThanOrEqualTo("price", price!!).orderBy("price", Query.Direction.ASCENDING).orderBy("key", Query.Direction.ASCENDING).startAfter(lastDocumentAds?.get("price") ?: "", lastDocumentAds?.get("key") ?: "").limit(ADS_LIMIT.toLong())
+                        when (filter["orderBy"]?.isNotEmpty() == true){
+                            (filter["orderBy"] == "По возрастанию цены") -> {
+                                queryDB = queryDB.whereGreaterThanOrEqualTo("price", price!!)
+                                    .orderBy("price", Query.Direction.ASCENDING)
+                                    .orderBy("key", Query.Direction.ASCENDING)
+                                    .startAfter(lastDocumentAds?.get("price") ?: "", lastDocumentAds?.get("key") ?: "")
+                                    .limit(ADS_LIMIT.toLong())
+                            }
+                            (filter["orderBy"] == "По убыванию цены") -> {
+                                queryDB = queryDB.whereGreaterThanOrEqualTo("price", price!!)
+                                    .orderBy("price", Query.Direction.DESCENDING)
+                                    .orderBy("key", Query.Direction.ASCENDING)
+                                    .startAfter(lastDocumentAds?.get("price") ?: "", lastDocumentAds?.get("key") ?: "")
+                                    .limit(ADS_LIMIT.toLong())
+                            }
+                            else -> {Log.d("DbManager_GAABFFP", "when orderBy PRICE5 -> else")}
+                        }
                     }else{
-                        queryDB = queryDB.whereGreaterThanOrEqualTo("price", price!!).whereLessThanOrEqualTo("price", filter["price_to"]!!).orderBy("price", Query.Direction.ASCENDING).orderBy("key", Query.Direction.ASCENDING).startAfter(lastDocumentAds?.get("price") ?: "", lastDocumentAds?.get("key") ?: "").limit(ADS_LIMIT.toLong())
+                        when (filter["orderBy"]?.isNotEmpty() == true){
+                            (filter["orderBy"] == "По возрастанию цены") -> {
+                                queryDB = queryDB.whereGreaterThanOrEqualTo("price", price!!)
+                                    .whereLessThanOrEqualTo("price", filter["price_to"]!!)
+                                    .orderBy("price", Query.Direction.ASCENDING)
+                                    .orderBy("key", Query.Direction.ASCENDING)
+                                    .startAfter(lastDocumentAds?.get("price") ?: "", lastDocumentAds?.get("key") ?: "")
+                                    .limit(ADS_LIMIT.toLong())
+                            }
+                            (filter["orderBy"] == "По убыванию цены") -> {
+                                queryDB = queryDB.whereLessThanOrEqualTo("price", price!!)
+                                    .orderBy("price", Query.Direction.DESCENDING)
+                                    .orderBy("key", Query.Direction.ASCENDING)
+                                    .startAfter(lastDocumentAds?.get("price") ?: "", lastDocumentAds?.get("key") ?: "")
+                                    .limit(ADS_LIMIT.toLong())
+                            }
+                            else -> {Log.d("DbManager_GAABFFP", "when orderBy PRICE6 -> else")}
+                        }
                     }
                 }
             }else{
-                queryDB = queryDB.whereGreaterThan("time", time).orderBy("time", Query.Direction.ASCENDING).limit(ADS_LIMIT.toLong())
-            }
-
-            when (filter["orderBy"]?.isNotEmpty() == true){
-                (filter["orderBy"] == "По новинкам") -> {
-                    queryDB = queryDB.whereLessThan("time", time).orderBy("time", Query.Direction.DESCENDING).limit(ADS_LIMIT.toLong())
+                when (filter["orderBy"]?.isNotEmpty() == true){
+                    (filter["orderBy"] == "По новинкам") -> {
+                        queryDB = queryDB.whereLessThan("time", time).orderBy("time", Query.Direction.DESCENDING).limit(ADS_LIMIT.toLong())
+                    }
+                    (filter["orderBy"] == "По популярности") -> {
+                        queryDB = queryDB.whereLessThanOrEqualTo("viewsCounter", viewsCounter)
+                            .orderBy("viewsCounter", Query.Direction.DESCENDING)
+                            .orderBy("key", Query.Direction.DESCENDING)
+                            .startAfter(lastDocumentAds?.get("viewsCounter") ?: "", lastDocumentAds?.get("key") ?: "")
+                            .limit(ADS_LIMIT.toLong())
+                    }
+                    (filter["orderBy"] == "По возрастанию цены") -> {
+                        queryDB = queryDB.whereGreaterThanOrEqualTo("price", price!!)
+                            .orderBy("price", Query.Direction.ASCENDING)
+                            .orderBy("key", Query.Direction.ASCENDING)
+                            .startAfter(lastDocumentAds?.get("price") ?: "", lastDocumentAds?.get("key") ?: "")
+                            .limit(ADS_LIMIT.toLong())
+                    }
+                    (filter["orderBy"] == "По убыванию цены") -> {
+                        queryDB = queryDB.whereLessThanOrEqualTo("price", price!!)
+                            .orderBy("price", Query.Direction.DESCENDING)
+                            .orderBy("key", Query.Direction.DESCENDING)
+                            .startAfter(lastDocumentAds?.get("price") ?: "", lastDocumentAds?.get("key") ?: "")
+                            .limit(ADS_LIMIT.toLong())
+                    }
+                    else -> {Log.d("DbManager_GAABFFP", "when orderBy21 -> else")}
                 }
-                (filter["orderBy"] == "По популярности") -> {
-                    queryDB = queryDB.whereLessThanOrEqualTo("viewsCounter", viewsCounter)
-                        .orderBy("viewsCounter", Query.Direction.DESCENDING)
-                        .orderBy("key", Query.Direction.DESCENDING)
-                        .startAfter(lastDocumentAds?.get("viewsCounter") ?: "", lastDocumentAds?.get("key") ?: "")
-                        .limit(ADS_LIMIT.toLong())
-                }
-                (filter["orderBy"] == "По возрастанию цены") -> {
-                    queryDB = queryDB.orderBy("price", Query.Direction.ASCENDING)
-                        .limit(ADS_LIMIT.toLong())
-                }
-                (filter["orderBy"] == "По убыванию цены") -> {
-                    queryDB = queryDB.orderBy("price", Query.Direction.DESCENDING)
-                        .limit(ADS_LIMIT.toLong())
-                }
-                else -> {Log.d("DbManager_GAABFFP", "when orderBy -> else")}
             }
 
 /*            val query = firestore.collection(MAIN_NODE).whereArrayContains("keyWords", value).whereGreaterThan("time", time).limit(

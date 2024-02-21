@@ -92,13 +92,18 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener, AdsR
         }*/
         mainContent.autoComplete.setText(filterDb["orderBy"])
         mainContent.autoComplete.setOnClickListener {
-            val listVariant = arrayListOf("По новинкам", "По популярности", "По возрастанию цены", "По убыванию цены")
-
+            val listVariant: ArrayList<String> = if (filterDb["price_from"]?.isNotEmpty() == true || filterDb["price_to"]?.isNotEmpty() == true) {
+                arrayListOf("По возрастанию цены", "По убыванию цены")
+            }else{
+                arrayListOf("По новинкам", "По популярности", "По возрастанию цены", "По убыванию цены")
+            }
             val onItemSelectedListener = object : RcViewDialogSpinnerAdapter.OnItemSelectedListener {
                 override fun onItemSelected(item: String) {
                     Toast.makeText(this@MainActivity, "Item: $item" , Toast.LENGTH_SHORT).show()
                     mainContent.autoComplete.setText(item)
                     filterDb["orderBy"] = item
+                    Log.d("MainActOnClickFilter", "filterDb = $filterDb")
+                    clearUpdate = true
                     firebaseViewModel.loadAllAnnouncementFirstPage(this@MainActivity, filterDb)
                 }
             }
@@ -150,8 +155,11 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener, AdsR
             ActivityResultContracts.StartActivityForResult()
         ) {
             if (it.resultCode == RESULT_OK) {
-                filterDb =
-                    (it.data?.getSerializableExtra(FilterActivity.FILTER_KEY) as? MutableMap<String, String>)!!
+                filterDb = (it.data?.getSerializableExtra(FilterActivity.FILTER_KEY) as? MutableMap<String, String>)!!
+                if (filterDb["price_from"]?.isNotEmpty() == true || filterDb["price_to"]?.isNotEmpty() == true) {
+                    filterDb["orderBy"] = "По возрастанию цены"
+                    binding.mainContent.autoComplete.setText(filterDb["orderBy"])
+                }
                 /*                val serializableExtra = it.data?.getSerializableExtra(FilterActivity.FILTER_KEY)
                                 filterDb = if (serializableExtra is MutableMap<*, *>) {
                                     @Suppress("UNCHECKED_CAST")
