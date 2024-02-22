@@ -58,12 +58,16 @@ class FirebaseViewModel: ViewModel() {
         dbManager.onFavClick(ad, object: DbManager.FinishWorkListener{
             override fun onFinish(isDone: Boolean) {
                 val updateList = liveAdsData.value
+                Log.d("updateList", "updateList = $updateList")
                 val pos = updateList?.indexOf(ad)
+                Log.d("ViewModelFav", "pos = $pos")
 
                 if (pos != -1){
                     pos?.let {
                         val favCounter = if (ad.isFav) ad.favCounter.toInt() - 1 else ad.favCounter.toInt() + 1
+                        Log.d("ViewModelFav", "favCounter = $favCounter")
                         updateList[pos] = updateList[pos].copy(isFav = !ad.isFav, favCounter = favCounter.toString())
+                        Log.d("ViewModelFav", "updateList[pos] = ${updateList[pos]}")
                     }
                 }
                 liveAdsData.postValue(updateList)

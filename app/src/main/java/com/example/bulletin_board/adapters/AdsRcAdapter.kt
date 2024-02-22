@@ -3,7 +3,6 @@ package com.example.bulletin_board.adapters
 import android.animation.Animator
 import android.content.Intent
 import android.os.Build
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -11,17 +10,12 @@ import androidx.annotation.RequiresApi
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
-import com.bumptech.glide.load.resource.bitmap.CenterCrop
 import com.bumptech.glide.load.resource.bitmap.RoundedCorners
 import com.bumptech.glide.request.RequestOptions
-import com.example.bulletin_board.R
-import com.example.bulletin_board.act.DescriptionActivity
 import com.example.bulletin_board.act.EditAdsActivity
 import com.example.bulletin_board.act.MainActivity
-import com.example.bulletin_board.application.MyApplication
 import com.example.bulletin_board.model.Announcement
 import com.example.bulletin_board.databinding.AdListItemBinding
-import com.squareup.picasso.Picasso
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
@@ -35,7 +29,12 @@ class AdsRcAdapter(val act: MainActivity) : RecyclerView.Adapter<AdsRcAdapter.Ad
         timeFormatter = SimpleDateFormat("dd/MM/yyyy - hh:mm", Locale.getDefault())
     }
 
-    class AdHolder(val binding: AdListItemBinding, val act: MainActivity, val formatter: SimpleDateFormat) :
+    class AdHolder(
+        val binding: AdListItemBinding,
+        val act: MainActivity,
+        val formatter: SimpleDateFormat,
+        val adArray: ArrayList<Announcement>
+    ) :
         RecyclerView.ViewHolder(binding.root) {
         @RequiresApi(Build.VERSION_CODES.O)
         fun setData(ad: Announcement) = with(binding) {
@@ -153,7 +152,7 @@ class AdsRcAdapter(val act: MainActivity) : RecyclerView.Adapter<AdsRcAdapter.Ad
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): AdHolder {
         val binding = AdListItemBinding.inflate(LayoutInflater.from(parent.context), parent, false)
-        return AdHolder(binding, act, timeFormatter!!)
+        return AdHolder(binding, act, timeFormatter!!, adArray)
     }
 
     override fun getItemCount(): Int {

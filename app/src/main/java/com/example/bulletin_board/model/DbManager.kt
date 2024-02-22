@@ -6,6 +6,7 @@ import com.example.bulletin_board.R
 import com.example.bulletin_board.utils.FilterManager
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.database.ktx.database
+import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.QueryDocumentSnapshot
@@ -66,10 +67,14 @@ class DbManager {
     private fun addToFavs(ad: Announcement, listener: FinishWorkListener) {
         ad.key?.let {
             auth.uid?.let { uid ->
-                database.child(it).child(FAVS_NODE)
+                firestore.collection(MAIN_NODE).document(it).update("favUids", FieldValue.arrayUnion(uid)).addOnCompleteListener {
+                    if (it.isSuccessful) listener.onFinish(true)
+                }
+
+/*                database.child(it).child(FAVS_NODE)
                     .child(uid).setValue(uid).addOnCompleteListener {
                         if (it.isSuccessful) listener.onFinish(true)
-                    }
+                    }*/
             }
         }
     }
@@ -77,10 +82,14 @@ class DbManager {
     private fun removeFromFavs(ad: Announcement, listener: FinishWorkListener) {
         ad.key?.let {
             auth.uid?.let { uid ->
-                database.child(it).child(FAVS_NODE)
+                firestore.collection(MAIN_NODE).document(it).update("favUids", FieldValue.arrayRemove(uid)).addOnCompleteListener {
+                    if (it.isSuccessful) listener.onFinish(true)
+                }
+
+/*                database.child(it).child(FAVS_NODE)
                     .child(uid).removeValue().addOnCompleteListener {
                         if (it.isSuccessful) listener.onFinish(true)
-                    }
+                    }*/
             }
         }
     }
@@ -539,7 +548,22 @@ class DbManager {
                         Log.d("DbManager", "adData: $adData")
                         Log.d("DbManager", "ad: $ad")
 
-                        // Если есть дополнительные поля в вашем документе, вы можете получить их аналогичным образом
+
+                        val favUids = adData?.get("favUids") as? List<String>
+
+                        val isFav = auth.uid?.let {
+                            val containsUid = favUids?.contains(it) == true
+                            val result = adData?.containsKey("favUids") == true && containsUid
+                            result
+                        }
+
+                        if (isFav != null) {
+                            ad?.isFav = isFav
+                        }
+
+                        val favCounter = favUids?.size
+                        ad?.favCounter = favCounter.toString()
+
 
                         //val infoItem = document.data["info"] as InfoItem?
                         /*                        val favCounter = document.reference.collection("favs").document().get().result
