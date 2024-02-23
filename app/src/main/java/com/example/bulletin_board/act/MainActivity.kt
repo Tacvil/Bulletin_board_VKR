@@ -129,7 +129,7 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener, AdsR
 
     override fun onResume() {
         super.onResume()
-        binding.mainContent.bNavView.selectedItemId = R.id.id_home
+        binding.mainContent.bottomAppBar.id = R.id.id_home
     }
 
     private fun onActivityResult() {
@@ -262,7 +262,7 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener, AdsR
     }
 
     private fun bottomMenuOnClick() = with(binding) {
-        mainContent.bNavView.setOnNavigationItemSelectedListener { item ->
+        mainContent.bottomAppBar.setOnMenuItemClickListener { item ->
             clearUpdate = true
             when (item.itemId) {
                 R.id.id_new_ad -> {
@@ -396,8 +396,9 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener, AdsR
         startActivity(i)
     }
 
-    override fun onFavClicked(ad: Announcement) {
-        firebaseViewModel.onFavClick(ad)
+    override fun onFavClicked(ad: Announcement, adArray: ArrayList<Announcement>) {
+        clearUpdate = true
+        firebaseViewModel.onFavClick(ad, adArray)
     }
 
     private fun navViewSetting() = with(binding) {
@@ -440,8 +441,7 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener, AdsR
                 super.onScrollStateChanged(recyclerView, newState)
                 if (!recyclerView.canScrollVertically(SCROLL_DOWN) && newState == RecyclerView.SCROLL_STATE_IDLE) {
                     clearUpdate = false
-                    val adsList =
-                        firebaseViewModel.liveAdsData.value // Получает текущий список объявлений из liveAdsData в FirebaseViewModel
+                    val adsList = firebaseViewModel.liveAdsData.value // Получает текущий список объявлений из liveAdsData в FirebaseViewModel
                     Log.d("MainAct_scrollListener", "adsList: $adsList")
                     if (adsList != null) {
                         if (adsList.isNotEmpty()) {
@@ -454,7 +454,7 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener, AdsR
     }
 
     private fun getAdsFromCat(adsList: ArrayList<Announcement>) {
-        adsList.getOrNull(1)?.let { secondAd ->
+/*        adsList.getOrNull(1)?.let { secondAd ->
             Log.d("MainAct", "adsList: 1")
 
             firebaseViewModel.loadAllAnnouncementNextPage(this, secondAd.time, secondAd.price, secondAd.viewsCounter, filterDb)
@@ -464,6 +464,14 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener, AdsR
             firebaseViewModel.loadAllAnnouncementNextPage(this, firstAd.time, firstAd.price, firstAd.viewsCounter, filterDb)
         } ?: run {
             Log.d("MainAct", "adsList: adsList.clear()")
+            adsList.clear()
+        }*/
+
+        adsList.lastOrNull()?.let { lastAd ->
+            Log.d("MainAct", "adsList: 1")
+            firebaseViewModel.loadAllAnnouncementNextPage(this, lastAd.time, lastAd.price, lastAd.viewsCounter, filterDb)
+        } ?: run {
+            Log.d("MainAct", "adsList -> NULL: adsList.clear()")
             adsList.clear()
         }
         /*        adsList[0].let {

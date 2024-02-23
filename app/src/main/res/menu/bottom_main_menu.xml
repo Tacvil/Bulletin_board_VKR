@@ -1,28 +1,33 @@
 <?xml version="1.0" encoding="utf-8"?>
-<menu xmlns:android="http://schemas.android.com/apk/res/android">
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <item
         android:title="New add"
         android:icon="@drawable/ic_new_ads"
         android:id="@+id/id_new_ad"
-        android:orderInCategory="400"/>
+        android:orderInCategory="400"
+        app:showAsAction="always"/>
 
     <item
         android:title="My ads"
         android:icon="@drawable/ic_my_ads"
         android:id="@+id/id_my_ads"
-        android:orderInCategory="300"/>
+        android:orderInCategory="300"
+        app:showAsAction="always"/>
 
     <item
         android:title="Favs"
         android:icon="@drawable/ic_favorite_normal"
         android:id="@+id/id_favs"
-        android:orderInCategory="200"/>
+        android:orderInCategory="200"
+        app:showAsAction="always"/>
 
     <item
         android:title="Home"
         android:icon="@drawable/ic_home"
         android:id="@+id/id_home"
-        android:orderInCategory="100"/>
+        android:orderInCategory="100"
+        app:showAsAction="always"/>
 
 </menu>

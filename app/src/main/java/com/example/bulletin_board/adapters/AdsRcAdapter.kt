@@ -3,6 +3,7 @@ package com.example.bulletin_board.adapters
 import android.animation.Animator
 import android.content.Intent
 import android.os.Build
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -94,6 +95,7 @@ class AdsRcAdapter(val act: MainActivity) : RecyclerView.Adapter<AdsRcAdapter.Ad
                         // Вызов метода по завершению анимации
                         //if(act.mAuth.currentUser?.isAnonymous == false)act.onFavClicked(ad)
                         //act.onFavClicked(ad)
+                        act.onFavClicked(ad, adArray)
                         //(act.application as MyApplication).isAnimationRunning = false
                         // Удаление слушателя, чтобы избежать многократного вызова
                         imageButtonFav1.removeAnimatorListener(this)
@@ -109,7 +111,6 @@ class AdsRcAdapter(val act: MainActivity) : RecyclerView.Adapter<AdsRcAdapter.Ad
                     }
                 })
                 imageButtonFav1.playAnimation()
-                act.onFavClicked(ad)
             }
             itemView.setOnClickListener {
                 act.onAdViewed(ad)
@@ -175,15 +176,20 @@ class AdsRcAdapter(val act: MainActivity) : RecyclerView.Adapter<AdsRcAdapter.Ad
     }
 
     fun updateAdapterWithClear(newList: List<Announcement>) {
-        val diffResult = DiffUtil.calculateDiff(DiffUtilHelper(adArray, newList))
-        diffResult.dispatchUpdatesTo(this)
+        Log.d("adapter", "newList = $newList")
+        val tempArray = ArrayList<Announcement>()
+        tempArray.addAll(newList)
+/*        val diffResult = DiffUtil.calculateDiff(DiffUtilHelper(adArray, tempArray))
+        diffResult.dispatchUpdatesTo(this)*/
         adArray.clear()
-        adArray.addAll(newList)
+        adArray.addAll(tempArray)
+        Log.d("adapter", "adArray = $adArray")
+        notifyDataSetChanged()
     }
 
     interface Listener{
         fun onDeleteItem(ad: Announcement)
         fun onAdViewed(ad: Announcement)
-        fun onFavClicked(ad: Announcement)
+        fun onFavClicked(ad: Announcement, adArray: ArrayList<Announcement>)
     }
 }

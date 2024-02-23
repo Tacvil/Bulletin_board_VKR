@@ -16,6 +16,7 @@ import com.example.bulletin_board.model.Announcement
 import com.example.bulletin_board.model.DbManager
 import com.example.bulletin_board.databinding.ActivityEditAdsBinding
 import com.example.bulletin_board.dialogs.DialogSpinnerHelper
+import com.example.bulletin_board.dialogs.RcViewDialogSpinnerAdapter
 import com.example.bulletin_board.fragments.FragmentCloseInterface
 import com.example.bulletin_board.fragments.ImageListFrag
 import com.example.bulletin_board.utils.CityHelper
@@ -97,23 +98,49 @@ class EditAdsActivity : AppCompatActivity(), FragmentCloseInterface {
 
     private fun onClickSelectCountryCity() {
 
-/*        binding.textViewSelectCountry.setOnClickListener {
+        binding.textViewSelectCountry.setOnClickListener {
             val listCountry = CityHelper.getAllCountries(this)
-            dialog.showSpinnerDialog(this, listCountry, binding.textViewSelectCountry)
             if (binding.textViewSelectCity.text.toString() != "") {   //getString(R.string.select_city)
                 binding.textViewSelectCity.setText("")//getString(R.string.select_city)
             }
+            val onItemSelectedListener =
+                object : RcViewDialogSpinnerAdapter.OnItemSelectedListener {
+                    override fun onItemSelected(item: String) {
+                        binding.textViewSelectCountry.setText(item)
+                    }
+                }
+            dialog.showSpinnerPopup(
+                this,
+                binding.textViewSelectCountry,
+                listCountry,
+                binding.textViewSelectCountry,
+                onItemSelectedListener,
+                true
+            )
         }
 
         binding.textViewSelectCity.setOnClickListener {
             val selectedCountry = binding.textViewSelectCountry.text.toString()
             if (selectedCountry != getString(R.string.select_country)) {
                 val listCity = CityHelper.getAllCities(selectedCountry, this)
-                dialog.showSpinnerDialog(this, listCity, binding.textViewSelectCity)
+                val onItemSelectedListener =
+                    object : RcViewDialogSpinnerAdapter.OnItemSelectedListener {
+                        override fun onItemSelected(item: String) {
+                            binding.textViewSelectCity.setText(item)
+                        }
+                    }
+                dialog.showSpinnerPopup(
+                    this,
+                    binding.textViewSelectCity,
+                    listCity,
+                    binding.textViewSelectCity,
+                    onItemSelectedListener,
+                    true
+                )
             } else {
                 Toast.makeText(this, "No country selected", Toast.LENGTH_LONG).show()
             }
-        }*/
+        }
 
 //        binding.textViewSelectCity.setOnClickListener {
 //            val selectedCountry = binding.textViewSelectCountry.text.toString()
@@ -204,7 +231,7 @@ class EditAdsActivity : AppCompatActivity(), FragmentCloseInterface {
         return announcementTemp
     }
 
-    private fun createKeyWords(title:String) : ArrayList<String>{
+    private fun createKeyWords(title: String): ArrayList<String> {
         Log.d("EdAdsAct title", title)
         val words = title.split(" ")
         Log.d("EdAdsAct words", "$words")
@@ -213,7 +240,10 @@ class EditAdsActivity : AppCompatActivity(), FragmentCloseInterface {
         return combinations as ArrayList<String>
     }
 
-    private fun generateCombinations(words: List<String>, memo: MutableMap<List<String>, List<String>> = mutableMapOf()): List<String> {
+    private fun generateCombinations(
+        words: List<String>,
+        memo: MutableMap<List<String>, List<String>> = mutableMapOf()
+    ): List<String> {
         if (words.isEmpty()) {
             return emptyList()
         }
@@ -238,13 +268,24 @@ class EditAdsActivity : AppCompatActivity(), FragmentCloseInterface {
 
     fun onClickSelectCategory() {
 
-/*        binding.textViewSelectCategory.setOnClickListener {
+        binding.textViewSelectCategory.setOnClickListener {
 
-            val listCategory =
-                resources.getStringArray(R.array.category).toMutableList() as ArrayList
-            dialog.showSpinnerDialog(this, listCategory, binding.textViewSelectCategory)
+            val listCategory = resources.getStringArray(R.array.category).toMutableList() as ArrayList
+            val onItemSelectedListener = object : RcViewDialogSpinnerAdapter.OnItemSelectedListener {
+                    override fun onItemSelected(item: String) {
+                        binding.textViewSelectCategory.setText(item)
+                    }
+                }
+            dialog.showSpinnerPopup(
+                this,
+                binding.textViewSelectCategory,
+                listCategory,
+                binding.textViewSelectCategory,
+                onItemSelectedListener,
+                false
+            )
 
-        }*/
+        }
     }
 
     override fun onFragClose(list: ArrayList<Bitmap>) {

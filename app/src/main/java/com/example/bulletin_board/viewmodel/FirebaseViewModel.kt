@@ -54,23 +54,29 @@ class FirebaseViewModel: ViewModel() {
 //        })
     }
 
-    fun onFavClick(ad: Announcement){
+    fun onFavClick(
+        ad: Announcement,
+        adArray: ArrayList<Announcement>,
+    ){
         dbManager.onFavClick(ad, object: DbManager.FinishWorkListener{
             override fun onFinish(isDone: Boolean) {
-                val updateList = liveAdsData.value
-                Log.d("updateList", "updateList = $updateList")
-                val pos = updateList?.indexOf(ad)
+                Log.d("updateList", "updateList = $adArray")
+                val pos = adArray.indexOf(ad)
                 Log.d("ViewModelFav", "pos = $pos")
 
-                if (pos != -1){
-                    pos?.let {
-                        val favCounter = if (ad.isFav) ad.favCounter.toInt() - 1 else ad.favCounter.toInt() + 1
+                if (pos != -1) {
+                    pos.let {
+                        val favCounter =
+                            if (ad.isFav) ad.favCounter.toInt() - 1 else ad.favCounter.toInt() + 1
                         Log.d("ViewModelFav", "favCounter = $favCounter")
-                        updateList[pos] = updateList[pos].copy(isFav = !ad.isFav, favCounter = favCounter.toString())
-                        Log.d("ViewModelFav", "updateList[pos] = ${updateList[pos]}")
+                        adArray[pos] = adArray[pos].copy(
+                            isFav = !ad.isFav,
+                            favCounter = favCounter.toString()
+                        )
+                        Log.d("ViewModelFav", "updateList[pos] = ${adArray[pos]}")
                     }
                 }
-                liveAdsData.postValue(updateList)
+                liveAdsData.postValue(adArray)
             }
         })
     }

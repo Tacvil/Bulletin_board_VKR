@@ -127,15 +127,28 @@
 
     </LinearLayout>
 
+<!--
+    app:layout_behavior="@string/hide_bottom_view_on_scroll_behavior"
+-->
 
-    <com.google.android.material.bottomnavigation.BottomNavigationView
-        android:id="@+id/bNavView"
+    <com.google.android.material.bottomappbar.BottomAppBar
+        android:id="@+id/bottom_app_bar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom"
         app:labelVisibilityMode="unlabeled"
-        app:layout_behavior="@string/hide_bottom_view_on_scroll_behavior"
+        app:hideOnScroll="true"
+        style="@style/Widget.Material3.BottomAppBar"
         app:menu="@menu/bottom_main_menu" />
+
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/flActView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:srcCompat="@drawable/ic_add_image"
+        app:layout_anchor="@id/bottom_app_bar"
+        android:contentDescription="TODO"/>
+>
 
     <!--    <com.google.android.material.appbar.MaterialToolbar
             android:id="@+id/toolbar"
