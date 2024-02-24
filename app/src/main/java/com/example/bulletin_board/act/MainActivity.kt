@@ -130,7 +130,7 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener, AdsR
 
     override fun onResume() {
         super.onResume()
-        //binding.mainContent.bottomAppBar.id = R.id.id_home
+        binding.mainContent.bottomNavView.selectedItemId = R.id.id_home
     }
 
     private fun onActivityResult() {
@@ -263,7 +263,7 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener, AdsR
     }
 
     private fun bottomMenuOnClick() = with(binding) {
-        mainContent.bottomAppBar.setOnMenuItemClickListener { item ->
+        mainContent.bottomNavView.setOnItemSelectedListener { item ->
             clearUpdate = true
             when (item.itemId) {
                 R.id.id_new_ad -> {

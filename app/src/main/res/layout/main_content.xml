@@ -18,6 +18,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             app:layout_scrollFlags="scroll|enterAlways"
+            app:contentScrim="?attr/colorPrimary"
             app:titleEnabled="false"
             app:toolbarId="@id/toolbar">
 
@@ -52,7 +53,7 @@
                             android:layout_height="wrap_content"
                             android:layout_gravity="start|center_vertical"
                             android:clickable="false"
-                            android:drawablePadding="-15dp"
+                            android:drawablePadding="-13dp"
                             android:focusable="false"
                             android:focusableInTouchMode="false"
                             android:inputType="none"
@@ -69,7 +70,7 @@
                         android:focusable="false"
                         app:boxStrokeWidth="0dp"
                         app:boxStrokeWidthFocused="0dp"
-                        app:startIconDrawable="@drawable/ic_sort_24"
+                        app:startIconDrawable="@drawable/filter_svgrepo_com"
                         app:startIconTint="?attr/colorSurfaceVariant">
 
                         <com.google.android.material.textfield.TextInputEditText
@@ -78,7 +79,7 @@
                             android:layout_height="wrap_content"
                             android:layout_gravity="center_vertical|end"
                             android:clickable="false"
-                            android:drawablePadding="-15dp"
+                            android:drawablePadding="-13dp"
                             android:focusable="false"
                             android:focusableInTouchMode="false"
                             android:inputType="none"
@@ -106,6 +107,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
+        android:paddingBottom="?attr/actionBarSize"
         app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
         <androidx.recyclerview.widget.RecyclerView
@@ -142,8 +144,9 @@
         app:fabAnimationMode="slide"
         app:fabCradleRoundedCornerRadius="30dp">
         <com.google.android.material.bottomnavigation.BottomNavigationView
+            android:id="@+id/bottom_nav_view"
             android:layout_width="wrap_content"
-            android:layout_height="50dp"
+            android:layout_height="?attr/actionBarSize"
             app:labelVisibilityMode="unlabeled"
             android:layout_marginEnd="20dp"
             android:background="@android:color/transparent"
