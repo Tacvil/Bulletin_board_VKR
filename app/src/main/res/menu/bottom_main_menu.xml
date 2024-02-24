@@ -7,7 +7,7 @@
         android:icon="@drawable/ic_new_ads"
         android:id="@+id/id_new_ad"
         android:orderInCategory="400"
-        app:showAsAction="always"/>
+        app:showAsAction="always" />
 
     <item
         android:title="My ads"
@@ -15,6 +15,13 @@
         android:id="@+id/id_my_ads"
         android:orderInCategory="300"
         app:showAsAction="always"/>
+
+    <item
+        android:title=""
+        android:id="@+id/fub"
+        android:orderInCategory="250"
+        app:showAsAction="always"
+        android:enabled="false"/>
 
     <item
         android:title="Favs"

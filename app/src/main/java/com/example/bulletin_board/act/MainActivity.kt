@@ -16,7 +16,7 @@ import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
-
+import com.google.android.material.bottomappbar.BottomAppBarTopEdgeTreatment
 import androidx.appcompat.app.ActionBarDrawerToggle
 import androidx.core.content.ContextCompat
 import androidx.core.view.GravityCompat
@@ -41,6 +41,7 @@ import com.example.bulletin_board.viewmodel.FirebaseViewModel
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.common.api.ApiException
 import com.google.android.material.navigation.NavigationView.OnNavigationItemSelectedListener
+import com.google.android.material.shape.MaterialShapeDrawable
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
@@ -129,7 +130,7 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener, AdsR
 
     override fun onResume() {
         super.onResume()
-        binding.mainContent.bottomAppBar.id = R.id.id_home
+        //binding.mainContent.bottomAppBar.id = R.id.id_home
     }
 
     private fun onActivityResult() {
