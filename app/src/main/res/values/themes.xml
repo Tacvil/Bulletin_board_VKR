@@ -38,13 +38,4 @@
         <item name="colorPrimaryInverse">@color/md_theme_light_inversePrimary</item>
     </style>
 
-    <style name="ShapeAppearanceOverlay.MyApp.FloatingActionButton" parent="">
-        <item name="cornerFamily">cut</item>
-        <item name="cornerSize">0dp</item> <!-- Устанавливаем размер углов в 0dp для ромба -->
-        <item name="cornerSizeTopRight">50%</item> <!-- Устанавливаем размер угла в верхнем правом углу для ромба -->
-        <item name="cornerSizeTopLeft">50%</item> <!-- Устанавливаем размер угла в верхнем левом углу для ромба -->
-        <item name="cornerSizeBottomRight">50%</item> <!-- Устанавливаем размер угла в нижнем правом углу для ромба -->
-        <item name="cornerSizeBottomLeft">50%</item> <!-- Устанавливаем размер угла в нижнем левом углу для ромба -->
-    </style>
-
 </resources>

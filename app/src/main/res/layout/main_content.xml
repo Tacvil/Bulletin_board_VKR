@@ -1,37 +1,33 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.coordinatorlayout.widget.CoordinatorLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:fitsSystemWindows="true"
-    android:focusableInTouchMode="true">
+    android:layout_height="match_parent">
 
     <com.google.android.material.appbar.AppBarLayout
         android:id="@+id/appBarLayout"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:fitsSystemWindows="true">
+        android:layout_height="wrap_content">
 
         <com.google.android.material.appbar.CollapsingToolbarLayout
             android:id="@+id/collapsingToolbarLayout"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:layout_scrollFlags="scroll|enterAlways"
             app:contentScrim="?attr/colorPrimary"
+            app:layout_scrollFlags="scroll|enterAlways"
             app:titleEnabled="false"
             app:toolbarId="@id/toolbar">
 
             <LinearLayout
                 android:layout_width="match_parent"
-                android:layout_height="125dp"
+                android:layout_height="135dp"
                 android:background="@drawable/custom_app_bar_background"
                 android:orientation="vertical">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="65dp"
+                    android:layout_marginTop="75dp"
                     android:orientation="horizontal"
                     android:weightSum="3">
 
@@ -39,13 +35,13 @@
                         android:id="@+id/textInputLayout3"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        app:boxStrokeWidth="0dp"
-                        android:layout_weight="1"
-                        app:boxStrokeWidthFocused="0dp"
                         android:layout_marginStart="10dp"
+                        android:layout_weight="1"
                         android:focusable="false"
-                        app:startIconTint="?attr/colorSurfaceVariant"
-                        app:startIconDrawable="@drawable/ic_sort_24">
+                        app:boxStrokeWidth="0dp"
+                        app:boxStrokeWidthFocused="0dp"
+                        app:startIconDrawable="@drawable/ic_sort_arrows"
+                        app:startIconTint="?attr/colorSurfaceVariant">
 
                         <com.google.android.material.textfield.TextInputEditText
                             android:id="@+id/auto_complete"
@@ -70,7 +66,7 @@
                         android:focusable="false"
                         app:boxStrokeWidth="0dp"
                         app:boxStrokeWidthFocused="0dp"
-                        app:startIconDrawable="@drawable/filter_svgrepo_com"
+                        app:startIconDrawable="@drawable/ic_filter"
                         app:startIconTint="?attr/colorSurfaceVariant">
 
                         <com.google.android.material.textfield.TextInputEditText
@@ -91,17 +87,20 @@
                 </LinearLayout>
             </LinearLayout>
 
-            <androidx.appcompat.widget.Toolbar
-                android:id="@+id/toolbar"
+            <com.google.android.material.search.SearchBar
+                android:id="@+id/search_bar"
                 android:layout_width="match_parent"
-                android:layout_height="?attr/actionBarSize"
+                style="@style/Widget.Material3.SearchBar"
+                android:layout_height="wrap_content"
+                android:hint="Search announcements"
+                android:visibility="visible"
+                app:tintNavigationIcon="@android:color/transparent"
                 app:layout_collapseMode="pin"
-                app:titleTextColor="?attr/colorControlNormal" />
+                app:navigationIcon="@drawable/ic_dehaze" />
 
         </com.google.android.material.appbar.CollapsingToolbarLayout>
 
     </com.google.android.material.appbar.AppBarLayout>
-
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -129,9 +128,9 @@
 
     </LinearLayout>
 
-<!--
-    app:layout_behavior="@string/hide_bottom_view_on_scroll_behavior"
--->
+    <!--
+        app:layout_behavior="@string/hide_bottom_view_on_scroll_behavior"
+    -->
 
     <com.google.android.material.bottomappbar.BottomAppBar
         android:id="@+id/bottomAppBar"
@@ -140,17 +139,19 @@
         android:layout_height="wrap_content"
         android:layout_gravity="bottom"
         app:addElevationShadow="true"
-        app:fabCradleMargin="10dp"
         app:fabAnimationMode="slide"
+        app:fabCradleMargin="10dp"
         app:fabCradleRoundedCornerRadius="30dp">
+
         <com.google.android.material.bottomnavigation.BottomNavigationView
             android:id="@+id/bottom_nav_view"
             android:layout_width="wrap_content"
             android:layout_height="?attr/actionBarSize"
-            app:labelVisibilityMode="unlabeled"
             android:layout_marginEnd="20dp"
             android:background="@android:color/transparent"
+            app:labelVisibilityMode="unlabeled"
             app:menu="@menu/bottom_main_menu">
+
         </com.google.android.material.bottomnavigation.BottomNavigationView>
     </com.google.android.material.bottomappbar.BottomAppBar>
 
@@ -158,18 +159,15 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         app:layout_anchor="@id/bottomAppBar"
-        app:srcCompat="@drawable/ic_add"
         app:maxImageSize="30dp"
-        />
+        app:srcCompat="@drawable/ic_add" />
 
-    <!--    <com.google.android.material.appbar.MaterialToolbar
-            android:id="@+id/toolbar"
-            android:layout_width="match_parent"
-            android:layout_height="?attr/actionBarSize"
-            android:background="?attr/colorPrimary"
-            app:titleTextColor="?attr/colorOnPrimary"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />-->
+    <com.google.android.material.search.SearchView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:hint="sdasdad"
+        app:layout_anchor="@id/search_bar">
+        <!-- Search suggestions/results go here (ScrollView, RecyclerView, etc.). -->
+    </com.google.android.material.search.SearchView>
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

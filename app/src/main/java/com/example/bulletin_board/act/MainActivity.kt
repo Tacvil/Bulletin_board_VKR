@@ -16,7 +16,6 @@ import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
-import com.google.android.material.bottomappbar.BottomAppBarTopEdgeTreatment
 import androidx.appcompat.app.ActionBarDrawerToggle
 import androidx.core.content.ContextCompat
 import androidx.core.view.GravityCompat
@@ -41,7 +40,6 @@ import com.example.bulletin_board.viewmodel.FirebaseViewModel
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.common.api.ApiException
 import com.google.android.material.navigation.NavigationView.OnNavigationItemSelectedListener
-import com.google.android.material.shape.MaterialShapeDrawable
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
@@ -75,7 +73,7 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener, AdsR
 //        setSupportActionBar(toolbar)
 
         init()
-        onClickSelectOrderBy()
+        onClickSelectOrderByFilter()
         initRecyclerView()
         initViewModel()
         bottomMenuOnClick()
@@ -83,7 +81,7 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener, AdsR
         onActivityResultFilter()
     }
 
-    private fun onClickSelectOrderBy() = with(binding) {
+    private fun onClickSelectOrderByFilter() = with(binding) {
 /*        val listVariant = arrayListOf("По новинкам", "По популярности", "По возрастанию цены", "По убыванию цены")
         val adapter = ArrayAdapter(this@MainActivity, R.layout.spinner_list_item, listVariant )
         mainContent.autoComplete.setAdapter(adapter)
@@ -111,6 +109,13 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener, AdsR
 
             dialog.showSpinnerPopup(this@MainActivity,mainContent.autoComplete, listVariant,mainContent.autoComplete, onItemSelectedListener, false)
         }
+
+        mainContent.filterButtonMain.setOnClickListener {
+            val i = Intent(this@MainActivity, FilterActivity::class.java).apply {
+                putExtra(FilterActivity.FILTER_KEY, filterDb as Serializable)
+            }
+            filterLauncher.launch(i)
+        }
     }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
@@ -119,11 +124,13 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener, AdsR
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        if (item.itemId == R.id.id_filter) {
-            val i = Intent(this@MainActivity, FilterActivity::class.java).apply {
-                putExtra(FilterActivity.FILTER_KEY, filterDb as Serializable)
-            }
-            filterLauncher.launch(i)
+        if (item.itemId == android.R.id.home){
+            binding.drawerLayout.openDrawer(GravityCompat.START)
+        }
+        if (item.itemId == R.id.id_search) {
+            //binding.mainContent.searchBar.visibility = View.VISIBLE
+            //binding.mainContent.searchBar.performClick()
+           binding.drawerLayout.openDrawer(GravityCompat.START)
         }
         return super.onOptionsItemSelected(item)
     }
@@ -243,18 +250,20 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener, AdsR
     private fun init() {
         filterDb["category"] = getString(R.string.def)
         filterDb["orderBy"] = "По новинкам"
-        setSupportActionBar(binding.mainContent.toolbar)
+        setSupportActionBar(binding.mainContent.searchBar)
         onActivityResult()
         navViewSetting()
-        val toggle = ActionBarDrawerToggle(
+/*        val toggle = ActionBarDrawerToggle(
             this,
             binding.drawerLayout,
-            binding.mainContent.toolbar,
+            //binding.mainContent.toolbar,
             R.string.open,
             R.string.close
         )
         binding.drawerLayout.addDrawerListener(toggle)
-        toggle.syncState()
+        toggle.syncState()*/
+        supportActionBar?.setDisplayHomeAsUpEnabled(true)
+        supportActionBar?.setDisplayShowHomeEnabled(true)
         binding.navigationView.setNavigationItemSelectedListener(this)
         textViewAccount =
             binding.navigationView.getHeaderView(0).findViewById(R.id.text_view_account_email)
@@ -281,12 +290,12 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener, AdsR
 
                 R.id.id_my_ads -> {
                     firebaseViewModel.loadMyAnnouncement()
-                    mainContent.toolbar.title = getString(R.string.ad_my_ads)
+                    //mainContent.toolbar.title = getString(R.string.ad_my_ads)
                 }
 
                 R.id.id_favs -> {
                     firebaseViewModel.loadMyFavs()
-                    mainContent.toolbar.title = getString(R.string.favs)
+                    //mainContent.toolbar.title = getString(R.string.favs)
                 }
 
                 R.id.id_home -> {
@@ -359,7 +368,7 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener, AdsR
 
     private fun getAdsFromCat(cat: String) {
         filterDb["category"] = cat
-        binding.mainContent.toolbar.title = cat
+        //binding.mainContent.toolbar.title = cat
         //currentCategory = cat
         Log.d("MainActivityCAT", "filterDb = $filterDb")
         firebaseViewModel.loadAllAnnouncementFirstPage(this, filterDb)
