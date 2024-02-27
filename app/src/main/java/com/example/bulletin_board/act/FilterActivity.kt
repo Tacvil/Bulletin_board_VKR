@@ -121,7 +121,7 @@ class FilterActivity : AppCompatActivity() {
         filter = (intent.getSerializableExtra(FILTER_KEY) as? MutableMap<String, String>)!!
         if (!filter.isNullOrEmpty()){
 
-            if (!filter["keyWords"].isNullOrEmpty()) textViewTitle.setText(filter["keyWords"])
+            //if (!filter["keyWords"].isNullOrEmpty()) textViewTitle.setText(filter["keyWords"])
             if (!filter["country"].isNullOrEmpty()) textViewSelectCountry.setText(filter["country"])
             if (!filter["city"].isNullOrEmpty()) textViewSelectCity.setText(filter["city"])
             if (!filter["index"].isNullOrEmpty()) textViewIndex.setText(filter["index"])
@@ -181,9 +181,9 @@ class FilterActivity : AppCompatActivity() {
     private fun createFilter(): MutableMap<String, String> = with(binding){
         val filters = mutableMapOf<String, String>()
 
-        val titleValidate = textViewTitle.text?.split(" ")?.joinToString("-")
+        /*val titleValidate = textViewTitle.text?.split(" ")?.joinToString("-")
 
-        filters["keyWords"] = titleValidate.toString()
+        filters["keyWords"] = titleValidate.toString()*/
         filters["country"] = textViewSelectCountry.text.toString()
         filters["city"] = textViewSelectCity.text.toString()
         filters["index"] = textViewIndex.text.toString()

@@ -1,15 +1,23 @@
 package com.example.bulletin_board.act
 
+import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
+import android.graphics.BitmapFactory
+import android.graphics.drawable.BitmapDrawable
+import android.graphics.drawable.VectorDrawable
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.text.Editable
 import android.text.SpannableString
+import android.text.TextWatcher
 import android.text.style.ForegroundColorSpan
 import android.util.Log
+import android.view.KeyEvent
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
+import android.view.inputmethod.InputMethodManager
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
@@ -36,6 +44,7 @@ import com.example.bulletin_board.dialogs.RcViewDialogSpinnerAdapter
 import com.example.bulletin_board.model.Announcement
 import com.example.bulletin_board.utils.BillingManager
 import com.example.bulletin_board.utils.BillingManager.Companion.REMOVE_ADS_PREF
+import com.example.bulletin_board.utils.CityHelper
 import com.example.bulletin_board.viewmodel.FirebaseViewModel
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.common.api.ApiException
@@ -44,6 +53,7 @@ import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
 import java.io.Serializable
+import kotlin.math.log
 
 class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener, AdsRcAdapter.Listener {
 
@@ -74,11 +84,71 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener, AdsR
 
         init()
         onClickSelectOrderByFilter()
+        searchAdd()
         initRecyclerView()
         initViewModel()
         bottomMenuOnClick()
         scrollListener()
         onActivityResultFilter()
+    }
+
+    private fun searchAdd() {
+        var query: String = ""
+        binding.mainContent.searchViewMainContent.editText.addTextChangedListener(object : TextWatcher {
+            /*            override fun onQueryTextSubmit(p0: String?): Boolean {
+                            return false
+                        }
+
+                        override fun onQueryTextChange(newText: String?): Boolean {
+                            val tempList = CityHelper.filterListData(list, newText)
+                            adapter.updateAdapter(tempList)
+                            return true
+                        }*/
+
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {
+
+            }
+
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+/*                val tempList = CityHelper.filterListData(list, s.toString())
+                Log.d("Dialog", "tempList: $s.toString()")
+                adapter.updateAdapter(tempList)*/
+            }
+
+            override fun afterTextChanged(s: Editable?) {
+                query = s.toString()
+            }
+        })
+        binding.mainContent.searchViewMainContent.editText.setOnEditorActionListener { v, actionId, event ->
+            val querySearch: String = binding.mainContent.searchViewMainContent.text.toString()
+            binding.mainContent.searchBar.setText(querySearch)
+            binding.mainContent.searchViewMainContent.hide()
+            binding.mainContent.searchBar.menu.findItem(R.id.id_search).setIcon(R.drawable.ic_cancel)
+
+            val titleValidate = querySearch.split(" ").joinToString("-")
+
+            filterDb["keyWords"] = titleValidate
+            Log.d("MainActSearch", "filterDb = $filterDb")
+            clearUpdate = true
+            firebaseViewModel.loadAllAnnouncementFirstPage(this@MainActivity, filterDb)
+            false
+        }
+        /*binding.mainContent.searchViewMainContent.editText.setOnKeyListener { _, keyCode, event ->
+            if (keyCode == KeyEvent.KEYCODE_ENTER || keyCode == KeyEvent.KEYCODE_SEARCH) {
+                // Пользователь нажал "Enter" (лупу)
+                val inputMethodManager = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+
+// Если фокус сейчас установлен на каком-то виджете, например, EditText
+                val currentFocusView = currentFocus
+
+                if (currentFocusView != null) {
+                    // Скрываем клавиатуру для текущего фокусированного вида
+                    inputMethodManager.hideSoftInputFromWindow(currentFocusView.windowToken, 0)
+                } else {
+                    // Если фокуса нет, просто скрываем клавиатуру
+                    inputMethodManager.toggleSoftInput(InputMethodManager.HIDE_IMPLICIT_ONLY, 0)
+                }
+*/
     }
 
     private fun onClickSelectOrderByFilter() = with(binding) {
@@ -124,14 +194,29 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener, AdsR
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        if (item.itemId == android.R.id.home){
-            binding.drawerLayout.openDrawer(GravityCompat.START)
+        when (item.itemId) {
+            android.R.id.home -> {
+                binding.drawerLayout.openDrawer(GravityCompat.START)
+            }
+            R.id.id_search -> {
+
+                if (!filterDb["keyWords"].isNullOrEmpty()) {
+                    // Текущая иконка НЕ является ic_search
+                    binding.mainContent.searchBar.clearText()
+                    filterDb["keyWords"] = ""
+                    Log.d("MainActR.id.id_search", "filterDb = $filterDb")
+                    clearUpdate = true
+                    firebaseViewModel.loadAllAnnouncementFirstPage(this@MainActivity, filterDb)
+                    item.setIcon(R.drawable.ic_search)
+                } else {
+                    // Текущая иконка - это ic_search
+                    binding.mainContent.searchViewMainContent.show()
+                    binding.mainContent.searchBar.performClick()
+                }
+                return true
+            }
         }
-        if (item.itemId == R.id.id_search) {
-            //binding.mainContent.searchBar.visibility = View.VISIBLE
-            //binding.mainContent.searchBar.performClick()
-           binding.drawerLayout.openDrawer(GravityCompat.START)
-        }
+
         return super.onOptionsItemSelected(item)
     }
 

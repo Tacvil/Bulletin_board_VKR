@@ -37,18 +37,6 @@
                     android:orientation="vertical"
                     android:padding="5dp">
 
-                    <com.google.android.material.textfield.TextInputLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:hint="@string/title">
-
-                        <com.google.android.material.textfield.TextInputEditText
-                            android:id="@+id/text_view_title"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:focusable="true" />
-                    </com.google.android.material.textfield.TextInputLayout>
-
                     <!--                    <TextView-->
                     <!--                        android:id="@+id/text_view_select_countryy"-->
                     <!--                        android:layout_width="match_parent"-->
