@@ -12,13 +12,12 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.PopupWindow
 import android.widget.TextView
-import android.widget.Toast
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.bulletin_board.R
 import com.example.bulletin_board.utils.CityHelper
 import com.google.android.material.appbar.AppBarLayout
-import com.google.android.material.search.SearchBar
+import com.google.android.material.search.SearchView
 import com.google.android.material.search.SearchView.TransitionState
 
 
@@ -27,7 +26,7 @@ class DialogSpinnerHelper {
     fun showSpinnerPopup(
         context: Context,
         anchorView: View,
-        list: ArrayList<String>,
+        list: ArrayList<Pair<String, String>>,
         tvSelection: TextView,
         onItemSelectedListener: RcViewDialogSpinnerAdapter.OnItemSelectedListener? = null,
         isSearchable: Boolean
@@ -95,8 +94,7 @@ class DialogSpinnerHelper {
                 true
             )
 
-            val adapter =
-                RcViewDialogSpinnerAdapter(tvSelection, popupWindow, onItemSelectedListener)
+            val adapter = RcViewDialogSpinnerAdapter(tvSelection, popupWindow, onItemSelectedListener)
             val rcView1 = binding.findViewById<RecyclerView>(R.id.recycler_view_spinner1)
 
             rcView1.layoutManager = LinearLayoutManager(context)
@@ -117,8 +115,8 @@ class DialogSpinnerHelper {
 
     private fun setSearchView(
         adapter: RcViewDialogSpinnerAdapter,
-        list: ArrayList<String>,
-        sv: com.google.android.material.search.SearchView
+        list: ArrayList<Pair<String, String>>,
+        sv: SearchView
     ) {
         sv.editText.addTextChangedListener(object : TextWatcher {
             /*            override fun onQueryTextSubmit(p0: String?): Boolean {

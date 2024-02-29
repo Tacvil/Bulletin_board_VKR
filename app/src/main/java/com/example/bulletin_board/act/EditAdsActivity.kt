@@ -270,7 +270,8 @@ class EditAdsActivity : AppCompatActivity(), FragmentCloseInterface {
 
         binding.textViewSelectCategory.setOnClickListener {
 
-            val listCategory = resources.getStringArray(R.array.category).toMutableList() as ArrayList
+            val listCategory = resources.getStringArray(R.array.category)
+            val pairsCategory = ArrayList<Pair<String, String>>(listCategory.map { Pair(it, "empty") })
             val onItemSelectedListener = object : RcViewDialogSpinnerAdapter.OnItemSelectedListener {
                     override fun onItemSelected(item: String) {
                         binding.textViewSelectCategory.setText(item)
@@ -279,7 +280,7 @@ class EditAdsActivity : AppCompatActivity(), FragmentCloseInterface {
             dialog.showSpinnerPopup(
                 this,
                 binding.textViewSelectCategory,
-                listCategory,
+                pairsCategory,
                 binding.textViewSelectCategory,
                 onItemSelectedListener,
                 false

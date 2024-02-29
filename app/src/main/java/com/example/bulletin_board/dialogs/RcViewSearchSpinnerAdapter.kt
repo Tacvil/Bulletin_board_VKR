@@ -9,8 +9,8 @@ import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.example.bulletin_board.R
 
-class RcViewDialogSpinnerAdapter(var tvSelection: TextView, var popupWindow: PopupWindow?, var onItemSelectedListener: OnItemSelectedListener? = null)
-    : RecyclerView.Adapter<RcViewDialogSpinnerAdapter.SpViewHolder>() {
+class RcViewSearchSpinnerAdapter(var onItemSelectedListener: OnItemSelectedListener? = null)
+    : RecyclerView.Adapter<RcViewSearchSpinnerAdapter.SpViewHolder>() {
 
     private val mainList = ArrayList<Pair<String, String>>()
 
@@ -20,8 +20,7 @@ class RcViewDialogSpinnerAdapter(var tvSelection: TextView, var popupWindow: Pop
 
     class SpViewHolder(
         itemView: View,
-        var tvSelection: TextView,
-        var adapter: RcViewDialogSpinnerAdapter
+        var adapter: RcViewSearchSpinnerAdapter
     ) : RecyclerView.ViewHolder(itemView), View.OnClickListener {
         private var itemText = ""
 
@@ -32,9 +31,9 @@ class RcViewDialogSpinnerAdapter(var tvSelection: TextView, var popupWindow: Pop
             tvSpItem.text = item.first
             itemText = item.first
 
-            if ("single".equals(item.second, ignoreCase = true)) {
+            if ("search".equals(item.second, ignoreCase = true)) {
                 // Ваш код для выполнения действий, если условие соответствует
-                imView2.visibility = View.GONE
+                imView2.visibility = View.VISIBLE
             } else {
                 imView2.visibility = View.GONE
                 imView1.visibility = View.GONE
@@ -44,15 +43,13 @@ class RcViewDialogSpinnerAdapter(var tvSelection: TextView, var popupWindow: Pop
         }
 
         override fun onClick(p0: View?) {
-            tvSelection.text = itemText
-            adapter.dismissDialog()  // Вызываем метод для закрытия диалога
             adapter.onItemSelectedListener?.onItemSelected(itemText)
         }
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): SpViewHolder {
-        val view = LayoutInflater.from(parent.context).inflate(R.layout.spinner_list_item, parent, false)
-        return SpViewHolder(view, tvSelection, this)
+        val view = LayoutInflater.from(parent.context).inflate(R.layout.spinner_list_item_search, parent, false)
+        return SpViewHolder(view, this)
     }
 
     override fun getItemCount(): Int {
@@ -69,7 +66,4 @@ class RcViewDialogSpinnerAdapter(var tvSelection: TextView, var popupWindow: Pop
         notifyDataSetChanged()
     }
 
-    fun dismissDialog() {
-        popupWindow?.dismiss()
-    }
 }

@@ -7,8 +7,8 @@ import java.io.InputStream
 import java.util.Locale
 
 object CityHelper {
-    fun getAllCountries(context: Context): ArrayList<String> {
-        var tempArray = ArrayList<String>()
+    fun getAllCountries(context: Context): ArrayList<Pair<String, String>> {
+        var tempArray = ArrayList<Pair<String, String>>()
         try {
             val inputStream: InputStream = context.assets.open("countriesToCities.json")
             val size: Int = inputStream.available()
@@ -19,7 +19,7 @@ object CityHelper {
             val countriesNames = jsonObject.names()
             if (countriesNames != null) {
                 for (n in 0 until countriesNames.length()) {
-                    tempArray.add(countriesNames.getString(n))
+                    tempArray.add(Pair(countriesNames.getString(n), "single"))
                 }
             }
         } catch (e: IOException) {
@@ -28,8 +28,8 @@ object CityHelper {
         return tempArray
     }
 
-    fun getAllCities(country: String, context: Context): ArrayList<String> {
-        var tempArray = ArrayList<String>()
+    fun getAllCities(country: String, context: Context): ArrayList<Pair<String, String>> {
+        var tempArray = ArrayList<Pair<String, String>>()
         try {
             val inputStream: InputStream = context.assets.open("countriesToCities.json")
             val size: Int = inputStream.available()
@@ -40,7 +40,7 @@ object CityHelper {
             val cityNames = jsonObject.getJSONArray(country)
 
             for (n in 0 until cityNames.length()) {
-                tempArray.add(cityNames.getString(n))
+                tempArray.add(Pair(cityNames.getString(n), "single"))
             }
 
         } catch (e: IOException) {
@@ -49,20 +49,20 @@ object CityHelper {
         return tempArray
     }
 
-    fun filterListData(list: ArrayList<String>, searchText: String?): ArrayList<String> {
-        val tempList = ArrayList<String>()
+    fun filterListData(list: ArrayList<Pair<String, String>>, searchText: String?): ArrayList<Pair<String, String>> {
+        val tempList = ArrayList<Pair<String, String>>()
         tempList.clear()
 
         if (searchText == null) {
-            tempList.add("No result")
+            tempList.add(Pair("No result", "empty"))
             return tempList
         }
 
-        for (selection: String in list) {
-            if (selection.lowercase(Locale.ROOT).startsWith(searchText.lowercase(Locale.ROOT)))
-                tempList.add(selection)
+        for (selection: Pair<String, String> in list) {
+            if (selection.first.lowercase(Locale.ROOT).startsWith(searchText.lowercase(Locale.ROOT)))
+                tempList.add(Pair(selection.first, "single"))
         }
-        if (tempList.size == 0) tempList.add("No result")
+        if (tempList.size == 0) tempList.add(Pair("No result", "empty"))
         return tempList
     }
 }
