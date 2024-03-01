@@ -1,9 +1,12 @@
 package com.example.bulletin_board.act
 
+import android.app.Activity
+import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.content.SharedPreferences
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.speech.RecognizerIntent
 import android.text.Editable
 import android.text.SpannableString
 import android.text.TextWatcher
@@ -106,8 +109,18 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener, AdsR
             }
 
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-                val searchQuery = s.toString().trim()
-                Log.d("MActTextChanged", "searchQuery = $searchQuery")
+                val searchQuery = s.toString()
+                if (searchQuery.isEmpty()){
+                    adapterSearch.clearAdapter()
+                    adapterSearch.setOnDataChangedListener {
+                        adapterSearch.clearAdapter()
+                    }
+                }else{
+                    adapterSearch.setOnDataChangedListener {
+
+                    }
+                }
+                Log.d("MActTextChanged", "searchQuery = $searchQuery, isEmpty = ${searchQuery.isEmpty()}")
                 if (searchQuery.isNotEmpty()) {
                     val db = FirebaseFirestore.getInstance()
                     val collectionReference = db.collection(DbManager.MAIN_NODE)
@@ -132,13 +145,20 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener, AdsR
                                 }
 
                                 spaceCount > 0 -> {
-                                    for (i in 1 .. spaceCount) {
+                                    phraseBuilder.append(searchQuery.substringBeforeLast(' ')).append(" ")
+                                    //phraseBuilder.append(words[spaceCount])
+                                    words.getOrNull(spaceCount)?.let {
+                                        phraseBuilder.append(it)
+                                    }
+                                   /* for (i in 1 .. spaceCount) {
                                         phraseBuilder.append(words[i]).append(" ")
                                         if (i == spaceCount){
                                             phraseBuilder.append(words[i+1])
                                         }
-                                    }
+                                    }*/
                                     val phrase = phraseBuilder.toString()
+                                    phraseBuilder.clear()
+                                    Log.d("MActTextChanged", "phrase = $phrase")
                                     results.add(phrase)
                                 }
                             }
@@ -160,8 +180,7 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener, AdsR
             val querySearch: String = binding.mainContent.searchViewMainContent.text.toString()
             binding.mainContent.searchBar.setText(querySearch)
             binding.mainContent.searchViewMainContent.hide()
-            binding.mainContent.searchBar.menu.findItem(R.id.id_search)
-                .setIcon(R.drawable.ic_cancel)
+            binding.mainContent.searchBar.menu.findItem(R.id.id_search).setIcon(R.drawable.ic_cancel)
 
             val titleValidate = querySearch.split(" ").joinToString("-")
 
@@ -256,10 +275,39 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener, AdsR
                 }
                 return true
             }
+
+            R.id.id_voice -> {
+                val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
+                intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+                intent.putExtra(RecognizerIntent.EXTRA_PROMPT, "Speak something")
+
+                try {
+                    voiceRecognitionLauncher.launch(intent)
+                } catch (e: ActivityNotFoundException) {
+                    // Обработка ситуации, когда нет подходящей активности
+                    Toast.makeText(this, "Голосовое распознавание не поддерживается на вашем устройстве", Toast.LENGTH_SHORT).show()
+                }
+                return true
+            }
         }
 
         return super.onOptionsItemSelected(item)
     }
+    private val voiceRecognitionLauncher: ActivityResultLauncher<Intent> =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            if (result.resultCode == Activity.RESULT_OK) {
+                val data: Intent? = result.data
+                val results = data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)
+
+                if (!results.isNullOrEmpty()) {
+                    val spokenText = results[0]
+                    Log.d("VoiceSearch", "Распознанный текст: $spokenText")
+                    //processVoiceInput(spokenText)
+                } else {
+                    Log.d("VoiceSearch", "Распознавание речи не дало результатов.")
+                }
+            }
+        }
 
     override fun onResume() {
         super.onResume()
@@ -445,6 +493,7 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener, AdsR
             override fun onItemSelected(item: String) {
                 Toast.makeText(this@MainActivity, "Item: $item", Toast.LENGTH_SHORT).show()
                 binding.mainContent.searchViewMainContent.editText.setText(item)
+                binding.mainContent.searchViewMainContent.editText.setSelection(binding.mainContent.searchViewMainContent.editText.text.length)
                 /* filterDb["orderBy"] = item
                  Log.d("MainActOnClickFilter", "filterDb = $filterDb")
                  clearUpdate = true
@@ -657,5 +706,6 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener, AdsR
         const val EDIT_STATE = "edit_state"
         const val ADS_DATA = "ads_data"
         const val SCROLL_DOWN = 1
+        const val REQUEST_CODE_SPEECH_INPUT = 100
     }
 }

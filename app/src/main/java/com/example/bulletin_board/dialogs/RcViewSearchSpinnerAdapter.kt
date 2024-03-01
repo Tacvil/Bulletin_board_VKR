@@ -13,6 +13,8 @@ class RcViewSearchSpinnerAdapter(var onItemSelectedListener: OnItemSelectedListe
     : RecyclerView.Adapter<RcViewSearchSpinnerAdapter.SpViewHolder>() {
 
     private val mainList = ArrayList<Pair<String, String>>()
+    private var onDataChangedListener: (() -> Unit)? = null
+    private var hasData: Boolean = false
 
     interface OnItemSelectedListener {
         fun onItemSelected(item: String)
@@ -63,7 +65,22 @@ class RcViewSearchSpinnerAdapter(var onItemSelectedListener: OnItemSelectedListe
     fun updateAdapter(list: ArrayList<Pair<String, String>>) {
         mainList.clear()
         mainList.addAll(list)
+        notifyDataChanged()
         notifyDataSetChanged()
+    }
+    fun clearAdapter() {
+        mainList.clear()
+        notifyDataSetChanged()
+    }
+
+    // Установка слушателя для изменений в данных
+    fun setOnDataChangedListener(listener: (() -> Unit)?) {
+        onDataChangedListener = listener
+    }
+
+    // Уведомление слушателя об изменениях в данных
+    private fun notifyDataChanged() {
+        onDataChangedListener?.invoke()
     }
 
 }
