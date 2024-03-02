@@ -93,7 +93,7 @@
                 android:layout_width="match_parent"
                 style="@style/Widget.Material3.SearchBar"
                 android:layout_height="wrap_content"
-                android:hint="Search announcements"
+                android:hint="Search ads"
                 android:visibility="visible"
                 app:tintNavigationIcon="@android:color/transparent"
                 app:layout_collapseMode="pin"
@@ -169,7 +169,7 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:elevation="10dp"
-        android:hint="sdasdad"
+        android:hint="Search ads"
         app:layout_anchor="@id/search_bar">
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/recycler_view_search"

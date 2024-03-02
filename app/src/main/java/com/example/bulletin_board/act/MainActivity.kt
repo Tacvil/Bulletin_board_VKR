@@ -4,7 +4,6 @@ import android.app.Activity
 import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.content.SharedPreferences
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.speech.RecognizerIntent
 import android.text.Editable
@@ -15,12 +14,14 @@ import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
+import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
+import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.view.GravityCompat
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -129,7 +130,7 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener, AdsR
                     Log.d("MActTextChanged", "spaceCount = $spaceCount")
                     val phraseBuilder = StringBuilder()
                     val results = mutableListOf<String>()
-                    var pairsResultSearch = ArrayList<Pair<String, String>>()
+                    var pairsResultSearch: ArrayList<Pair<String, String>>
                     query.get().addOnSuccessListener { documents ->
                         for (document in documents) {
                             val title = document.getString("title") ?: ""
@@ -177,12 +178,15 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener, AdsR
             }
         })
         binding.mainContent.searchViewMainContent.editText.setOnEditorActionListener { v, actionId, event ->
+            Log.d("actionId", "actionId = $actionId")
+            Log.d("v", "v = $v")
+            Log.d("event", "event = $event")
             val querySearch: String = binding.mainContent.searchViewMainContent.text.toString()
             binding.mainContent.searchBar.setText(querySearch)
             binding.mainContent.searchViewMainContent.hide()
             binding.mainContent.searchBar.menu.findItem(R.id.id_search).setIcon(R.drawable.ic_cancel)
 
-            val titleValidate = querySearch.split(" ").joinToString("-")
+            val titleValidate = queryValidate(querySearch)
 
             filterDb["keyWords"] = titleValidate
             Log.d("MainActSearch", "filterDb = $filterDb")
@@ -191,6 +195,21 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener, AdsR
             false
         }
 
+        binding.mainContent.searchBar.setOnClickListener {
+            val textSearchBar = binding.mainContent.searchBar.text.toString()
+            binding.mainContent.searchViewMainContent.editText.setText(textSearchBar)
+        }
+        binding.mainContent.searchViewMainContent.toolbar.setOnClickListener {
+            Log.d("MenuClick", "CLICK - $it")
+        }
+
+
+    }
+
+    private fun queryValidate(query: String):String{
+        val validateData = query.split(" ").joinToString("-")
+        Log.d("MainActQueryValidate", "validateData = $validateData")
+        return validateData
     }
 
     private fun onClickSelectOrderByFilter() = with(binding) {
@@ -253,6 +272,7 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener, AdsR
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        Log.d("MenuClick", "CLICK - $item")
         when (item.itemId) {
             android.R.id.home -> {
                 binding.drawerLayout.openDrawer(GravityCompat.START)
@@ -270,7 +290,8 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener, AdsR
                     item.setIcon(R.drawable.ic_search)
                 } else {
                     // Текущая иконка - это ic_search
-                    binding.mainContent.searchViewMainContent.show()
+                    //binding.mainContent.searchViewMainContent.show()
+                    //binding.mainContent.searchViewMainContent.editText.setText()
                     binding.mainContent.searchBar.performClick()
                 }
                 return true
@@ -302,7 +323,16 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener, AdsR
                 if (!results.isNullOrEmpty()) {
                     val spokenText = results[0]
                     Log.d("VoiceSearch", "Распознанный текст: $spokenText")
-                    //processVoiceInput(spokenText)
+
+                    binding.mainContent.searchBar.setText(spokenText)
+                    binding.mainContent.searchBar.menu.findItem(R.id.id_search).setIcon(R.drawable.ic_cancel)
+
+                    val validateText = queryValidate(spokenText)
+
+                    filterDb["keyWords"] = validateText
+                    Log.d("MainActSpokenText", "filterDb = $filterDb")
+                    clearUpdate = true
+                    firebaseViewModel.loadAllAnnouncementFirstPage(this@MainActivity, filterDb)
                 } else {
                     Log.d("VoiceSearch", "Распознавание речи не дало результатов.")
                 }
