@@ -127,6 +127,8 @@ class DbManager {
 
         var queryDB: Query = firestore.collection(MAIN_NODE)
 
+        queryDB = queryDB.whereEqualTo("isPublished", true)
+
         if (filter["keyWords"]?.isNotEmpty() == true) {
             queryDB = queryDB.whereArrayContains("keyWords", filter["keyWords"]!!)
         }
@@ -293,6 +295,8 @@ class DbManager {
             readDataCallback: ReadDataCallback?
         ) {
             var queryDB: Query = firestore.collection(MAIN_NODE)
+
+            queryDB = queryDB.whereEqualTo("isPublished", true)
 
             if (filter["keyWords"]?.isNotEmpty() == true) {
                 queryDB = queryDB.whereArrayContains("keyWords", filter["keyWords"]!!)

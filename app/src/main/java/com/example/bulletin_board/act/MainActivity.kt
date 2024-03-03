@@ -110,7 +110,7 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener, AdsR
             }
 
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-                val searchQuery = s.toString()
+                var searchQuery = s.toString()
                 if (searchQuery.isEmpty()){
                     adapterSearch.clearAdapter()
                     adapterSearch.setOnDataChangedListener {
@@ -122,7 +122,15 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener, AdsR
                     }
                 }
                 Log.d("MActTextChanged", "searchQuery = $searchQuery, isEmpty = ${searchQuery.isEmpty()}")
-                if (searchQuery.isNotEmpty()) {
+                if (searchQuery.trim().isNotEmpty()) {
+
+                    // Убираем пробелы в начале строки
+                    searchQuery = searchQuery.trimStart()
+
+                    // Убираем двойные, тройные и т.д. пробелы во всей строке
+                    searchQuery = searchQuery.replace(Regex("\\s{2,}"), " ")
+                    Log.d("MActTextChanged", "searchQueryAfterValid = $searchQuery}")
+
                     val db = FirebaseFirestore.getInstance()
                     val collectionReference = db.collection(DbManager.MAIN_NODE)
                     val query = collectionReference.whereGreaterThanOrEqualTo("title", searchQuery)
@@ -177,21 +185,23 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener, AdsR
             override fun afterTextChanged(s: Editable?) {
             }
         })
+        //Нажатие на ЛУПУ
         binding.mainContent.searchViewMainContent.editText.setOnEditorActionListener { v, actionId, event ->
-            Log.d("actionId", "actionId = $actionId")
-            Log.d("v", "v = $v")
-            Log.d("event", "event = $event")
             val querySearch: String = binding.mainContent.searchViewMainContent.text.toString()
-            binding.mainContent.searchBar.setText(querySearch)
+            if (querySearch.trim().isNotEmpty()){
+                //Toast.makeText(this, "EMPTY", Toast.LENGTH_SHORT).show()
+                binding.mainContent.searchBar.setText(querySearch)
+                binding.mainContent.searchBar.menu.findItem(R.id.id_search).setIcon(R.drawable.ic_cancel)
+
+                val titleValidate = queryValidate(querySearch)
+
+                filterDb["keyWords"] = titleValidate
+                Log.d("MainActSearch", "filterDb = $filterDb")
+                clearUpdate = true
+                firebaseViewModel.loadAllAnnouncementFirstPage(this@MainActivity, filterDb)
+            }
             binding.mainContent.searchViewMainContent.hide()
-            binding.mainContent.searchBar.menu.findItem(R.id.id_search).setIcon(R.drawable.ic_cancel)
 
-            val titleValidate = queryValidate(querySearch)
-
-            filterDb["keyWords"] = titleValidate
-            Log.d("MainActSearch", "filterDb = $filterDb")
-            clearUpdate = true
-            firebaseViewModel.loadAllAnnouncementFirstPage(this@MainActivity, filterDb)
             false
         }
 
@@ -202,8 +212,7 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener, AdsR
         binding.mainContent.searchViewMainContent.toolbar.setOnClickListener {
             Log.d("MenuClick", "CLICK - $it")
         }
-
-
+        
     }
 
     private fun queryValidate(query: String):String{

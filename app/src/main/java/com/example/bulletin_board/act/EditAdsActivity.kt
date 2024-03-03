@@ -80,7 +80,8 @@ class EditAdsActivity : AppCompatActivity(), FragmentCloseInterface {
         textViewIndex.setText(ad.index)
         textViewSelectTelNumb.setText(ad.tel)
         textViewSelectCategory.setText(ad.category)
-        checkBoxWithSend.isChecked = ad.withSend.toBoolean()
+        //checkBoxWithSend.isChecked = ad.withSend.toBoolean()
+        textViewSelectWithSend.setText(ad.withSend)
         textViewPrice.setText(ad.price.toString())
         textViewDescription.setText(ad.description)
         updateImageCounter(0)
@@ -140,6 +141,22 @@ class EditAdsActivity : AppCompatActivity(), FragmentCloseInterface {
             } else {
                 Toast.makeText(this, "No country selected", Toast.LENGTH_LONG).show()
             }
+        }
+
+        binding.textViewSelectWithSend.setOnClickListener{
+
+            val listVariant = arrayListOf(
+                Pair("Не важно", "empty"),
+                Pair("С отправкой", "empty"),
+                Pair("Без отправки", "empty)"))
+
+            val onItemSelectedListener =
+                object : RcViewDialogSpinnerAdapter.OnItemSelectedListener {
+                    override fun onItemSelected(item: String) {
+                        binding.textViewSelectWithSend.setText(item)
+                    }
+                }
+            dialog.showSpinnerPopup(this, binding.textViewSelectWithSend, listVariant, binding.textViewSelectWithSend, onItemSelectedListener, false )
         }
 
 //        binding.textViewSelectCity.setOnClickListener {
@@ -215,7 +232,7 @@ class EditAdsActivity : AppCompatActivity(), FragmentCloseInterface {
                 textViewSelectCity.text.toString(),
                 textViewIndex.text.toString(),
                 textViewSelectTelNumb.text.toString(),
-                checkBoxWithSend.isChecked.toString(),
+                textViewSelectWithSend.text.toString(),
                 textViewSelectCategory.text.toString(),
                 textViewPrice.text.toString().toInt(),
                 textViewDescription.text.toString(),

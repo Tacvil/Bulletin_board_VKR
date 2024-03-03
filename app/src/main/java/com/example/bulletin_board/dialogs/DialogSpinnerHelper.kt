@@ -2,14 +2,18 @@ package com.example.bulletin_board.dialogs
 
 import android.content.Context
 import android.graphics.Color
+import android.graphics.Point
 import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.InsetDrawable
 import android.text.Editable
 import android.text.TextWatcher
 import android.util.Log
+import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.WindowManager
+import android.widget.PopupMenu
 import android.widget.PopupWindow
 import android.widget.TextView
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -91,7 +95,7 @@ class DialogSpinnerHelper {
                 binding,
                 ViewGroup.LayoutParams.WRAP_CONTENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT,
-                true
+                false
             )
 
             val adapter = RcViewDialogSpinnerAdapter(tvSelection, popupWindow, onItemSelectedListener)

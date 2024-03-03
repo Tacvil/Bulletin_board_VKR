@@ -20,6 +20,7 @@ data class Announcement(
     val key: String? = null,
     val uid: String? = null,
     val time: String = "0",
+    val isPublished: Boolean = false,
 
     var isFav: Boolean = false,
     val favUids: ArrayList<String>? = null,

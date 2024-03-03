@@ -10,6 +10,7 @@ import android.widget.Toast
 import com.example.bulletin_board.R
 import com.example.bulletin_board.databinding.ActivityFilterBinding
 import com.example.bulletin_board.dialogs.DialogSpinnerHelper
+import com.example.bulletin_board.dialogs.RcViewDialogSpinnerAdapter
 import com.example.bulletin_board.model.DbManager
 import com.example.bulletin_board.utils.CityHelper
 import com.google.android.gms.tasks.Task
@@ -133,28 +134,65 @@ class FilterActivity : AppCompatActivity() {
 
     private fun onClickSelectCountryCity() = with(binding) {
 
-/*        textViewSelectCountry.setOnClickListener {
+        textViewSelectCountry.setOnClickListener {
             val listCountry = CityHelper.getAllCountries(this@FilterActivity)
-            dialog.showSpinnerDialog(this@FilterActivity, listCountry, textViewSelectCountry)
             if (textViewSelectCity.text.toString() != "") {   //getString(R.string.select_city)
                 textViewSelectCity.setText("")//getString(R.string.select_city)
             }
+            val onItemSelectedListener = object : RcViewDialogSpinnerAdapter.OnItemSelectedListener {
+                    override fun onItemSelected(item: String) {
+                        binding.textViewSelectCountry.setText(item)
+                    }
+                }
+
+            dialog.showSpinnerPopup(
+                this@FilterActivity,
+                binding.textViewSelectCountry,
+                listCountry,
+                binding.textViewSelectCountry,
+                onItemSelectedListener,
+                true,
+            )
         }
 
         textViewSelectCity.setOnClickListener {
             val selectedCountry = textViewSelectCountry.text.toString()
             if (selectedCountry != getString(R.string.select_country)) {
                 val listCity = CityHelper.getAllCities(selectedCountry, this@FilterActivity)
-                dialog.showSpinnerDialog(this@FilterActivity, listCity, textViewSelectCity)
+                val onItemSelectedListener =
+                    object : RcViewDialogSpinnerAdapter.OnItemSelectedListener {
+                        override fun onItemSelected(item: String) {
+                            binding.textViewSelectCity.setText(item)
+                        }
+                    }
+                dialog.showSpinnerPopup(
+                    this@FilterActivity,
+                    binding.textViewSelectCity,
+                    listCity,
+                    binding.textViewSelectCity,
+                    onItemSelectedListener,
+                    true
+                )
             } else {
                 Toast.makeText(this@FilterActivity, "No country selected", Toast.LENGTH_LONG).show()
             }
         }
 
         textViewSelectWithSend.setOnClickListener{
-            val listVariant = arrayListOf("Не важно", "С отправкой", "Без отправки")
-            dialog.showSpinnerDialog(this@FilterActivity, listVariant, textViewSelectWithSend)
-        }*/
+
+            val listVariant = arrayListOf(
+                Pair("Не важно", "empty"),
+                Pair("С отправкой", "empty"),
+                Pair("Без отправки", "empty)"))
+
+            val onItemSelectedListener =
+                object : RcViewDialogSpinnerAdapter.OnItemSelectedListener {
+                    override fun onItemSelected(item: String) {
+                        binding.textViewSelectWithSend.setText(item)
+                    }
+                }
+            dialog.showSpinnerPopup(this@FilterActivity, binding.textViewSelectWithSend, listVariant, binding.textViewSelectWithSend, onItemSelectedListener, false )
+        }
     }
 
     private fun onClickDone() = with(binding) {
@@ -173,7 +211,7 @@ class FilterActivity : AppCompatActivity() {
             textViewSelectCountry.setText(getString(R.string.select_country))
             textViewSelectCity.setText(getString(R.string.select_city))
             textViewIndex.setText("")
-            checkBoxWithSend.isChecked = false
+            textViewSelectWithSend.setText("Не важно")
             setResult(RESULT_CANCELED)
         }
     }
