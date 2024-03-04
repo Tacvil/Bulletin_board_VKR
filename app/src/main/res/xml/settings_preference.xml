@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <PreferenceCategory
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:title="cat1">
+        <ListPreference
+            android:defaultValue="Linear"
+            android:entries="@array/note_style_array"
+            android:entryValues="@array/note_style_values"
+            android:icon="@drawable/ic_call_link"
+            android:key="note_style_key"
+            app:useSimpleSummaryProvider="true"
+            android:title="adadawdawd" />
+        <ListPreference
+            android:defaultValue="hh:mm:ss - yyyy/MM/dd"
+            app:useSimpleSummaryProvider="true"
+            android:entries="@array/time_format_array"
+            android:entryValues="@array/time_format_values"
+            android:icon="@drawable/ic_search"
+            android:key="time_format_key"
+            android:title="wdawdawdawd" />
+<!--        <Preference-->
+<!--            android:icon="@drawable/ic_remove_ads"-->
+<!--            android:summary="@string/remove_ads_summary"-->
+<!--            android:title="@string/remove_ads" />-->
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:title="set2">
+
+        <ListPreference
+            android:defaultValue="light"
+            app:useSimpleSummaryProvider="true"
+            android:entries="@array/chose_theme_array"
+            android:entryValues="@array/chose_theme_values"
+            android:icon="@drawable/ic_edit"
+            android:key="theme_key"
+            android:title="awdawdawdaw" />
+    </PreferenceCategory>
+
+</PreferenceScreen>
