@@ -4,6 +4,7 @@ import android.animation.Animator
 import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import androidx.appcompat.app.AppCompatDelegate
 import com.airbnb.lottie.LottieAnimationView
 import com.airbnb.lottie.LottieDrawable
 import com.airbnb.lottie.LottieListener
@@ -14,6 +15,8 @@ import com.example.bulletin_board.databinding.ActivityLauncherBinding
 class LauncherActivity : AppCompatActivity() {
     lateinit var binding: ActivityLauncherBinding
     override fun onCreate(savedInstanceState: Bundle?) {
+        AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
+        setTheme(R.style.Base_Theme_Bulletin_board_dark)
         super.onCreate(savedInstanceState)
         binding = ActivityLauncherBinding.inflate(layoutInflater)
         setContentView(binding.root)

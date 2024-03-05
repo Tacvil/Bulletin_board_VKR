@@ -22,6 +22,7 @@ import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.content.ContextCompat
 import androidx.core.view.GravityCompat
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -41,6 +42,7 @@ import com.example.bulletin_board.dialogs.RcViewDialogSpinnerAdapter
 import com.example.bulletin_board.dialogs.RcViewSearchSpinnerAdapter
 import com.example.bulletin_board.model.Announcement
 import com.example.bulletin_board.model.DbManager
+import com.example.bulletin_board.settings.SettingsActivity
 import com.example.bulletin_board.utils.BillingManager
 import com.example.bulletin_board.utils.BillingManager.Companion.REMOVE_ADS_PREF
 import com.example.bulletin_board.viewmodel.FirebaseViewModel
@@ -111,17 +113,20 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener, AdsR
 
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
                 var searchQuery = s.toString()
-                if (searchQuery.isEmpty()){
+                if (searchQuery.isEmpty()) {
                     adapterSearch.clearAdapter()
                     adapterSearch.setOnDataChangedListener {
                         adapterSearch.clearAdapter()
                     }
-                }else{
+                } else {
                     adapterSearch.setOnDataChangedListener {
 
                     }
                 }
-                Log.d("MActTextChanged", "searchQuery = $searchQuery, isEmpty = ${searchQuery.isEmpty()}")
+                Log.d(
+                    "MActTextChanged",
+                    "searchQuery = $searchQuery, isEmpty = ${searchQuery.isEmpty()}"
+                )
                 if (searchQuery.trim().isNotEmpty()) {
 
                     // Убираем пробелы в начале строки
@@ -154,17 +159,18 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener, AdsR
                                 }
 
                                 spaceCount > 0 -> {
-                                    phraseBuilder.append(searchQuery.substringBeforeLast(' ')).append(" ")
+                                    phraseBuilder.append(searchQuery.substringBeforeLast(' '))
+                                        .append(" ")
                                     //phraseBuilder.append(words[spaceCount])
                                     words.getOrNull(spaceCount)?.let {
                                         phraseBuilder.append(it)
                                     }
-                                   /* for (i in 1 .. spaceCount) {
-                                        phraseBuilder.append(words[i]).append(" ")
-                                        if (i == spaceCount){
-                                            phraseBuilder.append(words[i+1])
-                                        }
-                                    }*/
+                                    /* for (i in 1 .. spaceCount) {
+                                         phraseBuilder.append(words[i]).append(" ")
+                                         if (i == spaceCount){
+                                             phraseBuilder.append(words[i+1])
+                                         }
+                                     }*/
                                     val phrase = phraseBuilder.toString()
                                     phraseBuilder.clear()
                                     Log.d("MActTextChanged", "phrase = $phrase")
@@ -188,10 +194,11 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener, AdsR
         //Нажатие на ЛУПУ
         binding.mainContent.searchViewMainContent.editText.setOnEditorActionListener { v, actionId, event ->
             val querySearch: String = binding.mainContent.searchViewMainContent.text.toString()
-            if (querySearch.trim().isNotEmpty()){
+            if (querySearch.trim().isNotEmpty()) {
                 //Toast.makeText(this, "EMPTY", Toast.LENGTH_SHORT).show()
                 binding.mainContent.searchBar.setText(querySearch)
-                binding.mainContent.searchBar.menu.findItem(R.id.id_search).setIcon(R.drawable.ic_cancel)
+                binding.mainContent.searchBar.menu.findItem(R.id.id_search)
+                    .setIcon(R.drawable.ic_cancel)
 
                 val titleValidate = queryValidate(querySearch)
 
@@ -212,10 +219,10 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener, AdsR
         binding.mainContent.searchViewMainContent.toolbar.setOnClickListener {
             Log.d("MenuClick", "CLICK - $it")
         }
-        
+
     }
 
-    private fun queryValidate(query: String):String{
+    private fun queryValidate(query: String): String {
         val validateData = query.split(" ").joinToString("-")
         Log.d("MainActQueryValidate", "validateData = $validateData")
         return validateData
@@ -308,14 +315,21 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener, AdsR
 
             R.id.id_voice -> {
                 val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
-                intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+                intent.putExtra(
+                    RecognizerIntent.EXTRA_LANGUAGE_MODEL,
+                    RecognizerIntent.LANGUAGE_MODEL_FREE_FORM
+                )
                 intent.putExtra(RecognizerIntent.EXTRA_PROMPT, "Speak something")
 
                 try {
                     voiceRecognitionLauncher.launch(intent)
                 } catch (e: ActivityNotFoundException) {
                     // Обработка ситуации, когда нет подходящей активности
-                    Toast.makeText(this, "Голосовое распознавание не поддерживается на вашем устройстве", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(
+                        this,
+                        "Голосовое распознавание не поддерживается на вашем устройстве",
+                        Toast.LENGTH_SHORT
+                    ).show()
                 }
                 return true
             }
@@ -323,6 +337,7 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener, AdsR
 
         return super.onOptionsItemSelected(item)
     }
+
     private val voiceRecognitionLauncher: ActivityResultLauncher<Intent> =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
             if (result.resultCode == Activity.RESULT_OK) {
@@ -334,7 +349,8 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener, AdsR
                     Log.d("VoiceSearch", "Распознанный текст: $spokenText")
 
                     binding.mainContent.searchBar.setText(spokenText)
-                    binding.mainContent.searchBar.menu.findItem(R.id.id_search).setIcon(R.drawable.ic_cancel)
+                    binding.mainContent.searchBar.menu.findItem(R.id.id_search)
+                        .setIcon(R.drawable.ic_cancel)
 
                     val validateText = queryValidate(spokenText)
 
@@ -486,20 +502,27 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener, AdsR
     }
 
     private fun bottomMenuOnClick() = with(binding) {
+
+        mainContent.floatingActButton.setOnClickListener {
+            if (mAuth.currentUser?.isAnonymous == true) {
+                Toast.makeText(
+                    this@MainActivity,
+                    "Чтобы создавать объявления - зарегистрируйтесь!",
+                    Toast.LENGTH_SHORT
+                ).show()
+            } else {
+                val i = Intent(this@MainActivity, EditAdsActivity::class.java)
+                startActivity(i)
+            }
+
+        }
+
         mainContent.bottomNavView.setOnItemSelectedListener { item ->
             clearUpdate = true
             when (item.itemId) {
-                R.id.id_new_ad -> {
-                    if (mAuth.currentUser?.isAnonymous == true) {
-                        Toast.makeText(
-                            this@MainActivity,
-                            "Чтобы создавать объявления - зарегистрируйтесь!",
-                            Toast.LENGTH_SHORT
-                        ).show()
-                    } else {
-                        val i = Intent(this@MainActivity, EditAdsActivity::class.java)
-                        startActivity(i)
-                    }
+                R.id.id_settings -> {
+                    val i = Intent(this@MainActivity, SettingsActivity::class.java)
+                    startActivity(i)
                 }
 
                 R.id.id_my_ads -> {

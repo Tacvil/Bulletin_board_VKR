@@ -54,6 +54,10 @@
             android:name=".act.MainActivity"
             android:exported="true">
         </activity>
+        <activity
+            android:name=".settings.SettingsActivity"
+            android:exported="false">
+        </activity>
 
         <meta-data
             android:name="com.google.android.gms.ads.APPLICATION_ID"

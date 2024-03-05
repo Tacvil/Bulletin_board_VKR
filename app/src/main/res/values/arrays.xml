@@ -24,8 +24,8 @@
         <item>Light theme</item>
     </string-array>
     <string-array name="chose_theme_values">
-        <item>dark</item>
-        <item>light</item>
+        <item>Dark theme</item>
+        <item>Light theme</item>
     </string-array>
 
     <string-array name="text_size_array">
@@ -46,6 +46,13 @@
         <attr name="minValue" format="integer" />
         <attr name="maxValue" format="integer" />
         <attr name="stepValue" format="integer" />
+    </declare-styleable>
+
+    <declare-styleable name="CustomListPreference">
+        <attr name="android:defaultValue" format="string" />
+        <attr name="android:entries" format="reference" />
+        <attr name="android:entryValues" format="reference" />
+        <!-- Другие атрибуты, которые вы можете определить -->
     </declare-styleable>
 
 
