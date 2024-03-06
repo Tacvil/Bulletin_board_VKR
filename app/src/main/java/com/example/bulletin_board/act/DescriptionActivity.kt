@@ -2,18 +2,22 @@ package com.example.bulletin_board.act
 
 import android.content.ActivityNotFoundException
 import android.content.Intent
+import android.content.SharedPreferences
 import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.widget.Toast
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.net.toUri
+import androidx.preference.PreferenceManager
 import androidx.viewpager2.widget.ViewPager2
 import com.example.bulletin_board.R
 import com.example.bulletin_board.adapters.ImageAdapter
 import com.example.bulletin_board.databinding.ActivityDescriptionBinding
 import com.example.bulletin_board.model.Announcement
+import com.example.bulletin_board.settings.SettingsActivity
 import com.example.bulletin_board.utils.ImageManager
 import com.example.bulletin_board.utils.ImageManager.fillImageArray
 import kotlinx.coroutines.CoroutineScope
@@ -25,7 +29,11 @@ class DescriptionActivity : AppCompatActivity() {
     lateinit var binding: ActivityDescriptionBinding
     lateinit var adapter: ImageAdapter
     private var ad: Announcement? = null
+    private lateinit var defPreferences: SharedPreferences
+
     override fun onCreate(savedInstanceState: Bundle?) {
+        defPreferences = PreferenceManager.getDefaultSharedPreferences(this)
+        setTheme(getSelectedTheme())
         super.onCreate(savedInstanceState)
         binding = ActivityDescriptionBinding.inflate(layoutInflater)
         setContentView(binding.root)
@@ -111,5 +119,18 @@ class DescriptionActivity : AppCompatActivity() {
                 binding.textViewCounter.text = imageCounter
             }
         })
+    }
+
+    private fun getSelectedTheme(): Int {
+        return when (defPreferences.getString(SettingsActivity.THEME_KEY, SettingsActivity.DEFAULT_THEME)) {
+            SettingsActivity.DEFAULT_THEME -> {
+                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
+                R.style.Base_Theme_Bulletin_board_light
+            }
+            else -> {
+                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
+                R.style.Base_Theme_Bulletin_board_dark
+            }
+        }
     }
 }

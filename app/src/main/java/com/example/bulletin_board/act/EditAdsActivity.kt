@@ -1,6 +1,7 @@
 package com.example.bulletin_board.act
 
 import android.content.Intent
+import android.content.SharedPreferences
 import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Build
@@ -9,6 +10,8 @@ import android.util.Log
 import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.app.AppCompatDelegate
+import androidx.preference.PreferenceManager
 import androidx.viewpager2.widget.ViewPager2
 import com.example.bulletin_board.R
 import com.example.bulletin_board.adapters.ImageAdapter
@@ -19,6 +22,7 @@ import com.example.bulletin_board.dialogs.DialogSpinnerHelper
 import com.example.bulletin_board.dialogs.RcViewDialogSpinnerAdapter
 import com.example.bulletin_board.fragments.FragmentCloseInterface
 import com.example.bulletin_board.fragments.ImageListFrag
+import com.example.bulletin_board.settings.SettingsActivity
 import com.example.bulletin_board.utils.CityHelper
 import com.example.bulletin_board.utils.ImageManager.fillImageArray
 import com.example.bulletin_board.utils.ImagePicker
@@ -39,7 +43,10 @@ class EditAdsActivity : AppCompatActivity(), FragmentCloseInterface {
     private var imageIndex = 0
     private var isEditState = false
     private var ad: Announcement? = null
+    private lateinit var defPreferences: SharedPreferences
     override fun onCreate(savedInstanceState: Bundle?) {
+        defPreferences = PreferenceManager.getDefaultSharedPreferences(this)
+        setTheme(getSelectedTheme())
         super.onCreate(savedInstanceState)
         binding = ActivityEditAdsBinding.inflate(layoutInflater)
         setContentView(binding.root)
@@ -420,5 +427,18 @@ class EditAdsActivity : AppCompatActivity(), FragmentCloseInterface {
         if (itemCount == 0) index = 0
         val imageCounter = "${counter + index}/$itemCount"
         binding.textViewImageCounter.text = imageCounter
+    }
+
+    private fun getSelectedTheme(): Int {
+        return when (defPreferences.getString(SettingsActivity.THEME_KEY, SettingsActivity.DEFAULT_THEME)) {
+            SettingsActivity.DEFAULT_THEME -> {
+                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
+                R.style.Base_Theme_Bulletin_board_light
+            }
+            else -> {
+                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
+                R.style.Base_Theme_Bulletin_board_dark
+            }
+        }
     }
 }

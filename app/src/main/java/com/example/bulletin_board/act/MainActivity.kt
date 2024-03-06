@@ -25,6 +25,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.content.ContextCompat
 import androidx.core.view.GravityCompat
+import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.airbnb.lottie.LottieDrawable
@@ -65,7 +66,7 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener, AdsR
     val mAuth = Firebase.auth
     val adapter = AdsRcAdapter(this)
     lateinit var googleSignInLauncher: ActivityResultLauncher<Intent>
-    lateinit var filterLauncher: ActivityResultLauncher<Intent>
+    private lateinit var filterLauncher: ActivityResultLauncher<Intent>
     private val firebaseViewModel: FirebaseViewModel by viewModels()
     private var clearUpdate: Boolean = true
     private var filterDb: MutableMap<String, String> = mutableMapOf()
@@ -74,8 +75,11 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener, AdsR
     private var bManager: BillingManager? = null
     private val onItemSelectedListener: RcViewSearchSpinnerAdapter.OnItemSelectedListener? = null
     private var adapterSearch = RcViewSearchSpinnerAdapter(onItemSelectedListener)
+    private lateinit var defPreferences: SharedPreferences
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        defPreferences = PreferenceManager.getDefaultSharedPreferences(this)
+        setTheme(getSelectedTheme())
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
@@ -762,6 +766,19 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener, AdsR
     override fun onDestroy() {
         super.onDestroy()
         bManager?.closeConnection()
+    }
+
+    private fun getSelectedTheme(): Int {
+        return when (defPreferences.getString(SettingsActivity.THEME_KEY, SettingsActivity.DEFAULT_THEME)) {
+            SettingsActivity.DEFAULT_THEME -> {
+                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
+                R.style.Base_Theme_Bulletin_board_light
+            }
+            else -> {
+                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
+                R.style.Base_Theme_Bulletin_board_dark
+            }
+        }
     }
 
     companion object {

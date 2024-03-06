@@ -1,17 +1,21 @@
 package com.example.bulletin_board.act
 
 import android.content.Intent
+import android.content.SharedPreferences
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
 import android.view.MenuItem
 import android.view.View
 import android.widget.Toast
+import androidx.appcompat.app.AppCompatDelegate
+import androidx.preference.PreferenceManager
 import com.example.bulletin_board.R
 import com.example.bulletin_board.databinding.ActivityFilterBinding
 import com.example.bulletin_board.dialogs.DialogSpinnerHelper
 import com.example.bulletin_board.dialogs.RcViewDialogSpinnerAdapter
 import com.example.bulletin_board.model.DbManager
+import com.example.bulletin_board.settings.SettingsActivity
 import com.example.bulletin_board.utils.CityHelper
 import com.google.android.gms.tasks.Task
 import com.google.android.gms.tasks.Tasks
@@ -27,7 +31,11 @@ class FilterActivity : AppCompatActivity() {
     private var minPrice: Int? = null
     private var maxPrice: Int? = null
     private var filter: MutableMap<String, String> = mutableMapOf()
+    private lateinit var defPreferences: SharedPreferences
+
     override fun onCreate(savedInstanceState: Bundle?) {
+        defPreferences = PreferenceManager.getDefaultSharedPreferences(this)
+        setTheme(getSelectedTheme())
         super.onCreate(savedInstanceState)
         binding = ActivityFilterBinding.inflate(layoutInflater)
         setContentView(binding.root)
@@ -256,5 +264,18 @@ class FilterActivity : AppCompatActivity() {
 
     companion object{
         const val FILTER_KEY = "filter_key"
+    }
+
+    private fun getSelectedTheme(): Int {
+        return when (defPreferences.getString(SettingsActivity.THEME_KEY, SettingsActivity.DEFAULT_THEME)) {
+            SettingsActivity.DEFAULT_THEME -> {
+                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
+                R.style.Base_Theme_Bulletin_board_light
+            }
+            else -> {
+                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
+                R.style.Base_Theme_Bulletin_board_dark
+            }
+        }
     }
 }

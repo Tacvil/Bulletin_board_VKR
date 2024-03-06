@@ -4,9 +4,12 @@ import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
 import android.os.Bundle
+import android.util.Log
 import android.view.MenuItem
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.app.AppCompatDelegate
+import androidx.preference.PreferenceManager
 import com.example.bulletin_board.R
 import com.example.bulletin_board.act.MainActivity
 import com.example.bulletin_board.databinding.ActivitySettingsBinding
@@ -17,7 +20,7 @@ class SettingsActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        defPreferences = getSharedPreferences(SETTINGS_FILE, Context.MODE_PRIVATE)
+        defPreferences = PreferenceManager.getDefaultSharedPreferences(this)
         setTheme(getSelectedTheme())
 
         binding = ActivitySettingsBinding.inflate(layoutInflater)
@@ -54,16 +57,22 @@ class SettingsActivity : AppCompatActivity() {
         startActivity(intent)
     }
 
-    private fun getSelectedTheme(): Int{
+    private fun getSelectedTheme(): Int {
         return when (defPreferences.getString(THEME_KEY, DEFAULT_THEME)) {
-            DEFAULT_THEME -> R.style.Base_Theme_Bulletin_board_light
-            else -> R.style.Base_Theme_Bulletin_board_dark
+            DEFAULT_THEME -> {
+                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
+                R.style.Base_Theme_Bulletin_board_light
+            }
+            else -> {
+                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
+                R.style.Base_Theme_Bulletin_board_dark
+            }
         }
     }
 
     companion object {
-        const val SETTINGS_FILE = "settings_file"
         const val THEME_KEY = "theme_key"
+        const val LANGUAGE_KEY = "LANGUAGE_KEY"
         const val DEFAULT_THEME = "Light theme"
     }
 

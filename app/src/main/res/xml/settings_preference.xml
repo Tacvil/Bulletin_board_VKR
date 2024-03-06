@@ -7,11 +7,11 @@
         android:layout_height="wrap_content"
         android:title="cat1">
         <com.example.bulletin_board.settings.CustomListPreference
-            android:defaultValue="Linear"
-            android:entries="@array/note_style_array"
-            android:entryValues="@array/note_style_values"
+            android:defaultValue="RU"
+            android:entries="@array/language_array"
+            android:entryValues="@array/language_array_values"
             android:icon="@drawable/ic_call_link"
-            android:key="note_style_key"
+            android:key="LANGUAGE_KEY"
             android:title="adadawdawd" />
 
         <com.example.bulletin_board.settings.CustomListPreference
