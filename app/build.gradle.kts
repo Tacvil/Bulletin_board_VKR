@@ -78,6 +78,10 @@ dependencies {
     implementation("com.google.android.gms:play-services-auth:20.7.0")
     implementation("androidx.legacy:legacy-support-v4:1.0.0")
     implementation("androidx.preference:preference-ktx:1.2.1")
+    implementation("com.google.firebase:firebase-messaging-ktx:23.4.1")
+    implementation("com.google.firebase:firebase-analytics")
+    implementation("com.google.firebase:firebase-messaging-directboot:20.2.0")
+
 
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.1.5")
@@ -90,6 +94,9 @@ dependencies {
     implementation ("com.yandex.android:mobileads:5.10.0")
     implementation ("com.yandex.ads.adapter:admob-mobileads:5.10.0.0")
 
+    //retrofit
+    implementation("com.squareup.retrofit2:retrofit:2.9.0")
+    implementation("com.squareup.retrofit2:converter-moshi:2.9.0")
     //billing
     implementation("com.android.billingclient:billing-ktx:6.1.0")
     //lotili

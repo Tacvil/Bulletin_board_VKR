@@ -111,4 +111,8 @@ class FirebaseViewModel: ViewModel() {
 
         })
     }
+
+    fun saveTokenDB(token: String){
+        dbManager.saveToken(token)
+    }
 }

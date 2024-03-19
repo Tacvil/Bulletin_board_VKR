@@ -1,9 +1,12 @@
 package com.example.bulletin_board.act
 
 import android.app.Activity
+import android.app.NotificationChannel
+import android.app.NotificationManager
 import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.content.SharedPreferences
+import android.os.Build
 import android.os.Bundle
 import android.speech.RecognizerIntent
 import android.text.Editable
@@ -14,7 +17,6 @@ import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
-import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
@@ -49,19 +51,25 @@ import com.example.bulletin_board.utils.BillingManager.Companion.REMOVE_ADS_PREF
 import com.example.bulletin_board.viewmodel.FirebaseViewModel
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.common.api.ApiException
+import com.google.android.gms.tasks.OnCompleteListener
 import com.google.android.material.navigation.NavigationView.OnNavigationItemSelectedListener
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.ktx.Firebase
+import com.google.firebase.messaging.FirebaseMessaging
 import java.io.Serializable
+
 
 class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener, AdsRcAdapter.Listener {
 
     private lateinit var textViewAccount: TextView
     private lateinit var imageViewAccount: ImageView
     private lateinit var binding: ActivityMainBinding
-    private val dialogHelper = DialogHelper(this)
+    //private val dialogHelper = DialogHelper(this)
+
+    private val dialogHelper = DialogHelper(this) { AccountHelper(this) }
+
     private val dialog = DialogSpinnerHelper()
     val mAuth = Firebase.auth
     val adapter = AdsRcAdapter(this)
@@ -87,6 +95,19 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener, AdsR
         isPremiumUser = pref?.getBoolean(REMOVE_ADS_PREF, false)!!
 //        val toolbar: Toolbar = findViewById(R.id.toolbar)
 //        setSupportActionBar(toolbar)
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            // Create the NotificationChannel.
+            val name = getString(R.string.ad_car)
+            val descriptionText = getString(R.string.ad_car)
+            val importance = NotificationManager.IMPORTANCE_DEFAULT
+            val mChannel = NotificationChannel("123", name, importance)
+            mChannel.description = descriptionText
+            // Register the channel with the system. You can't change the importance
+            // or other notification behaviors after this.
+            val notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
+            notificationManager.createNotificationChannel(mChannel)
+        }
 
         init()
         onClickSelectOrderByFilter()

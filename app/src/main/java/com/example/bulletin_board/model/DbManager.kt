@@ -10,14 +10,34 @@ import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.QueryDocumentSnapshot
+import com.google.firebase.firestore.SetOptions
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.storage.ktx.storage
 
 class DbManager {
     val database = Firebase.database.getReference(MAIN_NODE)
-    val firestore = FirebaseFirestore.getInstance()
+    private val firestore = FirebaseFirestore.getInstance()
     val dbStorage = Firebase.storage.getReference(MAIN_NODE)
     val auth = Firebase.auth
+
+    fun saveToken(token: String){
+        if (auth.uid != null) {
+            val userRef = firestore.collection(USER_NODE).document(auth.uid ?: "empty")
+            // Создаем HashMap с полем "token"
+            val tokenData = hashMapOf(
+                "token" to token
+            )
+            // Обновляем данные пользователя в Firestore, добавляя поле "token"
+            userRef
+                .set(tokenData, SetOptions.merge()) // Используем SetOptions.merge(), чтобы добавить поле без удаления существующих данных
+                .addOnSuccessListener {
+                    println("Токен успешно сохранен для пользователя с ID: ${auth.uid}")
+                }
+                .addOnFailureListener { e ->
+                    println("Ошибка при сохранении токена для пользователя с ID: ${auth.uid}, ошибка: $e")
+                }
+        }
+    }
 
     fun publishAnnouncement(announcement: Announcement, finishListener: FinishWorkListener) {
         if (auth.uid != null) database.child(announcement.key ?: "empty").child(auth.uid!!)
@@ -684,6 +704,7 @@ class DbManager {
         const val FILTER_NODE = "adFilter"
         const val INFO_NODE = "info"
         const val MAIN_NODE = "main"
+        const val USER_NODE = "users"
         const val FAVS_NODE = "favs"
         const val ADS_LIMIT = 2
     }

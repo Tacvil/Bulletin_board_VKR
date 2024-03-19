@@ -17,10 +17,12 @@ import com.example.bulletin_board.databinding.ActivityDescriptionBinding
 import com.example.bulletin_board.databinding.ActivityLauncherBinding
 import com.example.bulletin_board.settings.LocaleManager
 import com.example.bulletin_board.settings.SettingsActivity
+import com.google.firebase.auth.FirebaseAuth
 
 class LauncherActivity : AppCompatActivity() {
     lateinit var binding: ActivityLauncherBinding
     private lateinit var defPreferences: SharedPreferences
+
     override fun onCreate(savedInstanceState: Bundle?) {
         defPreferences = PreferenceManager.getDefaultSharedPreferences(this)
         setTheme(getSelectedTheme())

@@ -2,24 +2,45 @@ package com.example.bulletin_board.accounthelper
 
 import android.util.Log
 import android.widget.Toast
-import com.example.bulletin_board.act.MainActivity
+import androidx.activity.viewModels
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewmodel.viewModelFactory
 import com.example.bulletin_board.R
+import com.example.bulletin_board.act.MainActivity
+import com.example.bulletin_board.constance.FirebaseAuthConstants
+import com.example.bulletin_board.viewmodel.FirebaseViewModel
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInClient
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
-import com.google.firebase.auth.FirebaseUser
-import com.example.bulletin_board.constance.FirebaseAuthConstants
+import com.google.android.gms.tasks.OnCompleteListener
+import com.google.android.gms.tasks.Task
+import com.google.android.gms.tasks.TaskCompletionSource
+import com.google.firebase.Firebase
 import com.google.firebase.auth.EmailAuthProvider
 import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
 import com.google.firebase.auth.FirebaseAuthInvalidUserException
 import com.google.firebase.auth.FirebaseAuthUserCollisionException
 import com.google.firebase.auth.FirebaseAuthWeakPasswordException
+import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.GoogleAuthProvider
+import com.google.firebase.auth.auth
+import com.google.firebase.messaging.FirebaseMessaging
 
-class AccountHelper(private val activity: MainActivity) {
+class AccountHelper(private val activity: MainActivity): ViewModelProvider.Factory {
 
     val signInRequestCode = 111
     private lateinit var signInClient: GoogleSignInClient
+    // Получение экземпляра AccountHelperViewModel из ViewModelProvider
+    private val accountHelperViewModel: FirebaseViewModel by lazy {
+        ViewModelProvider(activity)[FirebaseViewModel::class.java]
+    }
+    override fun <T : ViewModel> create(modelClass: Class<T>): T {
+        if (modelClass.isAssignableFrom(AccountHelper::class.java)) {
+            return AccountHelper(activity) as T
+        }
+        throw IllegalArgumentException("Unknown ViewModel class")
+    }
 
     fun signUpWithEmail(email: String, password: String) {
 
@@ -27,12 +48,22 @@ class AccountHelper(private val activity: MainActivity) {
             activity.mAuth.currentUser?.delete()?.addOnCompleteListener { task ->
                 if (task.isSuccessful) {
                     activity.mAuth.createUserWithEmailAndPassword(email, password)
-                        .addOnCompleteListener { task ->
+                        .addOnCompleteListener { task1 ->
 
-                            if (task.isSuccessful) {
-                                signUpWithEmailSuccessful(task.result.user!!)
+                            if (task1.isSuccessful) {
+                                signUpWithEmailSuccessful(task1.result.user!!)
+                                if (Firebase.auth.uid != null) {
+                                    getFcmToken().addOnSuccessListener { token ->
+                                        accountHelperViewModel.saveTokenDB(token)
+                                    }.addOnFailureListener { exception ->
+                                        Log.d("Token", "Fetching FCM token failed", exception)
+                                    }
+                                }else{
+                                    Log.d("Token", "uid = null")
+                                }
+
                             } else {
-                                signUpWithEmailException(task.exception!!, email, password)
+                                signUpWithEmailException(task1.exception!!, email, password)
                             }
                         }
                 }
@@ -99,17 +130,22 @@ class AccountHelper(private val activity: MainActivity) {
     }
 
     fun signInWithEmail(email: String, password: String) {
-
         if (email.isNotEmpty() && password.isNotEmpty()) {
             activity.mAuth.currentUser?.delete()?.addOnCompleteListener { task ->
                 if (task.isSuccessful) {
                     activity.mAuth.signInWithEmailAndPassword(email, password)
-                        .addOnCompleteListener { task ->
-
-                            if (task.isSuccessful) {
-                                activity.uiUpdate(task.result.user)
+                        .addOnCompleteListener { task1 ->
+                            if (task1.isSuccessful) {
+                                activity.uiUpdate(task1.result.user)
+                                if (Firebase.auth.uid != null) {
+                                    getFcmToken().addOnSuccessListener { token ->
+                                        accountHelperViewModel.saveTokenDB(token)
+                                    }.addOnFailureListener { exception ->
+                                        Log.d("Token", "Fetching FCM token failed", exception)
+                                    }
+                                }
                             } else {
-                                signInWithEmailException(task.exception!!, email, password)
+                                signInWithEmailException(task1.exception!!, email, password)
                             }
                         }
                 }
@@ -190,7 +226,17 @@ class AccountHelper(private val activity: MainActivity) {
                 activity.mAuth.signInWithCredential(credential).addOnCompleteListener { task2 ->
                     if (task2.isSuccessful) {
                         Toast.makeText(activity, "Sign is done", Toast.LENGTH_SHORT).show()
+                        Log.d("UID", "signInFirebaseWithGoogle - ${Firebase.auth.uid}")
                         activity.uiUpdate(task2.result.user)
+                        if (Firebase.auth.uid != null) {
+                            getFcmToken().addOnSuccessListener { token ->
+                                accountHelperViewModel.saveTokenDB(token)
+                            }.addOnFailureListener { exception ->
+                                Log.d("Token", "Fetching FCM token failed", exception)
+                            }
+                        }else{
+                            Log.d("Token", "uid = null")
+                        }
                     } else {
                         Toast.makeText(activity, "Google Sign In Exception: ${task2.exception}", Toast.LENGTH_SHORT).show()
                         Log.d("MyLog", "Google Sign In Exception: ${task2.exception}")
@@ -218,6 +264,22 @@ class AccountHelper(private val activity: MainActivity) {
         const val RESULT_CODE_SUCCESS = 1111
         const val RESULT_CODE_FAILURE = 2222
         // другие константы
+    }
+
+    private fun getFcmToken(): Task<String> {
+        val taskCompletionSource = TaskCompletionSource<String>()
+
+        FirebaseMessaging.getInstance().token
+            .addOnSuccessListener { token ->
+                Log.d("TAG TOKEN", "token = $token")
+                taskCompletionSource.setResult(token)
+            }
+            .addOnFailureListener { exception ->
+                Log.d("TAG Token", "Fetching FCM registration token failed", exception)
+                taskCompletionSource.setException(exception)
+            }
+
+        return taskCompletionSource.task
     }
 
 }
