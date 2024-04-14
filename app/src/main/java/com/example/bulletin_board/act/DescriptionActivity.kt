@@ -3,7 +3,6 @@ package com.example.bulletin_board.act
 import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.content.SharedPreferences
-import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
@@ -18,11 +17,7 @@ import com.example.bulletin_board.adapters.ImageAdapter
 import com.example.bulletin_board.databinding.ActivityDescriptionBinding
 import com.example.bulletin_board.model.Announcement
 import com.example.bulletin_board.settings.SettingsActivity
-import com.example.bulletin_board.utils.ImageManager
 import com.example.bulletin_board.utils.ImageManager.fillImageArray
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 import java.io.Serializable
 
 class DescriptionActivity : AppCompatActivity() {
@@ -39,7 +34,7 @@ class DescriptionActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         init()
-        binding.buttonTel.setOnClickListener { call() }
+        binding.buttonTel.setOnClickListener { startPhoneCall() }
         binding.buttonEmail.setOnClickListener { sendEmail() }
     }
 
@@ -87,7 +82,7 @@ class DescriptionActivity : AppCompatActivity() {
         return if (withSent) "Да" else "Нет"
     }
 
-    private fun call() {
+    private fun startPhoneCall() {
         val callUri = "tel:${ad?.tel}"
         val iCall = Intent(Intent.ACTION_DIAL)
         iCall.data = callUri.toUri()

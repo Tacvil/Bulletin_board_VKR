@@ -114,15 +114,18 @@ class DbManager {
         }
     }
 
-    /*    fun getMyAnnouncement(readDataCallback: ReadDataCallback?) {
-            val query = database.orderByChild(auth.uid + "/announcement/uid").equalTo(auth.uid)
-            readDataFromDb(query, readDataCallback)
+        fun getMyAnnouncement(readDataCallback: ReadDataCallback?) {
+            val query = firestore.collection(MAIN_NODE).whereEqualTo("uid", auth.uid).orderBy("time", Query.Direction.DESCENDING)
+            readDataFromDb1(query, readDataCallback)
         }
 
         fun getMyFavs(readDataCallback: ReadDataCallback?) {
-            val query = database.orderByChild("/favs/${auth.uid}").equalTo(auth.uid)
-            readDataFromDb(query, readDataCallback)
-        }*/
+            val query =
+                auth.uid?.let { firestore.collection(MAIN_NODE).whereArrayContains("favUids", it).orderBy("time", Query.Direction.DESCENDING) }
+            if (query != null) {
+                readDataFromDb1(query, readDataCallback)
+            }
+        }
 
     fun getAllAnnouncementFirstPage1(
         context: Context,
@@ -147,7 +150,7 @@ class DbManager {
 
         var queryDB: Query = firestore.collection(MAIN_NODE)
 
-        queryDB = queryDB.whereEqualTo("isPublished", true)
+        //queryDB = queryDB.whereEqualTo("isPublished", true)
 
         if (filter["keyWords"]?.isNotEmpty() == true) {
             queryDB = queryDB.whereArrayContains("keyWords", filter["keyWords"]!!)
@@ -316,7 +319,7 @@ class DbManager {
         ) {
             var queryDB: Query = firestore.collection(MAIN_NODE)
 
-            queryDB = queryDB.whereEqualTo("isPublished", true)
+            //queryDB = queryDB.whereEqualTo("isPublished", true)
 
             if (filter["keyWords"]?.isNotEmpty() == true) {
                 queryDB = queryDB.whereArrayContains("keyWords", filter["keyWords"]!!)
@@ -404,8 +407,8 @@ class DbManager {
                         }
                     }
                 }
-            }else{
-                when (filter["orderBy"]?.isNotEmpty() == true){
+            }else if(filter["orderBy"]?.isNotEmpty() == true){
+                when {
                     (filter["orderBy"] == "По новинкам") -> {
                         queryDB = queryDB.whereLessThan("time", time).orderBy("time", Query.Direction.DESCENDING).limit(ADS_LIMIT.toLong())
                     }
@@ -432,7 +435,7 @@ class DbManager {
                     }
                     else -> {Log.d("DbManager_GAABFFP", "when orderBy21 -> else")}
                 }
-            }
+            }else {queryDB.whereLessThan("time", time).orderBy("time", Query.Direction.DESCENDING)}
 
 /*            val query = firestore.collection(MAIN_NODE).whereArrayContains("keyWords", value).whereGreaterThan("time", time).limit(
                     ADS_LIMIT.toLong())*/

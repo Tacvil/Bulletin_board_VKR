@@ -619,10 +619,10 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener, AdsR
                 getAdsFromCat(getString(R.string.ad_dm))
             }
 
-            R.id.remove_ads -> {
+/*            R.id.remove_ads -> {
                 bManager = BillingManager(this)
                 bManager?.startConnection()
-            }
+            }*/
 
             R.id.id_sign_up -> {
                 dialogHelper.createSignDialog(DialogConst.SIGN_UP_STATE)
@@ -759,7 +759,7 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener, AdsR
                 }*/
 
         adsList.lastOrNull()?.let { lastAd ->
-            Log.d("MainAct", "adsList: 1")
+            Log.d("MainAct", "$lastAd")
             firebaseViewModel.loadAllAnnouncementNextPage(
                 this,
                 lastAd.time,

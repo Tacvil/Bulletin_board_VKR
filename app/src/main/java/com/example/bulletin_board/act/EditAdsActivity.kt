@@ -86,6 +86,7 @@ class EditAdsActivity : AppCompatActivity(), FragmentCloseInterface {
         textViewSelectCity.setText(ad.city)
         textViewIndex.setText(ad.index)
         textViewSelectTelNumb.setText(ad.tel)
+        textViewSelectEmail.setText(ad.email)
         textViewSelectCategory.setText(ad.category)
         //checkBoxWithSend.isChecked = ad.withSend.toBoolean()
         textViewSelectWithSend.setText(ad.withSend)
@@ -191,7 +192,7 @@ class EditAdsActivity : AppCompatActivity(), FragmentCloseInterface {
         }
     }
 
-    fun onClickPublish() {
+    private fun onClickPublish() {
         binding.buttonPublish.setOnClickListener {
             if (isFieldsEmpty()) {
                 Toast.makeText(
@@ -290,7 +291,7 @@ class EditAdsActivity : AppCompatActivity(), FragmentCloseInterface {
         return result
     }
 
-    fun onClickSelectCategory() {
+    private fun onClickSelectCategory() {
 
         binding.textViewSelectCategory.setOnClickListener {
 

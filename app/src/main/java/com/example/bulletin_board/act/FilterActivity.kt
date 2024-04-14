@@ -82,7 +82,7 @@ class FilterActivity : AppCompatActivity() {
                 maxPrice = maxPriceDocument.getField<Int?>("price")?.toInt()
 
                 binding.textViewPriceToLayout.hint = "до $maxPrice"
-                focusChangeLstener(minPrice, maxPrice)
+                focusChangeListener(minPrice, maxPrice)
             }
         }
         onClickSelectCountryCity()
@@ -91,7 +91,7 @@ class FilterActivity : AppCompatActivity() {
         actionBarSettings()
     }
 
-    private fun focusChangeLstener(minPrice: Int?, maxPrice: Int?) = with(binding) {
+    private fun focusChangeListener(minPrice: Int?, maxPrice: Int?) = with(binding) {
         textViewPriceFromLayout.editText?.onFocusChangeListener = View.OnFocusChangeListener { _, hasFocus ->
             Log.d("sdsdsdwewe", hasFocus.toString())
             if (hasFocus) {

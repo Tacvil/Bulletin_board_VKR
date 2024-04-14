@@ -86,19 +86,25 @@ class FirebaseViewModel: ViewModel() {
     }
 
     fun loadMyAnnouncement(){
-//        dbManager.getMyAnnouncement(object : DbManager.ReadDataCallback{
-//            override fun readData(list: ArrayList<Announcement>) {
-//                liveAdsData.value = list
-//            }
-//        })
+        dbManager.getMyAnnouncement(object : DbManager.ReadDataCallback{
+            override fun readData(
+                list: ArrayList<Announcement>,
+                lastDocument: QueryDocumentSnapshot?
+            ) {
+                liveAdsData.value = list
+            }
+        })
     }
 
     fun loadMyFavs(){
-//        dbManager.getMyFavs(object : DbManager.ReadDataCallback{
-//            override fun readData(list: ArrayList<Announcement>) {
-//                liveAdsData.value = list
-//            }
-//        })
+        dbManager.getMyFavs(object : DbManager.ReadDataCallback{
+            override fun readData(
+                list: ArrayList<Announcement>,
+                lastDocument: QueryDocumentSnapshot?
+            ) {
+                liveAdsData.value = list
+            }
+        })
     }
 
     fun deleteItem(ad: Announcement){

@@ -30,8 +30,8 @@ class ImageListFrag(
 ) : BaseAdsFrag(), AdapterCallback {
 
     val adapter = SelectImageRvAdapter(this)
-    val dragCallback = ItemTouchMoveCallback(adapter)
-    val touchHelper = ItemTouchHelper(dragCallback)
+    private val dragCallback = ItemTouchMoveCallback(adapter)
+    private val touchHelper = ItemTouchHelper(dragCallback)
     private var addItem: MenuItem? = null
     private var job: Job? = null
     lateinit var binding: ListImageFragBinding
