@@ -11,7 +11,7 @@
         android:id="@+id/launcherAnim"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        app:lottie_fileName="nothink_white.json">
+        app:lottie_fileName="anim1.json">
 
     </com.airbnb.lottie.LottieAnimationView>
 

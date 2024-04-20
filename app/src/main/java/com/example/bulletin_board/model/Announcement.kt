@@ -23,7 +23,7 @@ data class Announcement(
     val isPublished: Boolean = false,
 
     var isFav: Boolean = false,
-    val favUids: ArrayList<String>? = null,
+    val favUids: ArrayList<String> = ArrayList(),
 
     var favCounter: String = "0",
     var viewsCounter: String = "0",

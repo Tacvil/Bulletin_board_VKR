@@ -44,6 +44,7 @@ class AdsRcAdapter(val act: MainActivity) : RecyclerView.Adapter<AdsRcAdapter.Ad
             textViewTitleD.setText(ad.title)
             textViewViewCounter.text = ad.viewsCounter
             textViewFav.text = ad.favCounter
+            Log.d("ADSRCADAPTER", "favCounter = ${ad.favCounter} | uids = ${ad.favUids}")
             imageButtonFav1.isClickable = true
             val publishTime = "Время публикации: ${getTimeFromMillis(ad.time)}"
             textViewData.text = publishTime

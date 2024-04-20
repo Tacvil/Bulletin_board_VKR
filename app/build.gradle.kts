@@ -100,7 +100,7 @@ dependencies {
     //billing
     implementation("com.android.billingclient:billing-ktx:6.1.0")
     //lotili
-    implementation ("com.airbnb.android:lottie:6.3.0")
+    implementation ("com.airbnb.android:lottie:6.4.0")
     implementation ("org.jetbrains.kotlin:kotlin-parcelize-runtime:1.7.20")
 
     val camerax_version = "1.2.3"

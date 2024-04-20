@@ -677,6 +677,7 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener, AdsR
 
     override fun onDeleteItem(ad: Announcement) {
         firebaseViewModel.deleteItem(ad)
+        clearUpdate = true
     }
 
     override fun onAdViewed(ad: Announcement) {

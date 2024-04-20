@@ -110,6 +110,7 @@ class FirebaseViewModel: ViewModel() {
     fun deleteItem(ad: Announcement){
         dbManager.deleteAnnouncement(ad, object: DbManager.FinishWorkListener{
             override fun onFinish(isDone: Boolean) {
+
                 val updatedList = liveAdsData.value
                 updatedList?.remove(ad)
                 liveAdsData.postValue(updatedList)

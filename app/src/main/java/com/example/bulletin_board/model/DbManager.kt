@@ -539,12 +539,20 @@ class DbManager {
 
     fun deleteAnnouncement(ad: Announcement, listener: FinishWorkListener) {
         if (ad.key == null || ad.uid == null) return
-        database.child(ad.key).removeValue().addOnCompleteListener {
+        /*database.child(ad.key).removeValue().addOnCompleteListener {
             if (it.isSuccessful) listener.onFinish(true)
-        }
-        /*        database.child(ad.key).child(ad.uid).removeValue().addOnCompleteListener {
-                    if (it.isSuccessful) listener.onFinish()
-                }*/
+        }*/
+        firestore.collection(MAIN_NODE).document(ad.key)
+            .delete()
+            .addOnSuccessListener {
+                // Успешно удалено
+                listener.onFinish(true)
+            }
+            .addOnFailureListener { e ->
+                // Обработка ошибок при удалении
+                listener.onFinish(false)
+                Log.d("Dbmanager", "Exeption -> $e")
+            }
     }
 
     private fun readDataFromDb1(query: Query, readDataCallback: ReadDataCallback?) {
