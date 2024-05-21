@@ -42,7 +42,7 @@ class AdsRcAdapter(val act: MainActivity) : RecyclerView.Adapter<AdsRcAdapter.Ad
             textViewDescription.setText(ad.description)
             textViewPrice.text = ad.price.toString()
             textViewTitleD.setText(ad.title)
-            textViewViewCounter.text = ad.viewsCounter
+            textViewViewCounter.text = ad.viewsCounter.toString()
             textViewFav.text = ad.favCounter
             Log.d("ADSRCADAPTER", "favCounter = ${ad.favCounter} | uids = ${ad.favUids}")
             imageButtonFav1.isClickable = true

@@ -26,7 +26,7 @@ data class Announcement(
     val favUids: ArrayList<String> = ArrayList(),
 
     var favCounter: String = "0",
-    var viewsCounter: String = "0",
+    var viewsCounter: Int = 0,
     var emailCounter: String = "0",
     var callsCounter: String = "0"
 ): Serializable

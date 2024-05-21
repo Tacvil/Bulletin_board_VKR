@@ -216,8 +216,10 @@ class FilterActivity : AppCompatActivity() {
 
     private fun onClickClear() = with(binding) {
         buttonClearFilter.setOnClickListener {
-            textViewSelectCountry.setText(getString(R.string.select_country))
-            textViewSelectCity.setText(getString(R.string.select_city))
+            textViewSelectCountry.setText("")
+            textViewSelectCity.setText("")
+            textViewSelectCountryLayout.setHint(getString(R.string.select_country))
+            textViewSelectCityLayout.setHint(getString(R.string.select_city))
             textViewIndex.setText("")
             textViewSelectWithSend.setText("Не важно")
             setResult(RESULT_CANCELED)

@@ -246,6 +246,7 @@
                     <com.google.android.material.textfield.TextInputLayout
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
+                        android:layout_marginBottom="5dp"
                         android:hint="@string/select_category" >
 
                         <com.google.android.material.textfield.TextInputEditText
@@ -255,12 +256,12 @@
                             android:clickable="true"
                             android:focusable="false" />
 
-                        <CheckBox
+                        <!--<CheckBox
                             android:id="@+id/check_box_with_send"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="5dp"
-                            android:text="@string/with_send" />
+                            android:text="@string/with_send" />-->
                     </com.google.android.material.textfield.TextInputLayout>
 
                     <com.google.android.material.textfield.TextInputLayout

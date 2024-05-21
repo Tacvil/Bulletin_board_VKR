@@ -51,13 +51,11 @@ import com.example.bulletin_board.utils.BillingManager.Companion.REMOVE_ADS_PREF
 import com.example.bulletin_board.viewmodel.FirebaseViewModel
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.common.api.ApiException
-import com.google.android.gms.tasks.OnCompleteListener
 import com.google.android.material.navigation.NavigationView.OnNavigationItemSelectedListener
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.ktx.Firebase
-import com.google.firebase.messaging.FirebaseMessaging
 import java.io.Serializable
 
 
@@ -417,8 +415,9 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener, AdsR
             ActivityResultContracts.StartActivityForResult()
         ) {
             if (it.resultCode == RESULT_OK) {
-                filterDb =
-                    (it.data?.getSerializableExtra(FilterActivity.FILTER_KEY) as? MutableMap<String, String>)!!
+                Log.d("MyLogMainAct", "filterDbBefore: $filterDb")
+                val newFilterData = (it.data?.getSerializableExtra(FilterActivity.FILTER_KEY) as? MutableMap<String, String>)!!
+                filterDb.putAll(newFilterData)
                 if (filterDb["price_from"]?.isNotEmpty() == true || filterDb["price_to"]?.isNotEmpty() == true) {
                     filterDb["orderBy"] = "По возрастанию цены"
                     binding.mainContent.autoComplete.setText(filterDb["orderBy"])
@@ -726,18 +725,23 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener, AdsR
         accCat.title = spanAccCat
     }
 
+    private var isLoading = false
+
     private fun scrollListener() = with(binding.mainContent) {
         recyclerViewMainContent.addOnScrollListener(object : RecyclerView.OnScrollListener() {
             override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
                 super.onScrollStateChanged(recyclerView, newState)
                 if (!recyclerView.canScrollVertically(SCROLL_DOWN) && newState == RecyclerView.SCROLL_STATE_IDLE) {
-                    clearUpdate = false
-                    val adsList =
-                        firebaseViewModel.liveAdsData.value // Получает текущий список объявлений из liveAdsData в FirebaseViewModel
-                    Log.d("MainAct_scrollListener", "adsList: $adsList")
-                    if (adsList != null) {
-                        if (adsList.isNotEmpty()) {
+                    Log.d("MainAct", "isLoading = $isLoading")
+                    if (!isLoading) {
+                        isLoading = true
+                        clearUpdate = false
+                        val adsList = firebaseViewModel.liveAdsData.value // Получает текущий список объявлений из liveAdsData в FirebaseViewModel
+                        Log.d("MainAct_scrollListener", "adsList: $adsList")
+                        if (adsList != null && adsList.isNotEmpty()) {
                             getAdsFromCat(adsList)
+                        } else {
+                            isLoading = false
                         }
                     }
                 }
@@ -767,11 +771,15 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener, AdsR
                 lastAd.price,
                 lastAd.viewsCounter,
                 filterDb
-            )
+            ) {
+                isLoading = false // Сбрасываем флаг по завершении загрузки данных
+            }
         } ?: run {
             Log.d("MainAct", "adsList -> NULL: adsList.clear()")
             adsList.clear()
+            isLoading = false
         }
+
         /*        adsList[0].let {
                     if (currentCategory == getString(R.string.def)) {
                         firebaseViewModel.loadAllAnnouncementNextPage(it.time, filterDb)

@@ -8,37 +8,61 @@ import com.example.bulletin_board.model.Announcement
 import com.example.bulletin_board.model.DbManager
 import com.google.firebase.firestore.QueryDocumentSnapshot
 
-class FirebaseViewModel: ViewModel() {
+class FirebaseViewModel : ViewModel() {
     private val dbManager = DbManager()
     val liveAdsData = MutableLiveData<ArrayList<Announcement>?>()
     var lastDocumentAds: QueryDocumentSnapshot? = null
-    fun loadAllAnnouncementFirstPage(context: Context, filter: MutableMap<String, String>){
-        dbManager.getAllAnnouncementFirstPage1(context, filter, object : DbManager.ReadDataCallback{
-            override fun readData(
-                list: ArrayList<Announcement>,
-                lastDocument: QueryDocumentSnapshot?
-            ) {
-                liveAdsData.value = list
-                lastDocumentAds = lastDocument
-                Log.d("FBVM", "liveAdsData1: ${liveAdsData.value}")
-            }
-        })
+    fun loadAllAnnouncementFirstPage(
+        context: Context,
+        filter: MutableMap<String, String>,
+
+    ) {
+        dbManager.getAllAnnouncementFirstPage1(
+            context,
+            filter,
+            object : DbManager.ReadDataCallback {
+                override fun readData(
+                    list: ArrayList<Announcement>,
+                    lastDocument: QueryDocumentSnapshot?,
+                ) {
+                    liveAdsData.value = list
+                    lastDocumentAds = lastDocument
+                    Log.d("FBVM", "liveAdsData1: ${liveAdsData.value}")
+                }
+            })
     }
 
-    fun loadAllAnnouncementNextPage(context: Context, time: String, price: Int?, viewsCounter: String, filter: MutableMap<String, String>){
-        dbManager.getAllAnnouncementNextPage1(context, time, price, viewsCounter, lastDocumentAds, filter, object : DbManager.ReadDataCallback{
-            override fun readData(
-                list: ArrayList<Announcement>,
-                lastDocument: QueryDocumentSnapshot?
-            ) {
-                liveAdsData.value = list
-                lastDocumentAds = lastDocument
-                Log.d("FBVM", "liveAdsData2: ${liveAdsData.value}")
-            }
-        })
+    fun loadAllAnnouncementNextPage(
+        context: Context,
+        time: String,
+        price: Int?,
+        viewsCounter: Int,
+        filter: MutableMap<String, String>,
+        onComplete: () -> Unit
+    ) {
+        dbManager.getAllAnnouncementNextPage1(
+            context,
+            time,
+            price,
+            viewsCounter,
+            lastDocumentAds,
+            filter,
+            object : DbManager.ReadDataCallback {
+                override fun readData(
+                    list: ArrayList<Announcement>,
+                    lastDocument: QueryDocumentSnapshot?,
+                ) {
+                    liveAdsData.value = list
+                    lastDocumentAds = lastDocument
+                    Log.d("FBVM", "liveAdsData2: ${liveAdsData.value}")
+                    onComplete() // Вызов завершения
+                }
+            },
+            onComplete // Передача onComplete в getAllAnnouncementNextPage1
+        )
     }
 
-    fun loadAllAnnouncementFromCatFirstPage(filter: MutableMap<String, String>){
+    fun loadAllAnnouncementFromCatFirstPage(filter: MutableMap<String, String>) {
 //        dbManager.getAllAnnouncementFromCatFirstPage(cat, filter, object : DbManager.ReadDataCallback{
 //            override fun readData(list: ArrayList<Announcement>) {
 //                liveAdsData.value = list
@@ -46,7 +70,11 @@ class FirebaseViewModel: ViewModel() {
 //        })
     }
 
-    fun loadAllAnnouncementFromCatNextPage(cat: String, time: String, filter: MutableMap<String, String>){
+    fun loadAllAnnouncementFromCatNextPage(
+        cat: String,
+        time: String,
+        filter: MutableMap<String, String>
+    ) {
 //        dbManager.getAllAnnouncementFromCatNextPage(cat, time, filter, object : DbManager.ReadDataCallback{
 //            override fun readData(list: ArrayList<Announcement>) {
 //                liveAdsData.value = list
@@ -57,8 +85,8 @@ class FirebaseViewModel: ViewModel() {
     fun onFavClick(
         ad: Announcement,
         adArray: ArrayList<Announcement>,
-    ){
-        dbManager.onFavClick(ad, object: DbManager.FinishWorkListener{
+    ) {
+        dbManager.onFavClick(ad, object : DbManager.FinishWorkListener {
             override fun onFinish(isDone: Boolean) {
                 Log.d("updateList", "updateList = $adArray")
                 val pos = adArray.indexOf(ad)
@@ -81,34 +109,34 @@ class FirebaseViewModel: ViewModel() {
         })
     }
 
-    fun adViewed(ad: Announcement){
+    fun adViewed(ad: Announcement) {
         dbManager.adViewed(ad)
     }
 
-    fun loadMyAnnouncement(){
-        dbManager.getMyAnnouncement(object : DbManager.ReadDataCallback{
+    fun loadMyAnnouncement() {
+        dbManager.getMyAnnouncement(object : DbManager.ReadDataCallback {
             override fun readData(
                 list: ArrayList<Announcement>,
-                lastDocument: QueryDocumentSnapshot?
+                lastDocument: QueryDocumentSnapshot?,
             ) {
                 liveAdsData.value = list
             }
         })
     }
 
-    fun loadMyFavs(){
-        dbManager.getMyFavs(object : DbManager.ReadDataCallback{
+    fun loadMyFavs() {
+        dbManager.getMyFavs(object : DbManager.ReadDataCallback {
             override fun readData(
                 list: ArrayList<Announcement>,
-                lastDocument: QueryDocumentSnapshot?
+                lastDocument: QueryDocumentSnapshot?,
             ) {
                 liveAdsData.value = list
             }
         })
     }
 
-    fun deleteItem(ad: Announcement){
-        dbManager.deleteAnnouncement(ad, object: DbManager.FinishWorkListener{
+    fun deleteItem(ad: Announcement) {
+        dbManager.deleteAnnouncement(ad, object : DbManager.FinishWorkListener {
             override fun onFinish(isDone: Boolean) {
 
                 val updatedList = liveAdsData.value
@@ -119,7 +147,7 @@ class FirebaseViewModel: ViewModel() {
         })
     }
 
-    fun saveTokenDB(token: String){
+    fun saveTokenDB(token: String) {
         dbManager.saveToken(token)
     }
 }

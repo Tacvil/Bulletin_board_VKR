@@ -53,34 +53,34 @@ android {
 
 dependencies {
 
-    implementation("androidx.core:core-ktx:1.12.0")
+    implementation("androidx.core:core-ktx:1.13.1")
     implementation("androidx.appcompat:appcompat:1.6.1")
-    implementation("com.google.android.material:material:1.12.0-alpha03")
+    implementation("com.google.android.material:material:1.12.0")
     implementation("androidx.constraintlayout:constraintlayout:2.1.4")
 
-    implementation ("androidx.activity:activity-ktx:1.8.2")
-    implementation ("androidx.fragment:fragment-ktx:1.6.2")
+    implementation ("androidx.activity:activity-ktx:1.9.0")
+    implementation ("androidx.fragment:fragment-ktx:1.7.1")
 
     implementation ("com.squareup.picasso:picasso:2.8")
 
-    implementation ("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
+    implementation ("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
 
 //    implementation  ("io.ak1.pix:piximagepicker:1.6.3")
 
     
     //firebase
-    implementation("com.google.firebase:firebase-firestore:24.10.2")
+    implementation("com.google.firebase:firebase-firestore:25.0.0")
 
-    implementation(platform("com.google.firebase:firebase-bom:32.7.1"))
+    implementation(platform("com.google.firebase:firebase-bom:33.0.0"))
     implementation("com.google.firebase:firebase-auth-ktx")
     implementation("com.google.firebase:firebase-database-ktx")
     implementation("com.google.firebase:firebase-storage-ktx")
-    implementation("com.google.android.gms:play-services-auth:20.7.0")
+    implementation("com.google.android.gms:play-services-auth:21.1.1")
     implementation("androidx.legacy:legacy-support-v4:1.0.0")
     implementation("androidx.preference:preference-ktx:1.2.1")
-    implementation("com.google.firebase:firebase-messaging-ktx:23.4.1")
+    implementation("com.google.firebase:firebase-messaging-ktx:24.0.0")
     implementation("com.google.firebase:firebase-analytics")
-    implementation("com.google.firebase:firebase-messaging-directboot:20.2.0")
+    implementation("com.google.firebase:firebase-messaging-directboot:24.0.0")
 
 
     testImplementation("junit:junit:4.13.2")
@@ -90,18 +90,18 @@ dependencies {
     implementation ("com.github.bumptech.glide:glide:4.16.0")
     implementation ("jp.wasabeef:glide-transformations:4.3.0")
 
-    implementation ("com.google.android.gms:play-services-ads:22.6.0")
+    implementation ("com.google.android.gms:play-services-ads:23.1.0")
     implementation ("com.yandex.android:mobileads:5.10.0")
     implementation ("com.yandex.ads.adapter:admob-mobileads:5.10.0.0")
 
     //retrofit
-    implementation("com.squareup.retrofit2:retrofit:2.9.0")
+    implementation("com.squareup.retrofit2:retrofit:2.11.0")
     implementation("com.squareup.retrofit2:converter-moshi:2.9.0")
     //billing
-    implementation("com.android.billingclient:billing-ktx:6.1.0")
+    implementation("com.android.billingclient:billing-ktx:7.0.0")
     //lotili
     implementation ("com.airbnb.android:lottie:6.4.0")
-    implementation ("org.jetbrains.kotlin:kotlin-parcelize-runtime:1.7.20")
+    implementation ("org.jetbrains.kotlin:kotlin-parcelize-runtime:1.9.24")
 
     val camerax_version = "1.2.3"
     // CameraX core library using camera2 implementation
@@ -115,7 +115,7 @@ dependencies {
     implementation ("com.google.guava:guava:31.0-jre")
     //Glide
     implementation ("com.github.bumptech.glide:glide:4.12.0")
-    implementation ("com.github.bumptech.glide:recyclerview-integration:4.12.0")
+    implementation ("com.github.bumptech.glide:recyclerview-integration:4.16.0")
     // Skip this if you don't want to use integration libraries or configure Glide.
 //    kapt "com.github.bumptech.glide:compiler:4.12.0"
 //    implementation ('com.github.bumptech.glide:recyclerview-integration:4.12.0') {

@@ -73,7 +73,7 @@ class DbManager {
         Log.d("DBCounter", "Counter = $counter")
 
         val dataToUpdate = hashMapOf<String, Any>(
-            "viewsCounter" to counter.toString()
+            "viewsCounter" to counter
         )
 
         if (auth.uid != null) firestore.collection(MAIN_NODE).document(ad.key ?: "empty")
@@ -116,14 +116,14 @@ class DbManager {
 
         fun getMyAnnouncement(readDataCallback: ReadDataCallback?) {
             val query = firestore.collection(MAIN_NODE).whereEqualTo("uid", auth.uid).orderBy("time", Query.Direction.DESCENDING)
-            readDataFromDb1(query, readDataCallback)
+            readDataFromDb1(query, readDataCallback, null)
         }
 
         fun getMyFavs(readDataCallback: ReadDataCallback?) {
             val query =
                 auth.uid?.let { firestore.collection(MAIN_NODE).whereArrayContains("favUids", it).orderBy("time", Query.Direction.DESCENDING) }
             if (query != null) {
-                readDataFromDb1(query, readDataCallback)
+                readDataFromDb1(query, readDataCallback, null)
             }
         }
 
@@ -140,7 +140,7 @@ class DbManager {
         }
         //val query = firestore.collection(MAIN_NODE).orderBy("time", Query.Direction.ASCENDING)
 
-        readDataFromDb1(query, readDataCallback)
+        readDataFromDb1(query, readDataCallback, null)
     }
 
     private fun getAllAnnouncementByFilterFirstPage1(
@@ -150,7 +150,7 @@ class DbManager {
 
         var queryDB: Query = firestore.collection(MAIN_NODE)
 
-        //queryDB = queryDB.whereEqualTo("isPublished", true)
+        queryDB = queryDB.whereEqualTo("published", true)
 
         if (filter["keyWords"]?.isNotEmpty() == true) {
             queryDB = queryDB.whereArrayContains("keyWords", filter["keyWords"]!!)
@@ -294,17 +294,18 @@ class DbManager {
             context: Context,
             time: String,
             price: Int?,
-            viewsCounter: String,
+            viewsCounter: Int,
             lastDocumentAds: QueryDocumentSnapshot?,
             filter: MutableMap<String, String>,
-            readDataCallback: ReadDataCallback?
+            readDataCallback: ReadDataCallback?,
+            onComplete: () -> Unit
         ) {
         if (filter.isEmpty()) {
             val query = firestore.collection(MAIN_NODE).whereGreaterThan("time", time).limit(
                 ADS_LIMIT.toLong())
-            readDataFromDb1(query, readDataCallback)
+            readDataFromDb1(query, readDataCallback, onComplete)
         } else {
-            getAllAnnouncementByFilterNextPage1(context, filter, time, price, viewsCounter, lastDocumentAds, readDataCallback)
+            getAllAnnouncementByFilterNextPage1(context, filter, time, price, viewsCounter, lastDocumentAds, readDataCallback, onComplete)
         }
     }
 
@@ -313,13 +314,14 @@ class DbManager {
             filter: MutableMap<String, String>,
             time: String,
             price: Int?,
-            viewsCounter: String,
+            viewsCounter: Int,
             lastDocumentAds: QueryDocumentSnapshot?,
-            readDataCallback: ReadDataCallback?
+            readDataCallback: ReadDataCallback?,
+            onComplete: () -> Unit
         ) {
             var queryDB: Query = firestore.collection(MAIN_NODE)
 
-            //queryDB = queryDB.whereEqualTo("isPublished", true)
+            queryDB = queryDB.whereEqualTo("published", true)
 
             if (filter["keyWords"]?.isNotEmpty() == true) {
                 queryDB = queryDB.whereArrayContains("keyWords", filter["keyWords"]!!)
@@ -440,7 +442,7 @@ class DbManager {
 /*            val query = firestore.collection(MAIN_NODE).whereArrayContains("keyWords", value).whereGreaterThan("time", time).limit(
                     ADS_LIMIT.toLong())*/
 
-            readDataFromDb1(queryDB, readDataCallback)
+            readDataFromDb1(queryDB, readDataCallback, onComplete)
         }
 
     /*    fun getAllAnnouncementNextPage(
@@ -555,7 +557,7 @@ class DbManager {
             }
     }
 
-    private fun readDataFromDb1(query: Query, readDataCallback: ReadDataCallback?) {
+    private fun readDataFromDb1(query: Query, readDataCallback: ReadDataCallback?, onComplete: (() -> Unit?)?) {
         query.get()
             .addOnCompleteListener { task ->
                 if (task.isSuccessful) {
@@ -615,9 +617,15 @@ class DbManager {
                     }
 
                     readDataCallback?.readData(adArray, lastDocument)
+                    if (onComplete != null) {
+                        onComplete()
+                    }
                 } else {
                     Log.e("DbManager", "Ошибка при получении данных: ${task.exception}")
                     // Обработка ошибки
+                    if (onComplete != null) {
+                        onComplete()
+                    }
                 }
             }
     }
@@ -703,7 +711,8 @@ class DbManager {
     */
 
     interface ReadDataCallback {
-        fun readData(list: ArrayList<Announcement>, lastDocument:  QueryDocumentSnapshot?)
+        fun readData(list: ArrayList<Announcement>,
+                     lastDocument:  QueryDocumentSnapshot?)
     }
 
     interface FinishWorkListener {
