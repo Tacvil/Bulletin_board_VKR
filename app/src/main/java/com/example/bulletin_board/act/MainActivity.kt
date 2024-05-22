@@ -264,15 +264,15 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener, AdsR
             val listVariant: ArrayList<Pair<String, String>> =
                 if (filterDb["price_from"]?.isNotEmpty() == true || filterDb["price_to"]?.isNotEmpty() == true) {
                     arrayListOf(
-                        Pair("По возрастанию цены", "single"),
-                        Pair("По убыванию цены", "single")
+                        Pair(getString(R.string.sort_by_ascending_price), "single"),
+                        Pair(getString(R.string.sort_by_descending_price), "single")
                     )
                 } else {
                     arrayListOf(
-                        Pair("По новинкам", "single"),
-                        Pair("По популярности", "single"),
-                        Pair("По возрастанию цены", "single"),
-                        Pair("По убыванию цены", "single")
+                        Pair(getString(R.string.sort_by_newest), "single"),
+                        Pair(getString(R.string.sort_by_popularity), "single"),
+                        Pair(getString(R.string.sort_by_ascending_price), "single"),
+                        Pair(getString(R.string.sort_by_descending_price), "single")
                     )
                 }
             val onItemSelectedListener =
@@ -503,7 +503,7 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener, AdsR
 
     private fun init() {
         filterDb["category"] = getString(R.string.def)
-        filterDb["orderBy"] = "По новинкам"
+        filterDb["orderBy"] = getString(R.string.sort_by_newest)
         setSupportActionBar(binding.mainContent.searchBar)
         onActivityResult()
         navViewSetting()

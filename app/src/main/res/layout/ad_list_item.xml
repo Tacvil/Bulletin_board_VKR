@@ -46,7 +46,7 @@
                     android:gravity="center"
                     android:maxLines="2"
                     android:ellipsize="end"
-                    android:hint="Название объявления"
+                    android:hint="@string/ads_name"
                     android:text="Example name ads"/>
             </com.google.android.material.textfield.TextInputLayout>
 

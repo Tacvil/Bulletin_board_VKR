@@ -13,6 +13,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.resource.bitmap.RoundedCorners
 import com.bumptech.glide.request.RequestOptions
+import com.example.bulletin_board.R
 import com.example.bulletin_board.act.EditAdsActivity
 import com.example.bulletin_board.act.MainActivity
 import com.example.bulletin_board.model.Announcement
@@ -46,7 +47,8 @@ class AdsRcAdapter(val act: MainActivity) : RecyclerView.Adapter<AdsRcAdapter.Ad
             textViewFav.text = ad.favCounter
             Log.d("ADSRCADAPTER", "favCounter = ${ad.favCounter} | uids = ${ad.favUids}")
             imageButtonFav1.isClickable = true
-            val publishTime = "Время публикации: ${getTimeFromMillis(ad.time)}"
+            val publishTimeLabel = act.getString(R.string.publication_time)
+            val publishTime = "$publishTimeLabel: ${getTimeFromMillis(ad.time)}"
             textViewData.text = publishTime
             //val roundedCorners = RoundedCorners(20)
             //val centerCrop = CenterCrop()

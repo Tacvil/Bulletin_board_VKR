@@ -1,53 +1,65 @@
 <resources>
-    <string name="app_name">Bulletin_board</string>
+    <string name="app_name">Bulletin board</string>
     <string name="ad_id">ca-app-pub-3940256099942544/6300978111</string>
     <!-- Menu Drawer Strings -->
-    <string name="ad_cat1"><font color="?attr/colorPrimary">Объявления</font></string>
+    <string name="ad_cat1"><font color="?attr/colorPrimary">Ads</font></string>
     <string name="ad_car">Cars</string>
-    <string name="ad_pc">Компьютеры</string>
-    <string name="ad_smartphone">Смартфоны</string>
-    <string name="ad_dm">Бытовая техника</string>
-    <string name="def">Разное</string>
-    <string name="favs">Избранное</string>
+    <string name="ad_pc">Computers</string>
+    <string name="ad_smartphone">Smartphones</string>
+    <string name="ad_dm">Home Appliances</string>
+    <string name="def">Miscellaneous</string>
+    <string name="favs">Favorites</string>
 
-    <string name="ad_cat2"><font color="?attr/colorPrimary">Аккаунт</font></string>
-    <string name="ac_sign_up">Регистрация</string>
-    <string name="ac_sign_in">Вход</string>
-    <string name="ac_sign_out">Выход</string>
+    <string name="ad_cat2"><font color="?attr/colorPrimary">Account</font></string>
+    <string name="ac_sign_up">Sign Up</string>
+    <string name="ac_sign_in">Sign In</string>
+    <string name="ac_sign_out">Sign Out</string>
 
     <string name="open">Open</string>
     <string name="close">Close</string>
 
-    <string name="not_reg">Войдите или зарегистрируйтесь!</string>
+    <string name="not_reg">Please sign in or register!</string>
     <!-- Sign dialog -->
     <string name="email_hint">Email</string>
     <string name="email_reset">Reset Email was sent!</string>
-    <string name="dialog_reset_email_message">Для восстановления пароля укажите Ваш Email адрес!</string>
+    <string name="dialog_reset_email_message">To reset your password, please provide your email address!</string>
     <string name="password_hint">Password</string>
-    <string name="sign_up_action">Зарегистрироваться</string>
-    <string name="sign_in_action">Войти</string>
-    <string name="forget_password">Забыли пароль?</string>
-    <string name="sign_up_error">Не удалось зарегистрироваться</string>
-    <string name="sign_in_error">Не удалось войти в аккаунт</string>
-    <string name="send_verification_email_error">Не удалось отправить email для подтверждения!</string>
-    <string name="send_verification_email_done">На вашу почту была отправлена ссылка для подтверждения вашего аккаунта!</string>
+    <string name="sign_up_action">Register</string>
+    <string name="sign_in_action">Sign In</string>
+    <string name="forget_password">Forgot Password?</string>
+    <string name="sign_up_error">Registration failed</string>
+    <string name="sign_in_error">Sign in failed</string>
+    <string name="send_verification_email_error">Failed to send verification email!</string>
+    <string name="send_verification_email_done">A verification link has been sent to your email!</string>
     <!-- Sign dialog -->
-    <string name="link_done">Email подключен к Google</string>
-    <string name="enter_to_google">У Вас уже есть аккаунт с этим Email адресом, войдите по нему.</string>
+    <string name="link_done">Email linked to Google</string>
+    <string name="enter_to_google">You already have an account with this email address, please sign in.</string>
     <!-- Edit Activity -->
-    <string name="select_country">*Выберите страну</string>
-    <string name="select_city">*Выберите город</string>
-    <string name="index">*Индекс</string>
-    <string name="tel_numb">*Номер телефона</string>
-    <string name="select_category">*Выберите категорию</string>
-    <string name="price">*Укажите цену</string>
-    <string name="description">*Описание</string>
-    <string name="with_send">С отправкой</string>
-    <string name="publish">Опубликовать</string>
-    <string name="title">*Название объявления</string>
-    <!-- Ad list item -->
-    <string name="price_desc">Цена:</string>
+    <string name="select_country">*Select Country</string>
+    <string name="select_city">*Select City</string>
+    <string name="index">*Index</string>
+    <string name="tel_numb">*Phone Number</string>
+    <string name="select_category">*Select Category</string>
+    <string name="price">*Specify Price</string>
+    <string name="description">*Description</string>
+    <string name="with_send">With Shipping</string>
+    <string name="publish">Publish</string>
+    <string name="title">*Ad Title</string>
 
+    <!-- Ad list item -->
+    <string name="price_desc">Price:</string>
+    <string name="ads_name">Title Ad</string>
+    <string name="publication_time">Publication time</string>
+
+    <!-- Search bar -->
+    <string name="search_ads">Search ads</string>
+
+    <!-- Filters -->
+    <string name="sort_by_ascending_price">By ascending price</string>
+    <string name="sort_by_descending_price">By descending price</string>
+    <string name="sort_by_newest">By newest</string>
+    <string name="sort_by_popularity">By popularity</string>
+    <string name="filters">Filters</string>
 
     <!-- Pix -->
     <string name="pix_selection_limiter">Can\'t select more than %d items.</string>
@@ -65,5 +77,5 @@
     <string name="click_button">click button</string>
     <string name="camera_flash_button">camera flash button</string>
     <string name="lens_facing_button">lens facing button</string>
-    <string name="ad_my_ads">Мои объявления</string>
+    <string name="ad_my_ads">My Ads</string>
 </resources>

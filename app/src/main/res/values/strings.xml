@@ -45,9 +45,22 @@
     <string name="with_send">С отправкой</string>
     <string name="publish">Опубликовать</string>
     <string name="title">*Название объявления</string>
+
     <!-- Ad list item -->
     <string name="price_desc">Цена:</string>
+    <string name="ads_name">Название объявления</string>
+    <string name="publication_time">Время публикации</string>
 
+    <!-- Search bar -->
+    <string name="search_ads">Поиск объявлений</string>
+
+
+    <!-- Filters -->
+    <string name="sort_by_ascending_price">По возрастанию цены</string>
+    <string name="sort_by_descending_price">По убыванию цены</string>
+    <string name="sort_by_newest">По новинкам</string>
+    <string name="sort_by_popularity">По популярности</string>
+    <string name="filters">Фильтры</string>
 
     <!-- Pix -->
     <string name="pix_selection_limiter">Can\'t select more than %d items.</string>
