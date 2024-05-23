@@ -1,11 +1,13 @@
 package com.example.bulletin_board.act
 
 import android.app.Activity
+import android.Manifest
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.content.SharedPreferences
+import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import android.speech.RecognizerIntent
@@ -23,8 +25,10 @@ import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
+import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
+import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.view.GravityCompat
 import androidx.preference.PreferenceManager
@@ -83,6 +87,7 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener, AdsR
     private var adapterSearch = RcViewSearchSpinnerAdapter(onItemSelectedListener)
     private lateinit var defPreferences: SharedPreferences
 
+
     override fun onCreate(savedInstanceState: Bundle?) {
         defPreferences = PreferenceManager.getDefaultSharedPreferences(this)
         setTheme(getSelectedTheme())
@@ -107,6 +112,16 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener, AdsR
             notificationManager.createNotificationChannel(mChannel)
         }
 
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+            // Запрос разрешения
+            ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.POST_NOTIFICATIONS), PERMISSION_REQUEST_CODE)
+        } else {
+            // Разрешение уже предоставлено, можно отправлять уведомления
+            Log.d("POST_NOTIFICATIONS_PER_TRUE", "POST_NOTIFICATIONS_PER_TRUE")
+        }
+
+
+
         init()
         onClickSelectOrderByFilter()
         searchAdd()
@@ -115,6 +130,22 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener, AdsR
         bottomMenuOnClick()
         scrollListener()
         onActivityResultFilter()
+    }
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        when (requestCode) {
+            PERMISSION_REQUEST_CODE -> {
+                if ((grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED)) {
+                    // Разрешение предоставлено, можно отправлять уведомления
+                    Log.d("POST_NOTIFICATIONS_PER_TRUE", "POST_NOTIFICATIONS_PER_TRUE")
+                } else {
+                    Log.d("POST_NOTIFICATIONS_PER_FALSE", "POST_NOTIFICATIONS_PER_FALSE")
+                    Toast.makeText(this, "Permission denied, notifications cannot be sent", Toast.LENGTH_SHORT).show()
+                }
+                return
+            }
+        }
     }
 
     private fun searchAdd() {
@@ -816,5 +847,6 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener, AdsR
         const val ADS_DATA = "ads_data"
         const val SCROLL_DOWN = 1
         const val REQUEST_CODE_SPEECH_INPUT = 100
+        private const val PERMISSION_REQUEST_CODE = 1
     }
 }
