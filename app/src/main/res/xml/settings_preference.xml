@@ -5,14 +5,14 @@
     <PreferenceCategory
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:title="Главное">
+        android:title="@string/title_main">
         <com.example.bulletin_board.settings.CustomListPreference
             android:defaultValue="RU"
             android:entries="@array/language_array"
             android:entryValues="@array/language_array_values"
             android:icon="@drawable/ic_language"
             android:key="LANGUAGE_KEY"
-            android:title="Язык приложения" />
+            android:title="@string/app_language" />
 
         <com.example.bulletin_board.settings.CustomListPreference
             android:defaultValue="hh:mm:ss - yyyy/MM/dd"
@@ -20,20 +20,19 @@
             android:entryValues="@array/time_format_values"
             android:icon="@drawable/ic_calendar"
             android:key="time_format_key"
-            android:title="Дата и время" />
+            android:title="@string/date_and_time" />
     </PreferenceCategory>
 
     <PreferenceCategory
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:title="Интерфейс">
+        android:title="@string/title_interface">
 
         <com.example.bulletin_board.settings.CustomListPreference
             android:key="theme_key"
-            android:title="Выберите стиль"
-            android:defaultValue="Light theme"
+            android:title="@string/choose_style"
+            android:defaultValue="@string/light_theme"
             android:icon="@drawable/ic_colors"
-            android:dialogTitle="Стиль приложения"
             android:entries="@array/chose_theme_array"
             android:entryValues="@array/chose_theme_values" />
     </PreferenceCategory>

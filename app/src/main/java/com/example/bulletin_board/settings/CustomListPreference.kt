@@ -18,8 +18,13 @@ class CustomListPreference(context: Context?, attrs: AttributeSet?) : Preference
 
         // Установим начальное значение в summary
         val defaultValueFromXml = typedArray?.getString(R.styleable.CustomListPreference_android_defaultValue)
+        Log.d("LOOOOG1", "defaultValueFromXml = $defaultValueFromXml")
+
         val selectedValue = sharedPreferences?.getString(key, defaultValueFromXml)
+        Log.d("LOOOOG2", "selectedValue = $selectedValue")
+
         summary = selectedValue
+
 
         // Получаем ресурсы для массивов
         val valuesArrayResId = typedArray?.getResourceId(R.styleable.CustomListPreference_android_entryValues, 0)
@@ -74,6 +79,7 @@ class CustomListPreference(context: Context?, attrs: AttributeSet?) : Preference
     }
 
     private fun setValue(value: String?) {
+        Log.d("LOOOOG5", "value = $value")
         sharedPreferences?.edit()?.putString(key, value)?.apply()
 
         // Обновляем summary при изменении значения

@@ -54,6 +54,16 @@
     <!-- Search bar -->
     <string name="search_ads">Search ads</string>
 
+    <!-- Settings -->
+    <string name="settings">Settings</string>
+    <string name="title_main">Main</string>
+    <string name="app_language">App language</string>
+    <string name="date_and_time">Date and time</string>
+    <string name="title_interface">Interface</string>
+    <string name="choose_style">Choose a style</string>
+    <string name="dark_theme">Dark theme</string>
+    <string name="light_theme">Light theme</string>
+
     <!-- Filters -->
     <string name="sort_by_ascending_price">By ascending price</string>
     <string name="sort_by_descending_price">By descending price</string>

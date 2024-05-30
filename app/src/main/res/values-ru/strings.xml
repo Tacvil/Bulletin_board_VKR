@@ -54,6 +54,16 @@
     <!-- Search bar -->
     <string name="search_ads">Поиск объявлений</string>
 
+    <!-- Settings -->
+    <string name="settings">Настройки</string>
+    <string name="title_main">Главное</string>
+    <string name="app_language">Язык приложения</string>
+    <string name="date_and_time">Дата и время</string>
+    <string name="title_interface">Интерфейс</string>
+    <string name="choose_style">Выберите стиль</string>
+    <string name="dark_theme">Тёмная тема</string>
+    <string name="light_theme">Светлая тема</string>
+
     <!-- Filters -->
     <string name="sort_by_ascending_price">По возрастанию цены</string>
     <string name="sort_by_descending_price">По убыванию цены</string>

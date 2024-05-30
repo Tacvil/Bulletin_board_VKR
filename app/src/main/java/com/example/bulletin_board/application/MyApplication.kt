@@ -5,7 +5,6 @@ import androidx.appcompat.app.AppCompatDelegate
 import androidx.preference.PreferenceManager
 import com.example.bulletin_board.R
 import com.example.bulletin_board.settings.LocaleManager
-import com.example.bulletin_board.settings.SettingsActivity
 class MyApplication: Application() {
     override fun onCreate() {
         super.onCreate()

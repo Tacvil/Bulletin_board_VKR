@@ -118,17 +118,15 @@
 
         </androidx.recyclerview.widget.RecyclerView>
 
-        <com.airbnb.lottie.LottieAnimationView
-            android:id="@+id/nothink_white_anim"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:visibility="gone"
-            app:lottie_fileName="nothink_white.json">
-
-        </com.airbnb.lottie.LottieAnimationView>
-
     </LinearLayout>
+    <com.airbnb.lottie.LottieAnimationView
+        android:id="@+id/nothink_white_anim"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="gone"
+        app:lottie_fileName="nothink_white.json">
 
+    </com.airbnb.lottie.LottieAnimationView>
     <!--
         app:layout_behavior="@string/hide_bottom_view_on_scroll_behavior"
     -->

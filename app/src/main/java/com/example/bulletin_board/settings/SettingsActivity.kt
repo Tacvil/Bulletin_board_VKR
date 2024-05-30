@@ -20,6 +20,7 @@ class SettingsActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         defPreferences = PreferenceManager.getDefaultSharedPreferences(this)
         setTheme(getSelectedTheme())
+        applyLanguageFromPreferences() // Установка языка
 
         binding = ActivitySettingsBinding.inflate(layoutInflater)
         setContentView(binding.root)
@@ -65,6 +66,13 @@ class SettingsActivity : AppCompatActivity() {
                 AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
                 R.style.Base_Theme_Bulletin_board_dark
             }
+        }
+    }
+
+    private fun applyLanguageFromPreferences() {
+        val language = defPreferences.getString(LANGUAGE_KEY, "en") // По умолчанию "en" - английский язык
+        if (language != null) {
+            LocaleManager.setLocale(this, language)
         }
     }
 
