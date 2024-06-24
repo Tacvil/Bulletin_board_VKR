@@ -151,12 +151,12 @@
                         android:layout_height="match_parent"
                         android:hint="@string/select_category">
 
-                        <com.google.android.material.textfield.TextInputEditText
-                            android:id="@+id/text_view_select_category"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:clickable="true"
-                            android:focusable="false" />
+<!--                        <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/text_view_select_category"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:clickable="true"
+                        android:focusable="false" />-->
 
                     </com.google.android.material.textfield.TextInputLayout>
 

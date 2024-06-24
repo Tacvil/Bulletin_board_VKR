@@ -12,10 +12,10 @@ class FirebaseViewModel : ViewModel() {
     private val dbManager = DbManager()
     val liveAdsData = MutableLiveData<ArrayList<Announcement>?>()
     var lastDocumentAds: QueryDocumentSnapshot? = null
+
     fun loadAllAnnouncementFirstPage(
         context: Context,
         filter: MutableMap<String, String>,
-
     ) {
         dbManager.getAllAnnouncementFirstPage1(
             context,
@@ -29,7 +29,8 @@ class FirebaseViewModel : ViewModel() {
                     lastDocumentAds = lastDocument
                     Log.d("FBVM", "liveAdsData1: ${liveAdsData.value}")
                 }
-            })
+            },
+        )
     }
 
     fun loadAllAnnouncementNextPage(
@@ -38,7 +39,7 @@ class FirebaseViewModel : ViewModel() {
         price: Int?,
         viewsCounter: Int,
         filter: MutableMap<String, String>,
-        onComplete: () -> Unit
+        onComplete: () -> Unit,
     ) {
         dbManager.getAllAnnouncementNextPage1(
             context,
@@ -58,7 +59,7 @@ class FirebaseViewModel : ViewModel() {
                     onComplete() // Вызов завершения
                 }
             },
-            onComplete // Передача onComplete в getAllAnnouncementNextPage1
+            onComplete, // Передача onComplete в getAllAnnouncementNextPage1
         )
     }
 
@@ -73,7 +74,7 @@ class FirebaseViewModel : ViewModel() {
     fun loadAllAnnouncementFromCatNextPage(
         cat: String,
         time: String,
-        filter: MutableMap<String, String>
+        filter: MutableMap<String, String>,
     ) {
 //        dbManager.getAllAnnouncementFromCatNextPage(cat, time, filter, object : DbManager.ReadDataCallback{
 //            override fun readData(list: ArrayList<Announcement>) {
@@ -86,27 +87,31 @@ class FirebaseViewModel : ViewModel() {
         ad: Announcement,
         adArray: ArrayList<Announcement>,
     ) {
-        dbManager.onFavClick(ad, object : DbManager.FinishWorkListener {
-            override fun onFinish(isDone: Boolean) {
-                Log.d("updateList", "updateList = $adArray")
-                val pos = adArray.indexOf(ad)
-                Log.d("ViewModelFav", "pos = $pos")
+        dbManager.onFavClick(
+            ad,
+            object : DbManager.FinishWorkListener {
+                override fun onFinish(isDone: Boolean) {
+                    Log.d("updateList", "updateList = $adArray")
+                    val pos = adArray.indexOf(ad)
+                    Log.d("ViewModelFav", "pos = $pos")
 
-                if (pos != -1) {
-                    pos.let {
-                        val favCounter =
-                            if (ad.isFav) ad.favCounter.toInt() - 1 else ad.favCounter.toInt() + 1
-                        Log.d("ViewModelFav", "favCounter = $favCounter")
-                        adArray[pos] = adArray[pos].copy(
-                            isFav = !ad.isFav,
-                            favCounter = favCounter.toString()
-                        )
-                        Log.d("ViewModelFav", "updateList[pos] = ${adArray[pos]}")
+                    if (pos != -1) {
+                        pos.let {
+                            val favCounter =
+                                if (ad.isFav) ad.favCounter.toInt() - 1 else ad.favCounter.toInt() + 1
+                            Log.d("ViewModelFav", "favCounter = $favCounter")
+                            adArray[pos] =
+                                adArray[pos].copy(
+                                    isFav = !ad.isFav,
+                                    favCounter = favCounter.toString(),
+                                )
+                            Log.d("ViewModelFav", "updateList[pos] = ${adArray[pos]}")
+                        }
                     }
+                    liveAdsData.postValue(adArray)
                 }
-                liveAdsData.postValue(adArray)
-            }
-        })
+            },
+        )
     }
 
     fun adViewed(ad: Announcement) {
@@ -114,37 +119,42 @@ class FirebaseViewModel : ViewModel() {
     }
 
     fun loadMyAnnouncement() {
-        dbManager.getMyAnnouncement(object : DbManager.ReadDataCallback {
-            override fun readData(
-                list: ArrayList<Announcement>,
-                lastDocument: QueryDocumentSnapshot?,
-            ) {
-                liveAdsData.value = list
-            }
-        })
+        dbManager.getMyAnnouncement(
+            object : DbManager.ReadDataCallback {
+                override fun readData(
+                    list: ArrayList<Announcement>,
+                    lastDocument: QueryDocumentSnapshot?,
+                ) {
+                    liveAdsData.value = list
+                }
+            },
+        )
     }
 
     fun loadMyFavs() {
-        dbManager.getMyFavs(object : DbManager.ReadDataCallback {
-            override fun readData(
-                list: ArrayList<Announcement>,
-                lastDocument: QueryDocumentSnapshot?,
-            ) {
-                liveAdsData.value = list
-            }
-        })
+        dbManager.getMyFavs(
+            object : DbManager.ReadDataCallback {
+                override fun readData(
+                    list: ArrayList<Announcement>,
+                    lastDocument: QueryDocumentSnapshot?,
+                ) {
+                    liveAdsData.value = list
+                }
+            },
+        )
     }
 
     fun deleteItem(ad: Announcement) {
-        dbManager.deleteAnnouncement(ad, object : DbManager.FinishWorkListener {
-            override fun onFinish(isDone: Boolean) {
-
-                val updatedList = liveAdsData.value
-                updatedList?.remove(ad)
-                liveAdsData.postValue(updatedList)
-            }
-
-        })
+        dbManager.deleteAnnouncement(
+            ad,
+            object : DbManager.FinishWorkListener {
+                override fun onFinish(isDone: Boolean) {
+                    val updatedList = liveAdsData.value
+                    updatedList?.remove(ad)
+                    liveAdsData.postValue(updatedList)
+                }
+            },
+        )
     }
 
     fun saveTokenDB(token: String) {

@@ -1,0 +1,27 @@
+build:
+  maxIssues: 10
+  weights:
+    complexity: 2
+    LongParameterList: 1
+    style: 1
+
+comments:
+  UndocumentedPublicClass:
+    active: true
+
+complexity:
+  ComplexCondition:
+    active: true
+
+formatting:
+  active: true
+
+style:
+  MagicNumber:
+    active: true
+    ignoreNumbers: 
+      - "-1"
+      - "0"
+      - "1"
+      - "2"
+      - "100"

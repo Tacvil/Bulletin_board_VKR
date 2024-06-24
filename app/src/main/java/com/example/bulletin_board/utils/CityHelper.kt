@@ -23,12 +23,14 @@ object CityHelper {
                 }
             }
         } catch (e: IOException) {
-
         }
         return tempArray
     }
 
-    fun getAllCities(country: String, context: Context): ArrayList<Pair<String, String>> {
+    fun getAllCities(
+        country: String,
+        context: Context,
+    ): ArrayList<Pair<String, String>> {
         var tempArray = ArrayList<Pair<String, String>>()
         try {
             val inputStream: InputStream = context.assets.open("countriesToCities.json")
@@ -42,14 +44,15 @@ object CityHelper {
             for (n in 0 until cityNames.length()) {
                 tempArray.add(Pair(cityNames.getString(n), "single"))
             }
-
         } catch (e: IOException) {
-
         }
         return tempArray
     }
 
-    fun filterListData(list: ArrayList<Pair<String, String>>, searchText: String?): ArrayList<Pair<String, String>> {
+    fun filterListData(
+        list: ArrayList<Pair<String, String>>,
+        searchText: String?,
+    ): ArrayList<Pair<String, String>> {
         val tempList = ArrayList<Pair<String, String>>()
         tempList.clear()
 
@@ -59,8 +62,9 @@ object CityHelper {
         }
 
         for (selection: Pair<String, String> in list) {
-            if (selection.first.lowercase(Locale.ROOT).startsWith(searchText.lowercase(Locale.ROOT)))
+            if (selection.first.lowercase(Locale.ROOT).startsWith(searchText.lowercase(Locale.ROOT))) {
                 tempList.add(Pair(selection.first, "single"))
+            }
         }
         if (tempList.size == 0) tempList.add(Pair("No result", "empty"))
         return tempList

@@ -8,7 +8,10 @@ import androidx.preference.PreferenceManager
 import com.example.bulletin_board.R
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 
-class CustomListPreference(context: Context?, attrs: AttributeSet?) : Preference(context!!, attrs) {
+class CustomListPreference(
+    context: Context?,
+    attrs: AttributeSet?,
+) : Preference(context!!, attrs) {
     private val sharedPreferences = context?.let { PreferenceManager.getDefaultSharedPreferences(it) }
     private var entryValues: Array<String>? = null
     private var entries: Array<String>? = null
@@ -25,7 +28,6 @@ class CustomListPreference(context: Context?, attrs: AttributeSet?) : Preference
 
         summary = selectedValue
 
-
         // Получаем ресурсы для массивов
         val valuesArrayResId = typedArray?.getResourceId(R.styleable.CustomListPreference_android_entryValues, 0)
         val entriesArrayResId = typedArray?.getResourceId(R.styleable.CustomListPreference_android_entries, 0)
@@ -36,7 +38,7 @@ class CustomListPreference(context: Context?, attrs: AttributeSet?) : Preference
                 entriesArrayResId?.let { context.resources.getStringArray(it) }?.let { it1 ->
                     setEntryValuesAndEntries(
                         it,
-                        it1
+                        it1,
                     )
                 }
             }
@@ -50,7 +52,10 @@ class CustomListPreference(context: Context?, attrs: AttributeSet?) : Preference
         }
     }
 
-    fun setEntryValuesAndEntries(entryValues: Array<String>, entries: Array<String>) {
+    fun setEntryValuesAndEntries(
+        entryValues: Array<String>,
+        entries: Array<String>,
+    ) {
         this.entryValues = entryValues
         this.entries = entries
     }
@@ -59,7 +64,7 @@ class CustomListPreference(context: Context?, attrs: AttributeSet?) : Preference
         Log.d("LOOOOG", "entries = ${entries?.contentToString()}")
         Log.d("LOOOOG", "entryValues = ${entryValues?.contentToString()}")
 
-        //val selectedValue = sharedPreferences?.getString(key, "defaultValue") ?: "defaultValue"
+        // val selectedValue = sharedPreferences?.getString(key, "defaultValue") ?: "defaultValue"
 
         val selectedIndex = entryValues?.indexOf(selectedValue) ?: -1
 
@@ -73,8 +78,7 @@ class CustomListPreference(context: Context?, attrs: AttributeSet?) : Preference
                     setValue(newValue)
                 }
                 dialog.dismiss()
-            }
-            .setPositiveButton(android.R.string.ok, null)
+            }.setPositiveButton(android.R.string.ok, null)
             .show()
     }
 
