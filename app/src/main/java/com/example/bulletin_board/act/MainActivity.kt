@@ -87,6 +87,7 @@ class MainActivity :
     private val onItemSelectedListener: RcViewSearchSpinnerAdapter.OnItemSelectedListener? = null
     private var adapterSearch = RcViewSearchSpinnerAdapter(onItemSelectedListener)
     private lateinit var defPreferences: SharedPreferences
+    private var viewModelIsLoading = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         defPreferences = PreferenceManager.getDefaultSharedPreferences(this)
@@ -274,7 +275,7 @@ class MainActivity :
                 filterDb["keyWords"] = titleValidate
                 Log.d("MainActSearch", "filterDb = $filterDb")
                 clearUpdate = true
-                firebaseViewModel.loadAllAnnouncementFirstPage(this@MainActivity, filterDb)
+                firebaseViewModel.loadAllAnnouncements(this@MainActivity, filterDb)
             }
             binding.mainContent.searchViewMainContent.hide()
 
@@ -342,7 +343,7 @@ class MainActivity :
                                 filterDb["orderBy"] = sortOption.id
                                 Log.d("MainActOnClickFilter", "filterDb = $filterDb")
                                 clearUpdate = true
-                                firebaseViewModel.loadAllAnnouncementFirstPage(this@MainActivity, filterDb)
+                                firebaseViewModel.loadAllAnnouncements(this@MainActivity, filterDb)
                             } else {
                                 Log.e("MainActivity", "Selected item not found in sort options")
                             }
@@ -387,7 +388,7 @@ class MainActivity :
                     filterDb["keyWords"] = ""
                     Log.d("MainActR.id.id_search", "filterDb = $filterDb")
                     clearUpdate = true
-                    firebaseViewModel.loadAllAnnouncementFirstPage(this@MainActivity, filterDb)
+                    firebaseViewModel.loadAllAnnouncements(this@MainActivity, filterDb)
                     item.setIcon(R.drawable.ic_search)
                 } else {
                     // Текущая иконка - это ic_search
@@ -444,7 +445,7 @@ class MainActivity :
                     filterDb["keyWords"] = validateText
                     Log.d("MainActSpokenText", "filterDb = $filterDb")
                     clearUpdate = true
-                    firebaseViewModel.loadAllAnnouncementFirstPage(this@MainActivity, filterDb)
+                    firebaseViewModel.loadAllAnnouncements(this@MainActivity, filterDb)
                 } else {
                     Log.d("VoiceSearch", "Распознавание речи не дало результатов.")
                 }
@@ -529,6 +530,10 @@ class MainActivity :
     }
 
     private fun initViewModel() {
+        firebaseViewModel.isLoading.observe(this) { isLoading ->
+            viewModelIsLoading = isLoading
+        }
+
         firebaseViewModel.liveAdsData.observe(this) {
             it?.let { content ->
                 // val list = getAdsByCategory(content)
@@ -718,7 +723,7 @@ class MainActivity :
         // binding.mainContent.toolbar.title = cat
         // currentCategory = cat
         Log.d("MainActivityCAT", "filterDb = $filterDb")
-        firebaseViewModel.loadAllAnnouncementFirstPage(this, filterDb)
+        firebaseViewModel.loadAllAnnouncements(this, filterDb)
     }
 
     fun uiUpdate(user: FirebaseUser?) {
@@ -805,8 +810,6 @@ class MainActivity :
             accCat.title = spanAccCat
         }
 
-    private var isLoading = false
-
     private fun scrollListener() =
         with(binding.mainContent) {
             recyclerViewMainContent.addOnScrollListener(
@@ -817,16 +820,12 @@ class MainActivity :
                     ) {
                         super.onScrollStateChanged(recyclerView, newState)
                         if (!recyclerView.canScrollVertically(SCROLL_DOWN) && newState == RecyclerView.SCROLL_STATE_IDLE) {
-                            Log.d("MainAct", "isLoading = $isLoading")
-                            if (!isLoading) {
-                                isLoading = true
+                            if (!viewModelIsLoading) {
                                 clearUpdate = false
-                                val adsList = firebaseViewModel.liveAdsData.value // Получает текущий список объявлений из liveAdsData в FirebaseViewModel
+                                val adsList = firebaseViewModel.liveAdsData.value
                                 Log.d("MainAct_scrollListener", "adsList: $adsList")
                                 if (adsList != null && adsList.isNotEmpty()) {
                                     getAdsFromCat(adsList)
-                                } else {
-                                    isLoading = false
                                 }
                             }
                         }
@@ -849,14 +848,20 @@ class MainActivity :
                     adsList.clear()
                 }*/
 
-        adsList.lastOrNull()?.let { lastAd ->
+        adsList.lastOrNull()?.let {
+            firebaseViewModel.loadAllAnnouncements(this, filterDb)
+        } ?: run {
+            adsList.clear()
+        }
+
+/*        adsList.lastOrNull()?.let { lastAd ->
             Log.d("MainAct", "$lastAd")
-            firebaseViewModel.loadAllAnnouncementNextPage(
+            firebaseViewModel.loadAllAnnouncements(
                 this,
+                filterDb,
                 lastAd.time,
                 lastAd.price,
                 lastAd.viewsCounter,
-                filterDb,
             ) {
                 isLoading = false // Сбрасываем флаг по завершении загрузки данных
             }
@@ -864,7 +869,7 @@ class MainActivity :
             Log.d("MainAct", "adsList -> NULL: adsList.clear()")
             adsList.clear()
             isLoading = false
-        }
+        }*/
 
         /*        adsList[0].let {
                     if (currentCategory == getString(R.string.def)) {
