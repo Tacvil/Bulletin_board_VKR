@@ -40,6 +40,8 @@ import com.bumptech.glide.request.RequestOptions
 import com.example.bulletin_board.R
 import com.example.bulletin_board.accounthelper.AccountHelper
 import com.example.bulletin_board.adapters.AdsRcAdapter
+import com.example.bulletin_board.adapters.FavsAdapter
+import com.example.bulletin_board.adapters.MyAdsAdapter
 import com.example.bulletin_board.databinding.ActivityMainBinding
 import com.example.bulletin_board.dialoghelper.DialogConst
 import com.example.bulletin_board.dialoghelper.DialogHelper
@@ -75,11 +77,13 @@ class MainActivity :
 
     private val dialog = DialogSpinnerHelper()
     val mAuth = Firebase.auth
-    val adapter = AdsRcAdapter(this)
+    val homeAdsAdapter = AdsRcAdapter(this)
+    private val myAdsAdapter = MyAdsAdapter(this)
+    private val favsAdapter = FavsAdapter(this)
     lateinit var googleSignInLauncher: ActivityResultLauncher<Intent>
     private lateinit var filterLauncher: ActivityResultLauncher<Intent>
     private val firebaseViewModel: FirebaseViewModel by viewModels()
-    private var clearUpdate: Boolean = true
+    private var clearUpdate: Boolean = false
     private var filterDb: MutableMap<String, String> = mutableMapOf()
     private var pref: SharedPreferences? = null
     private var isPremiumUser: Boolean = false
@@ -107,8 +111,7 @@ class MainActivity :
             val importance = NotificationManager.IMPORTANCE_DEFAULT
             val mChannel = NotificationChannel("123", name, importance)
             mChannel.description = descriptionText
-            // Register the channel with the system. You can't change the importance
-            // or other notification behaviors after this.
+
             val notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
             notificationManager.createNotificationChannel(mChannel)
         }
@@ -155,16 +158,6 @@ class MainActivity :
         binding.mainContent.searchViewMainContent.editText.addTextChangedListener(
             object :
                 TextWatcher {
-            /*            override fun onQueryTextSubmit(p0: String?): Boolean {
-                            return false
-                        }
-
-                        override fun onQueryTextChange(newText: String?): Boolean {
-                            val tempList = CityHelper.filterListData(list, newText)
-                            adapter.updateAdapter(tempList)
-                            return true
-                        }*/
-
                 override fun beforeTextChanged(
                     s: CharSequence?,
                     start: Int,
@@ -227,16 +220,9 @@ class MainActivity :
                                         phraseBuilder
                                             .append(searchQuery.substringBeforeLast(' '))
                                             .append(" ")
-                                        // phraseBuilder.append(words[spaceCount])
                                         words.getOrNull(spaceCount)?.let {
                                             phraseBuilder.append(it)
                                         }
-                                    /* for (i in 1 .. spaceCount) {
-                                         phraseBuilder.append(words[i]).append(" ")
-                                         if (i == spaceCount){
-                                             phraseBuilder.append(words[i+1])
-                                         }
-                                     }*/
                                         val phrase = phraseBuilder.toString()
                                         phraseBuilder.clear()
                                         Log.d("MActTextChanged", "phrase = $phrase")
@@ -249,9 +235,6 @@ class MainActivity :
                             adapterSearch.updateAdapter(pairsResultSearch)
                         }
                     }
-                /*                val tempList = CityHelper.filterListData(list, s.toString())
-                                Log.d("Dialog", "tempList: $s.toString()")
-                                adapter.updateAdapter(tempList)*/
                 }
 
                 override fun afterTextChanged(s: Editable?) {
@@ -264,7 +247,6 @@ class MainActivity :
                 binding.mainContent.searchViewMainContent.text
                     .toString()
             if (querySearch.trim().isNotEmpty()) {
-                // Toast.makeText(this, "EMPTY", Toast.LENGTH_SHORT).show()
                 binding.mainContent.searchBar.setText(querySearch)
                 binding.mainContent.searchBar.menu
                     .findItem(R.id.id_search)
@@ -302,13 +284,6 @@ class MainActivity :
 
     private fun onClickSelectOrderByFilter() =
         with(binding) {
-/*        val listVariant = arrayListOf("По новинкам", "По популярности", "По возрастанию цены", "По убыванию цены")
-        val adapter = ArrayAdapter(this@MainActivity, R.layout.spinner_list_item, listVariant )
-        mainContent.autoComplete.setAdapter(adapter)
-        mainContent.autoComplete.onItemClickListener = AdapterView.OnItemClickListener { parent, view, position, id ->
-            val itemSelected = parent.getItemAtPosition(position)
-            Toast.makeText(this@MainActivity, "Item: $itemSelected" , Toast.LENGTH_SHORT).show()
-        }*/
             mainContent.autoComplete.setText(filterDb["orderBy"])
             mainContent.autoComplete.setOnClickListener {
                 val listVariant: ArrayList<Pair<String, String>> =
@@ -328,25 +303,13 @@ class MainActivity :
                 val onItemSelectedListener =
                     object : RcViewDialogSpinnerAdapter.OnItemSelectedListener {
                         override fun onItemSelected(item: String) {
-                            val sortOption =
-                                when (item) {
-                                    getString(R.string.sort_by_newest) -> SortOption.BY_NEWEST
-                                    getString(R.string.sort_by_popularity) -> SortOption.BY_POPULARITY
-                                    getString(R.string.sort_by_ascending_price) -> SortOption.BY_PRICE_ASC
-                                    getString(R.string.sort_by_descending_price) -> SortOption.BY_PRICE_DESC
-                                    else -> null
-                                }
                             Toast.makeText(this@MainActivity, "Item: $item", Toast.LENGTH_SHORT).show()
                             mainContent.autoComplete.setText(item)
 
-                            if (sortOption != null) {
-                                filterDb["orderBy"] = sortOption.id
-                                Log.d("MainActOnClickFilter", "filterDb = $filterDb")
-                                clearUpdate = true
-                                firebaseViewModel.loadAllAnnouncements(this@MainActivity, filterDb)
-                            } else {
-                                Log.e("MainActivity", "Selected item not found in sort options")
-                            }
+                            filterDb["orderBy"] = getSortOption(item)
+                            Log.d("MainActOnClickFilter", "filterDb = $filterDb")
+                            clearUpdate = true
+                            firebaseViewModel.loadAllAnnouncements(this@MainActivity, filterDb)
                         }
                     }
 
@@ -367,6 +330,15 @@ class MainActivity :
                     }
                 filterLauncher.launch(i)
             }
+        }
+
+    private fun getSortOption(item: String): String =
+        when (item) {
+            getString(R.string.sort_by_newest) -> SortOption.BY_NEWEST.id
+            getString(R.string.sort_by_popularity) -> SortOption.BY_POPULARITY.id
+            getString(R.string.sort_by_ascending_price) -> SortOption.BY_PRICE_ASC.id
+            getString(R.string.sort_by_descending_price) -> SortOption.BY_PRICE_DESC.id
+            else -> item
         }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
@@ -391,9 +363,6 @@ class MainActivity :
                     firebaseViewModel.loadAllAnnouncements(this@MainActivity, filterDb)
                     item.setIcon(R.drawable.ic_search)
                 } else {
-                    // Текущая иконка - это ic_search
-                    // binding.mainContent.searchViewMainContent.show()
-                    // binding.mainContent.searchViewMainContent.editText.setText()
                     binding.mainContent.searchBar.performClick()
                 }
                 return true
@@ -489,13 +458,6 @@ class MainActivity :
                         filterDb["orderBy"] = "По возрастанию цены"
                         binding.mainContent.autoComplete.setText(filterDb["orderBy"])
                     }
-                /*                val serializableExtra = it.data?.getSerializableExtra(FilterActivity.FILTER_KEY)
-                                filterDb = if (serializableExtra is MutableMap<*, *>) {
-                                    @Suppress("UNCHECKED_CAST")
-                                    serializableExtra as MutableMap<String, String>
-                                } else {
-                                    mutableMapOf()
-                                }*/
                     Log.d("MyLogMainAct", "filterDb: $filterDb")
                     // filterDb = FilterManager.getFilter(filter)
                 } else if (it.resultCode == RESULT_CANCELED) {
@@ -503,26 +465,6 @@ class MainActivity :
                 }
             }
     }
-
-//     val launcher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-//        if (result.resultCode == RESULT_CODE_SUCCESS) {
-//            // Обработка успешного результата
-//            val data: Intent? = result.data
-//            val task = GoogleSignIn.getSignedInAccountFromIntent(data)
-//            //Log.d("MyLog", "Sign in result ")
-//
-//            try {
-//                val account = task.getResult(ApiException::class.java)
-//                if (account != null){
-//                    dialogHelper.accHelper.signInFirebaseWithGoogle(account.idToken!!)
-//                }
-//            } catch (e: ApiException){
-//                Log.d("MyLog", "Api exception: ${e.message} ")
-//            }
-//        } else {
-//            Log.d("MyLog", "Sign in resultttt ")
-//        }
-//    }
 
     override fun onStart() {
         super.onStart()
@@ -533,19 +475,24 @@ class MainActivity :
         firebaseViewModel.isLoading.observe(this) { isLoading ->
             viewModelIsLoading = isLoading
         }
-
-        firebaseViewModel.liveAdsData.observe(this) {
+        firebaseViewModel.myAdsData.observe(this) { list ->
+            list?.let { myAdsAdapter.updateAdapter(it) } // Обновляем адаптер
+        }
+        firebaseViewModel.favsData.observe(this) { list ->
+            list?.let { favsAdapter.updateAdapter(it) } // Обновляем адаптер
+        }
+        firebaseViewModel.homeAdsData.observe(this) {
             it?.let { content ->
                 // val list = getAdsByCategory(content)
                 Log.d("MainActInitViewModel", "clearUpdate: $clearUpdate")
+
                 if (!clearUpdate) {
-                    adapter.updateAdapter(content)
+                    homeAdsAdapter.updateAdapter(content)
                 } else {
-                    adapter.updateAdapterWithClear(
-                        content,
-                    )
+                    homeAdsAdapter.updateAdapterWithClear(content)
                 }
-                if (adapter.itemCount == 0) {
+
+                if (homeAdsAdapter.itemCount == 0) {
                     binding.mainContent.recyclerViewMainContent.visibility = View.INVISIBLE
                     binding.mainContent.nothinkWhiteAnim.visibility = View.VISIBLE
                     binding.mainContent.nothinkWhiteAnim.repeatCount = LottieDrawable.INFINITE
@@ -559,34 +506,12 @@ class MainActivity :
         }
     }
 
-    /*    private fun getAdsByCategory(list: ArrayList<Announcement>): ArrayList<Announcement> {
-            val tempList = ArrayList<Announcement>()
-            tempList.addAll(list)
-            if (currentCategory != getString(R.string.def)) {
-                tempList.clear()
-                list.forEach {
-                    if (currentCategory == it.category) tempList.add(it)
-                }
-            }
-            //tempList.reverse()
-            return tempList
-        }*/
-
     private fun init() {
         filterDb["category"] = getString(R.string.def)
         filterDb["orderBy"] = getString(R.string.sort_by_newest)
         setSupportActionBar(binding.mainContent.searchBar)
         onActivityResult()
         navViewSetting()
-        /*        val toggle = ActionBarDrawerToggle(
-                    this,
-                    binding.drawerLayout,
-                    //binding.mainContent.toolbar,
-                    R.string.open,
-                    R.string.close
-                )
-                binding.drawerLayout.addDrawerListener(toggle)
-                toggle.syncState()*/
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         supportActionBar?.setDisplayShowHomeEnabled(true)
         binding.navigationView.setNavigationItemSelectedListener(this)
@@ -613,7 +538,7 @@ class MainActivity :
             }
 
             mainContent.bottomNavView.setOnItemSelectedListener { item ->
-                clearUpdate = true
+                clearUpdate = false
                 when (item.itemId) {
                     R.id.id_settings -> {
                         val i = Intent(this@MainActivity, SettingsActivity::class.java)
@@ -622,15 +547,18 @@ class MainActivity :
 
                     R.id.id_my_ads -> {
                         firebaseViewModel.loadMyAnnouncement()
+                        binding.mainContent.recyclerViewMainContent.adapter = myAdsAdapter
                         // mainContent.toolbar.title = getString(R.string.ad_my_ads)
                     }
 
                     R.id.id_favs -> {
                         firebaseViewModel.loadMyFavs()
+                        binding.mainContent.recyclerViewMainContent.adapter = favsAdapter
                         // mainContent.toolbar.title = getString(R.string.favs)
                     }
 
                     R.id.id_home -> {
+                        binding.mainContent.recyclerViewMainContent.adapter = homeAdsAdapter
                         getAdsFromCat(getString(R.string.def))
                     }
                 }
@@ -642,7 +570,7 @@ class MainActivity :
         binding.apply {
             mainContent.recyclerViewMainContent.layoutManager =
                 LinearLayoutManager(this@MainActivity)
-            mainContent.recyclerViewMainContent.adapter = adapter
+            mainContent.recyclerViewMainContent.adapter = homeAdsAdapter
         }
 
         val onItemSelectedListener =
@@ -654,10 +582,6 @@ class MainActivity :
                     binding.mainContent.searchViewMainContent.editText.setSelection(
                         binding.mainContent.searchViewMainContent.editText.text.length,
                     )
-                /* filterDb["orderBy"] = item
-                 Log.d("MainActOnClickFilter", "filterDb = $filterDb")
-                 clearUpdate = true
-                 firebaseViewModel.loadAllAnnouncementFirstPage(this@MainActivity, filterDb)*/
                 }
             }
         adapterSearch = RcViewSearchSpinnerAdapter(onItemSelectedListener)
@@ -691,11 +615,6 @@ class MainActivity :
                 getAdsFromCat(getString(R.string.ad_dm))
             }
 
-/*            R.id.remove_ads -> {
-                bManager = BillingManager(this)
-                bManager?.startConnection()
-            }*/
-
             R.id.id_sign_up -> {
                 dialogHelper.createSignDialog(DialogConst.SIGN_UP_STATE)
             }
@@ -720,9 +639,11 @@ class MainActivity :
 
     private fun getAdsFromCat(cat: String) {
         filterDb["category"] = cat
-        // binding.mainContent.toolbar.title = cat
-        // currentCategory = cat
+        Log.d("MainActivityCAT", "firebaseViewModel.homeAdsData.value = ${firebaseViewModel.homeAdsData.value}")
+        Log.d("MainActivityCAT", "_isLoading.value = $viewModelIsLoading")
+        filterDb["orderBy"] = filterDb["orderBy"]?.let { getSortOption(it) }.toString()
         Log.d("MainActivityCAT", "filterDb = $filterDb")
+
         firebaseViewModel.loadAllAnnouncements(this, filterDb)
     }
 
@@ -822,7 +743,7 @@ class MainActivity :
                         if (!recyclerView.canScrollVertically(SCROLL_DOWN) && newState == RecyclerView.SCROLL_STATE_IDLE) {
                             if (!viewModelIsLoading) {
                                 clearUpdate = false
-                                val adsList = firebaseViewModel.liveAdsData.value
+                                val adsList = firebaseViewModel.homeAdsData.value
                                 Log.d("MainAct_scrollListener", "adsList: $adsList")
                                 if (adsList != null && adsList.isNotEmpty()) {
                                     getAdsFromCat(adsList)
@@ -834,59 +755,16 @@ class MainActivity :
             )
         }
 
-    private fun getAdsFromCat(adsList: ArrayList<Announcement>) {
-        /*        adsList.getOrNull(1)?.let { secondAd ->
-                    Log.d("MainAct", "adsList: 1")
-
-                    firebaseViewModel.loadAllAnnouncementNextPage(this, secondAd.time, secondAd.price, secondAd.viewsCounter, filterDb)
-
-                } ?: adsList.firstOrNull()?.let { firstAd ->
-                    Log.d("MainAct", "adsList: 0")
-                    firebaseViewModel.loadAllAnnouncementNextPage(this, firstAd.time, firstAd.price, firstAd.viewsCounter, filterDb)
-                } ?: run {
-                    Log.d("MainAct", "adsList: adsList.clear()")
-                    adsList.clear()
-                }*/
-
+    private fun getAdsFromCat(adsList: List<Announcement>) {
         adsList.lastOrNull()?.let {
             firebaseViewModel.loadAllAnnouncements(this, filterDb)
-        } ?: run {
-            adsList.clear()
         }
-
-/*        adsList.lastOrNull()?.let { lastAd ->
-            Log.d("MainAct", "$lastAd")
-            firebaseViewModel.loadAllAnnouncements(
-                this,
-                filterDb,
-                lastAd.time,
-                lastAd.price,
-                lastAd.viewsCounter,
-            ) {
-                isLoading = false // Сбрасываем флаг по завершении загрузки данных
-            }
-        } ?: run {
-            Log.d("MainAct", "adsList -> NULL: adsList.clear()")
-            adsList.clear()
-            isLoading = false
-        }*/
-
-        /*        adsList[0].let {
-                    if (currentCategory == getString(R.string.def)) {
-                        firebaseViewModel.loadAllAnnouncementNextPage(it.time, filterDb)
-                    } else {
-                        firebaseViewModel.loadAllAnnouncementFromCatNextPage(
-                            it.category!!,
-                            it.time,
-                            filterDb
-                        )
-                    }
-                }*/
     }
 
     override fun onDestroy() {
         super.onDestroy()
         bManager?.closeConnection()
+        firebaseViewModel.clearCache()
     }
 
     private fun getSelectedTheme(): Int =

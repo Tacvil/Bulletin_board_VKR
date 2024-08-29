@@ -132,8 +132,20 @@ dependencies {
     implementation("com.squareup.picasso:picasso:2.8")
 
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
+    implementation("androidx.media3:media3-database:1.4.1")
 
 //    implementation  ("io.ak1.pix:piximagepicker:1.6.3")
+
+    // Room
+    val room_version = "2.6.1"
+
+    implementation("androidx.room:room-runtime:$room_version")
+    annotationProcessor("androidx.room:room-compiler:$room_version")
+    ksp("androidx.room:room-compiler:$room_version")
+    implementation("androidx.room:room-ktx:$room_version")
+
+    // Timber
+    implementation("com.jakewharton.timber:timber:5.0.1")
 
     // Hilt
     implementation("com.google.dagger:hilt-android:2.52")
@@ -178,6 +190,10 @@ dependencies {
     // retrofit
     implementation("com.squareup.retrofit2:retrofit:2.11.0")
     implementation("com.squareup.retrofit2:converter-moshi:2.11.0")
+
+    // Gson
+    implementation("com.google.code.gson:gson:2.11.0")
+
     // billing
     implementation("com.android.billingclient:billing-ktx:7.0.0")
     // lotili

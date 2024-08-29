@@ -13,7 +13,6 @@ import com.google.firebase.firestore.QueryDocumentSnapshot
 import com.google.firebase.firestore.SetOptions
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.storage.ktx.storage
-import org.json.JSONObject
 
 enum class SortOption(
     val id: String,
@@ -22,6 +21,9 @@ enum class SortOption(
     BY_POPULARITY("byPopularity"),
     BY_PRICE_ASC("byPriceAsc"),
     BY_PRICE_DESC("byPriceDesc"),
+    WITH_SEND("with_send"),
+    WITHOUT_SEND("without_send"),
+    ALL("all"),
 }
 
 class DbManager {
@@ -159,7 +161,7 @@ class DbManager {
                 .collection(MAIN_NODE)
                 .whereEqualTo("uid", auth.uid)
                 .orderBy("time", Query.Direction.DESCENDING)
-        readDataFromDb(query, readDataCallback, null)
+        readDataFromDb(query, readDataCallback)
     }
 
     fun getMyFavs(readDataCallback: ReadDataCallback?) {
@@ -172,7 +174,7 @@ class DbManager {
                     .orderBy("time", Query.Direction.DESCENDING)
             }
         if (query != null) {
-            readDataFromDb(query, readDataCallback, null)
+            readDataFromDb(query, readDataCallback)
         }
     }
 
@@ -224,7 +226,8 @@ class DbManager {
             queryDB = queryDB.whereEqualTo("category", filter["category"])
         }
         when (filter["withSend"]) {
-            "С отправкой", "Без отправки" -> queryDB = queryDB.whereEqualTo("withSend", filter["withSend"])
+            SortOption.WITH_SEND.id -> queryDB = queryDB.whereEqualTo("withSend", SortOption.WITH_SEND.id)
+            SortOption.WITHOUT_SEND.id -> queryDB = queryDB.whereEqualTo("withSend", SortOption.WITHOUT_SEND.id)
             else -> {}
         }
 
@@ -280,28 +283,14 @@ class DbManager {
                 }
                 SortOption.BY_POPULARITY.id -> {
                     val lastViewsCounter = lastDocumentAds.getLong("viewsCounter")?.toInt()
-                    Log.d("DbManager", "lastViewsCounter: $lastViewsCounter")
-                    val jsonObject = lastDocumentAds.data.let { JSONObject(it) }
-                    Log.d("DbManager", "lastDocumentAds: $jsonObject")
                     val lastKey = lastDocumentAds.get("key") as? String
-                    Log.d("DbManager", "lastKey: $lastKey")
                     if (lastViewsCounter != null && lastKey != null) {
                         queryDB = queryDB.startAfter(lastViewsCounter, lastKey)
                     }
                 }
-/*                SortOption.BY_POPULARITY.id -> {
-                    queryDB =
-                        queryDB
-                            .whereLessThanOrEqualTo("viewsCounter", viewsCounter)
-                            .orderBy("viewsCounter", Query.Direction.DESCENDING)
-                            .orderBy("key", Query.Direction.DESCENDING)
-                            .startAfter(
-                                lastDocumentAds?.get("viewsCounter") ?: "",
-                                lastDocumentAds?.get("key") ?: "",
-                            ).limit(ADS_LIMIT.toLong())
-                }*/
                 SortOption.BY_NEWEST.id -> {
                     val lastTime = lastDocumentAds.get("time") as? String
+                    Log.d("DbManager", "lastDocumentAds = ${lastDocumentAds.data}")
                     if (lastTime != null) {
                         queryDB = queryDB.startAfter(lastTime)
                     }
@@ -325,16 +314,14 @@ class DbManager {
         viewsCounter: Int? = null,
         lastDocumentAds: QueryDocumentSnapshot? = null,
         readDataCallback: ReadDataCallback?,
-        onComplete: () -> Unit,
     ) {
         val query = getAllAnnouncementsByFilter(context, filter, time, viewsCounter, lastDocumentAds)
-        readDataFromDb(query, readDataCallback, onComplete)
+        readDataFromDb(query, readDataCallback)
     }
 
     private fun readDataFromDb(
         query: Query,
         readDataCallback: ReadDataCallback?,
-        onComplete: (() -> Unit?)?,
     ) {
         query.get().addOnCompleteListener { task ->
             if (task.isSuccessful) {
@@ -358,8 +345,11 @@ class DbManager {
                 readDataCallback?.readData(adArray, lastDocument)
             } else {
                 Log.e("DbManager", "Ошибка при получении данных: ${task.exception}")
+                readDataCallback?.onError(task.exception ?: Exception("Unknown error")) // Вызываем onError
             }
-            onComplete?.invoke()
+            if (readDataCallback != null) {
+                readDataCallback.onComplete()
+            }
         }
     }
 
@@ -867,6 +857,8 @@ class DbManager {
             list: ArrayList<Announcement>,
             lastDocument: QueryDocumentSnapshot?,
         )
+
+        fun onComplete()
 
         fun onError(e: Exception)
     }

@@ -16,12 +16,13 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.consumeAsFlow
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.time.debounce
 
 @OptIn(FlowPreview::class)
 class FirebaseViewModel : ViewModel() {
     private val dbManager = DbManager()
-    val liveAdsData = MutableLiveData<ArrayList<Announcement>?>()
+    val homeAdsData = MutableLiveData<List<Announcement>?>(emptyList())
+    val myAdsData = MutableLiveData<List<Announcement>?>(emptyList())
+    val favsData = MutableLiveData<List<Announcement>?>(emptyList())
     private var currentSortOption: String? = null
     private var lastDocumentAds: QueryDocumentSnapshot? = null
     private val _isLoading = MutableLiveData<Boolean>()
@@ -52,20 +53,24 @@ class FirebaseViewModel : ViewModel() {
                                             list: ArrayList<Announcement>,
                                             lastDocument: QueryDocumentSnapshot?,
                                         ) {
-                                            liveAdsData.postValue(list)
+                                            homeAdsData.value = list
                                             lastDocumentAds = lastDocument
+                                            Log.d("FirebaseViewModel", "Список объявлений: $list")
+                                        }
+
+                                        override fun onComplete() {
+                                            _isLoading.value = false
                                         }
 
                                         override fun onError(e: Exception) {
                                             Log.e("FirebaseViewModel", "Ошибка загрузки данных", e)
-                                            liveAdsData.postValue(null)
+                                            homeAdsData.postValue(null)
                                         }
                                     },
-                                onComplete = { _isLoading.value = false },
                             )
                         } catch (e: Exception) {
                             Log.e("FirebaseViewModel", "Ошибка загрузки данных", e)
-                            liveAdsData.postValue(null)
+                            homeAdsData.postValue(null)
                             _isLoading.value = false
                         }
                     }
@@ -73,84 +78,20 @@ class FirebaseViewModel : ViewModel() {
         }
     }
 
+    fun clearCache() {
+        homeAdsData.value = emptyList()
+        lastDocumentAds = null
+    }
+
     fun loadAllAnnouncements(
         context: Context,
         filter: MutableMap<String, String>,
     ) {
         if (_isLoading.value == true) return
+        Log.d("loadAllAnnouncements", "loadAllAnnouncements")
         viewModelScope.launch {
             loadAllAnnouncementsChannel.send(Pair(context, filter))
         }
-    }
-
- /*   fun loadAllAnnouncementFirstPage(
-        context: Context,
-        filter: MutableMap<String, String>,
-    ) {
-        dbManager.getAllAnnouncementFirstPage1(
-            context,
-            filter,
-            object : DbManager.ReadDataCallback {
-                override fun readData(
-                    list: ArrayList<Announcement>,
-                    lastDocument: QueryDocumentSnapshot?,
-                ) {
-                    liveAdsData.value = list
-                    lastDocumentAds = lastDocument
-                    Log.d("FBVM", "liveAdsData1: ${liveAdsData.value}")
-                }
-            },
-        )
-    }
-
-    fun loadAllAnnouncementNextPage(
-        context: Context,
-        time: String,
-        price: Int?,
-        viewsCounter: Int,
-        filter: MutableMap<String, String>,
-        onComplete: () -> Unit,
-    ) {
-        dbManager.getAllAnnouncementNextPage1(
-            context,
-            time,
-            price,
-            viewsCounter,
-            lastDocumentAds,
-            filter,
-            object : DbManager.ReadDataCallback {
-                override fun readData(
-                    list: ArrayList<Announcement>,
-                    lastDocument: QueryDocumentSnapshot?,
-                ) {
-                    liveAdsData.value = list
-                    lastDocumentAds = lastDocument
-                    Log.d("FBVM", "liveAdsData2: ${liveAdsData.value}")
-                    onComplete() // Вызов завершения
-                }
-            },
-            onComplete, // Передача onComplete в getAllAnnouncementNextPage1
-        )
-    }*/
-
-    fun loadAllAnnouncementFromCatFirstPage(filter: MutableMap<String, String>) {
-//        dbManager.getAllAnnouncementFromCatFirstPage(cat, filter, object : DbManager.ReadDataCallback{
-//            override fun readData(list: ArrayList<Announcement>) {
-//                liveAdsData.value = list
-//            }
-//        })
-    }
-
-    fun loadAllAnnouncementFromCatNextPage(
-        cat: String,
-        time: String,
-        filter: MutableMap<String, String>,
-    ) {
-//        dbManager.getAllAnnouncementFromCatNextPage(cat, time, filter, object : DbManager.ReadDataCallback{
-//            override fun readData(list: ArrayList<Announcement>) {
-//                liveAdsData.value = list
-//            }
-//        })
     }
 
     fun onFavClick(
@@ -178,7 +119,7 @@ class FirebaseViewModel : ViewModel() {
                             Log.d("ViewModelFav", "updateList[pos] = ${adArray[pos]}")
                         }
                     }
-                    liveAdsData.postValue(adArray)
+                    homeAdsData.postValue(adArray)
                 }
             },
         )
@@ -195,12 +136,16 @@ class FirebaseViewModel : ViewModel() {
                     list: ArrayList<Announcement>,
                     lastDocument: QueryDocumentSnapshot?,
                 ) {
-                    liveAdsData.value = list
+                    myAdsData.value = list
+                }
+
+                override fun onComplete() {
+                    _isLoading.value = false
                 }
 
                 override fun onError(e: Exception) {
                     Log.e("FirebaseViewModel", "Ошибка загрузки данных", e)
-                    liveAdsData.postValue(null)
+                    myAdsData.postValue(null)
                 }
             },
         )
@@ -213,12 +158,16 @@ class FirebaseViewModel : ViewModel() {
                     list: ArrayList<Announcement>,
                     lastDocument: QueryDocumentSnapshot?,
                 ) {
-                    liveAdsData.value = list
+                    favsData.value = list
+                }
+
+                override fun onComplete() {
+                    _isLoading.value = false
                 }
 
                 override fun onError(e: Exception) {
                     Log.e("FirebaseViewModel", "Ошибка загрузки данных", e)
-                    liveAdsData.postValue(null)
+                    favsData.postValue(null)
                 }
             },
         )
@@ -229,9 +178,9 @@ class FirebaseViewModel : ViewModel() {
             ad,
             object : DbManager.FinishWorkListener {
                 override fun onFinish(isDone: Boolean) {
-                    val updatedList = liveAdsData.value
+                    val updatedList = homeAdsData.value?.toMutableList() // Создаем изменяемый список
                     updatedList?.remove(ad)
-                    liveAdsData.postValue(updatedList)
+                    homeAdsData.postValue(updatedList)
                 }
             },
         )
