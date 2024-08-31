@@ -7,12 +7,12 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 import com.example.bulletin_board.R
-import com.example.bulletin_board.model.Announcement
+import com.example.bulletin_board.model.Ad
 
 class FavsAdapter(
     val context: Context,
 ) : RecyclerView.Adapter<FavsAdapter.AdHolder>() {
-    val mainList = ArrayList<Announcement>()
+    val mainList = ArrayList<Ad>()
 
     override fun onCreateViewHolder(
         parent: ViewGroup,
@@ -31,7 +31,7 @@ class FavsAdapter(
 
     override fun getItemCount(): Int = mainList.size
 
-    fun updateAdapter(newList: List<Announcement>) {
+    fun updateAdapter(newList: List<Ad>) {
         val diffResult = DiffUtil.calculateDiff(DiffUtilHelper(mainList, newList))
         diffResult.dispatchUpdatesTo(this)
         mainList.clear()
@@ -41,7 +41,7 @@ class FavsAdapter(
     class AdHolder(
         itemView: View,
     ) : RecyclerView.ViewHolder(itemView) {
-        fun setData(announcement: Announcement) =
+        fun setData(ad: Ad) =
             with(itemView) {
                 // ... ваш код для установки данных в элементы ad_item ...
             }

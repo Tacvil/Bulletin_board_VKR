@@ -1,12 +1,13 @@
-package com.example.bulletin_board.Room
+package com.example.bulletin_board.model
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import java.io.Serializable
 
 @Entity
 data class Ad(
     @PrimaryKey
-    val key: String? = null,
+    val key: String,
     val title: String? = null,
     val keyWords: List<String>? = null,
     val country: String? = null,
@@ -25,9 +26,9 @@ data class Ad(
     val time: String = "0",
     val isPublished: Boolean = false,
     var isFav: Boolean = false,
-    val favUids: List<String> = emptyList(),
+    val favUids: List<String> = listOf(),
     var favCounter: String = "0",
     var viewsCounter: Int = 0,
     var emailCounter: String = "0",
     var callsCounter: String = "0",
-)
+) : Serializable

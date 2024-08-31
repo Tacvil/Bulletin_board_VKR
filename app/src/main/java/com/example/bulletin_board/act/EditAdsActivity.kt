@@ -15,13 +15,14 @@ import androidx.preference.PreferenceManager
 import androidx.viewpager2.widget.ViewPager2
 import com.example.bulletin_board.R
 import com.example.bulletin_board.adapters.ImageAdapter
-import com.example.bulletin_board.model.Announcement
-import com.example.bulletin_board.model.DbManager
 import com.example.bulletin_board.databinding.ActivityEditAdsBinding
 import com.example.bulletin_board.dialogs.DialogSpinnerHelper
 import com.example.bulletin_board.dialogs.RcViewDialogSpinnerAdapter
 import com.example.bulletin_board.fragments.FragmentCloseInterface
 import com.example.bulletin_board.fragments.ImageListFrag
+import com.example.bulletin_board.model.Ad
+import com.example.bulletin_board.model.DbManager
+import com.example.bulletin_board.model.DbManager.Companion.MAIN_NODE
 import com.example.bulletin_board.settings.SettingsActivity
 import com.example.bulletin_board.utils.CityHelper
 import com.example.bulletin_board.utils.ImageManager.fillImageArray
@@ -32,8 +33,9 @@ import java.io.ByteArrayOutputStream
 import java.io.Serializable
 import kotlin.collections.ArrayList
 
-
-class EditAdsActivity : AppCompatActivity(), FragmentCloseInterface {
+class EditAdsActivity :
+    AppCompatActivity(),
+    FragmentCloseInterface {
     var chooseImageFrag: ImageListFrag? = null
     lateinit var binding: ActivityEditAdsBinding
     private val dialog = DialogSpinnerHelper()
@@ -42,8 +44,9 @@ class EditAdsActivity : AppCompatActivity(), FragmentCloseInterface {
     var editImagePos = 0
     private var imageIndex = 0
     private var isEditState = false
-    private var ad: Announcement? = null
+    private var ad: Ad? = null
     private lateinit var defPreferences: SharedPreferences
+
     override fun onCreate(savedInstanceState: Bundle?) {
         defPreferences = PreferenceManager.getDefaultSharedPreferences(this)
         setTheme(getSelectedTheme())
@@ -62,39 +65,43 @@ class EditAdsActivity : AppCompatActivity(), FragmentCloseInterface {
     private fun checkEditState() {
         if (isEditState()) {
             isEditState = true
-            ad = intent.serializable<Announcement>(MainActivity.ADS_DATA)
+            ad = intent.serializable<Ad>(MainActivity.ADS_DATA)
             ad?.let { fillViews(it) }
         }
     }
 
-    private inline fun <reified T : Serializable> Intent.serializable(key: String): T? = when {
-        Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU -> getSerializableExtra(
-            key,
-            T::class.java
-        )
+    private inline fun <reified T : Serializable> Intent.serializable(key: String): T? =
+        when {
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU ->
+                getSerializableExtra(
+                    key,
+                    T::class.java,
+                )
 
-        else -> @Suppress("DEPRECATION") getSerializableExtra(key) as? T
-    }
+            else ->
+                @Suppress("DEPRECATION")
+                getSerializableExtra(key)
+                    as? T
+        }
 
-    private fun isEditState(): Boolean {
-        return intent.getBooleanExtra(MainActivity.EDIT_STATE, false)
-    }
+    private fun isEditState(): Boolean = intent.getBooleanExtra(MainActivity.EDIT_STATE, false)
 
-    private fun fillViews(ad: Announcement) = with(binding) {
-        textViewTitle.setText(ad.title)
-        textViewSelectCountry.setText(ad.country)
-        textViewSelectCity.setText(ad.city)
-        textViewIndex.setText(ad.index)
-        textViewSelectTelNumb.setText(ad.tel)
-        textViewSelectEmail.setText(ad.email)
-        textViewSelectCategory.setText(ad.category)
-        //checkBoxWithSend.isChecked = ad.withSend.toBoolean()
-        textViewSelectWithSend.setText(ad.withSend)
-        textViewPrice.setText(ad.price.toString())
-        textViewDescription.setText(ad.description)
-        updateImageCounter(0)
-        fillImageArray(ad, imageAdapter)
-    }
+    private fun fillViews(ad: Ad) =
+        with(binding) {
+            textViewTitle.setText(ad.title)
+            textViewSelectCountry.setText(ad.country)
+            textViewSelectCity.setText(ad.city)
+            textViewIndex.setText(ad.index)
+            textViewSelectTelNumb.setText(ad.tel)
+            textViewSelectEmail.setText(ad.email)
+            textViewSelectCategory.setText(ad.category)
+            // checkBoxWithSend.isChecked = ad.withSend.toBoolean()
+            textViewSelectWithSend.setText(ad.withSend)
+            textViewPrice.setText(ad.price.toString())
+            textViewDescription.setText(ad.description)
+            updateImageCounter(0)
+            fillImageArray(ad, imageAdapter)
+        }
 
     private fun init() {
         imageAdapter = ImageAdapter()
@@ -104,13 +111,11 @@ class EditAdsActivity : AppCompatActivity(), FragmentCloseInterface {
 //        dialog.showSpinnerDialog(this, listCountry)
     }
 
-
     private fun onClickSelectCountryCity() {
-
         binding.textViewSelectCountry.setOnClickListener {
             val listCountry = CityHelper.getAllCountries(this)
-            if (binding.textViewSelectCity.text.toString() != "") {   //getString(R.string.select_city)
-                binding.textViewSelectCity.setText("")//getString(R.string.select_city)
+            if (binding.textViewSelectCity.text.toString() != "") { // getString(R.string.select_city)
+                binding.textViewSelectCity.setText("") // getString(R.string.select_city)
             }
             val onItemSelectedListener =
                 object : RcViewDialogSpinnerAdapter.OnItemSelectedListener {
@@ -124,7 +129,7 @@ class EditAdsActivity : AppCompatActivity(), FragmentCloseInterface {
                 listCountry,
                 binding.textViewSelectCountry,
                 onItemSelectedListener,
-                true
+                true,
             )
         }
 
@@ -144,19 +149,20 @@ class EditAdsActivity : AppCompatActivity(), FragmentCloseInterface {
                     listCity,
                     binding.textViewSelectCity,
                     onItemSelectedListener,
-                    true
+                    true,
                 )
             } else {
                 Toast.makeText(this, "No country selected", Toast.LENGTH_LONG).show()
             }
         }
 
-        binding.textViewSelectWithSend.setOnClickListener{
-
-            val listVariant = arrayListOf(
-                Pair("Не важно", "empty"),
-                Pair("С отправкой", "empty"),
-                Pair("Без отправки", "empty)"))
+        binding.textViewSelectWithSend.setOnClickListener {
+            val listVariant =
+                arrayListOf(
+                    Pair("Не важно", "empty"),
+                    Pair("С отправкой", "empty"),
+                    Pair("Без отправки", "empty)"),
+                )
 
             val onItemSelectedListener =
                 object : RcViewDialogSpinnerAdapter.OnItemSelectedListener {
@@ -164,7 +170,14 @@ class EditAdsActivity : AppCompatActivity(), FragmentCloseInterface {
                         binding.textViewSelectWithSend.setText(item)
                     }
                 }
-            dialog.showSpinnerPopup(this, binding.textViewSelectWithSend, listVariant, binding.textViewSelectWithSend, onItemSelectedListener, false )
+            dialog.showSpinnerPopup(
+                this,
+                binding.textViewSelectWithSend,
+                listVariant,
+                binding.textViewSelectWithSend,
+                onItemSelectedListener,
+                false,
+            )
         }
 
 //        binding.textViewSelectCity.setOnClickListener {
@@ -178,16 +191,12 @@ class EditAdsActivity : AppCompatActivity(), FragmentCloseInterface {
 //        }
 
         binding.imageButton.setOnClickListener {
-
             if (imageAdapter.mainArray.size == 0) {
-
                 ImagePicker.getMultiImages(this, 3)
-                //ImagePicker.getImages(this)
+                // ImagePicker.getImages(this)
             } else {
-
                 openChooseImageFrag(null)
                 chooseImageFrag?.updateAdapterFromEdit(imageAdapter.mainArray)
-
             }
         }
     }
@@ -195,11 +204,12 @@ class EditAdsActivity : AppCompatActivity(), FragmentCloseInterface {
     private fun onClickPublish() {
         binding.buttonPublish.setOnClickListener {
             if (isFieldsEmpty()) {
-                Toast.makeText(
-                    this,
-                    "Внимание! Все поля должны быть заполнены!",
-                    Toast.LENGTH_SHORT
-                ).show()
+                Toast
+                    .makeText(
+                        this,
+                        "Внимание! Все поля должны быть заполнены!",
+                        Toast.LENGTH_SHORT,
+                    ).show()
                 return@setOnClickListener
             }
             binding.progressLayout.visibility = View.VISIBLE
@@ -208,8 +218,9 @@ class EditAdsActivity : AppCompatActivity(), FragmentCloseInterface {
         }
     }
 
-    private fun isFieldsEmpty(): Boolean = with(binding) {
-        return textViewSelectCountry.text.toString() == getString(R.string.select_country) ||
+    private fun isFieldsEmpty(): Boolean =
+        with(binding) {
+            return textViewSelectCountry.text.toString() == getString(R.string.select_country) ||
                 textViewSelectCity.text.toString() == getString(R.string.select_city) ||
                 textViewSelectCategory.text.toString() == getString(R.string.select_category) ||
                 textViewTitle.text?.isEmpty() ?: true ||
@@ -217,43 +228,44 @@ class EditAdsActivity : AppCompatActivity(), FragmentCloseInterface {
                 textViewIndex.text?.isEmpty() ?: true ||
                 textViewDescription.text?.isEmpty() ?: true ||
                 textViewSelectTelNumb.text?.isEmpty() ?: true
+        }
 
-    }
-
-    private fun onPublishFinish(): DbManager.FinishWorkListener {
-        return object : DbManager.FinishWorkListener {
+    private fun onPublishFinish(): DbManager.FinishWorkListener =
+        object : DbManager.FinishWorkListener {
             override fun onFinish(isDone: Boolean) {
                 binding.progressLayout.visibility = View.GONE
                 if (isDone) finish()
             }
-
         }
-    }
 
-    private fun fillAnnouncement(): Announcement {
-        val announcementTemp: Announcement
+    private fun fillAnnouncement(): Ad {
+        val adTemp: Ad
         binding.apply {
-            announcementTemp = Announcement(
-                textViewTitle.text.toString(),
-                createKeyWords(textViewTitle.text.toString()),
-                textViewSelectCountry.text.toString(),
-                textViewSelectCity.text.toString(),
-                textViewIndex.text.toString(),
-                textViewSelectTelNumb.text.toString(),
-                textViewSelectWithSend.text.toString(),
-                textViewSelectCategory.text.toString(),
-                textViewPrice.text.toString().toInt(),
-                textViewDescription.text.toString(),
-                textViewSelectEmail.text.toString(),
-                ad?.mainImage ?: "empty",
-                ad?.image2 ?: "empty",
-                ad?.image3 ?: "empty",
-                ad?.key ?: dbManager.database.push().key,
-                dbManager.auth.uid,
-                ad?.time ?: System.currentTimeMillis().toString()
-            )
+            adTemp =
+                Ad(
+                    ad?.key ?: dbManager.firestore
+                        .collection(MAIN_NODE)
+                        .document()
+                        .id,
+                    textViewTitle.text.toString(),
+                    createKeyWords(textViewTitle.text.toString()),
+                    textViewSelectCountry.text.toString(),
+                    textViewSelectCity.text.toString(),
+                    textViewIndex.text.toString(),
+                    textViewSelectTelNumb.text.toString(),
+                    textViewSelectWithSend.text.toString(),
+                    textViewSelectCategory.text.toString(),
+                    textViewPrice.text.toString().toInt(),
+                    textViewDescription.text.toString(),
+                    textViewSelectEmail.text.toString(),
+                    ad?.mainImage ?: "empty",
+                    ad?.image2 ?: "empty",
+                    ad?.image3 ?: "empty",
+                    dbManager.auth.uid,
+                    ad?.time ?: System.currentTimeMillis().toString(),
+                )
         }
-        return announcementTemp
+        return adTemp
     }
 
     private fun createKeyWords(title: String): ArrayList<String> {
@@ -267,7 +279,7 @@ class EditAdsActivity : AppCompatActivity(), FragmentCloseInterface {
 
     private fun generateCombinations(
         words: List<String>,
-        memo: MutableMap<List<String>, List<String>> = mutableMapOf()
+        memo: MutableMap<List<String>, List<String>> = mutableMapOf(),
     ): List<String> {
         if (words.isEmpty()) {
             return emptyList()
@@ -292,12 +304,11 @@ class EditAdsActivity : AppCompatActivity(), FragmentCloseInterface {
     }
 
     private fun onClickSelectCategory() {
-
         binding.textViewSelectCategory.setOnClickListener {
-
             val listCategory = resources.getStringArray(R.array.category)
             val pairsCategory = ArrayList<Pair<String, String>>(listCategory.map { Pair(it, "empty") })
-            val onItemSelectedListener = object : RcViewDialogSpinnerAdapter.OnItemSelectedListener {
+            val onItemSelectedListener =
+                object : RcViewDialogSpinnerAdapter.OnItemSelectedListener {
                     override fun onItemSelected(item: String) {
                         binding.textViewSelectCategory.setText(item)
                     }
@@ -308,9 +319,8 @@ class EditAdsActivity : AppCompatActivity(), FragmentCloseInterface {
                 pairsCategory,
                 binding.textViewSelectCategory,
                 onItemSelectedListener,
-                false
+                false,
             )
-
         }
     }
 
@@ -319,7 +329,6 @@ class EditAdsActivity : AppCompatActivity(), FragmentCloseInterface {
         imageAdapter.update(list)
         chooseImageFrag = null
         updateImageCounter(binding.viewPagerImages.currentItem)
-
     }
 
     fun openChooseImageFrag(newList: ArrayList<Uri>?) {
@@ -333,9 +342,9 @@ class EditAdsActivity : AppCompatActivity(), FragmentCloseInterface {
     }
 
     private fun uploadImages() {
-        //Log.d("index", "$imageIndex")
+        // Log.d("index", "$imageIndex")
         if (imageIndex == 3) {
-            //dbManager.publishAnnouncement(ad!!, onPublishFinish())
+            // dbManager.publishAnnouncement(ad!!, onPublishFinish())
             dbManager.publishAnnouncement1(ad!!, onPublishFinish())
             return
         }
@@ -348,7 +357,7 @@ class EditAdsActivity : AppCompatActivity(), FragmentCloseInterface {
                 }
             } else {
                 uploadImage(byteArray) {
-                    //dbManager.publishAnnouncement(ad!!, onPublishFinish())
+                    // dbManager.publishAnnouncement(ad!!, onPublishFinish())
                     nextImage(it.result.toString())
                 }
             }
@@ -377,9 +386,7 @@ class EditAdsActivity : AppCompatActivity(), FragmentCloseInterface {
         }
     }
 
-    private fun getUrlFromAd(): String {
-        return listOf(ad?.mainImage!!, ad?.image2!!, ad?.image3!!)[imageIndex]
-    }
+    private fun getUrlFromAd(): String = listOf(ad?.mainImage!!, ad?.image2!!, ad?.image3!!)[imageIndex]
 
     private fun prepareImageByteArray(bitmap: Bitmap): ByteArray {
         val outStream = ByteArrayOutputStream()
@@ -387,39 +394,54 @@ class EditAdsActivity : AppCompatActivity(), FragmentCloseInterface {
         return outStream.toByteArray()
     }
 
-    private fun uploadImage(byteArray: ByteArray, listener: OnCompleteListener<Uri>) {
-        val imStorageRef = dbManager.dbStorage
-            .child(dbManager.auth.uid!!)
-            .child("image_${System.currentTimeMillis()}")
+    private fun uploadImage(
+        byteArray: ByteArray,
+        listener: OnCompleteListener<Uri>,
+    ) {
+        val imStorageRef =
+            dbManager.dbStorage
+                .child(dbManager.auth.uid!!)
+                .child("image_${System.currentTimeMillis()}")
         val upTask = imStorageRef.putBytes(byteArray)
-        upTask.continueWithTask { task ->
-            imStorageRef.downloadUrl
-        }.addOnCompleteListener(listener)
-
+        upTask
+            .continueWithTask { task ->
+                imStorageRef.downloadUrl
+            }.addOnCompleteListener(listener)
     }
 
-    private fun updateImage(byteArray: ByteArray, url: String, listener: OnCompleteListener<Uri>) {
+    private fun updateImage(
+        byteArray: ByteArray,
+        url: String,
+        listener: OnCompleteListener<Uri>,
+    ) {
         val imStorageRef = dbManager.dbStorage.storage.getReferenceFromUrl(url)
         val upTask = imStorageRef.putBytes(byteArray)
-        upTask.continueWithTask { task ->
-            imStorageRef.downloadUrl
-        }.addOnCompleteListener(listener)
-
+        upTask
+            .continueWithTask { task ->
+                imStorageRef.downloadUrl
+            }.addOnCompleteListener(listener)
     }
 
-    private fun deleteImageByUrl(oldUrl: String, listener: OnCompleteListener<Void>) {
+    private fun deleteImageByUrl(
+        oldUrl: String,
+        listener: OnCompleteListener<Void>,
+    ) {
         dbManager.dbStorage.storage
-            .getReferenceFromUrl(oldUrl).delete().addOnCompleteListener(listener)
+            .getReferenceFromUrl(oldUrl)
+            .delete()
+            .addOnCompleteListener(listener)
     }
 
     private fun imageChangeCounter() {
-        binding.viewPagerImages.registerOnPageChangeCallback(object :
-            ViewPager2.OnPageChangeCallback() {
-            override fun onPageSelected(position: Int) {
-                super.onPageSelected(position)
-                updateImageCounter(position)
-            }
-        })
+        binding.viewPagerImages.registerOnPageChangeCallback(
+            object :
+                ViewPager2.OnPageChangeCallback() {
+                override fun onPageSelected(position: Int) {
+                    super.onPageSelected(position)
+                    updateImageCounter(position)
+                }
+            },
+        )
     }
 
     private fun updateImageCounter(counter: Int) {
@@ -430,8 +452,8 @@ class EditAdsActivity : AppCompatActivity(), FragmentCloseInterface {
         binding.textViewImageCounter.text = imageCounter
     }
 
-    private fun getSelectedTheme(): Int {
-        return when (defPreferences.getString(SettingsActivity.THEME_KEY, SettingsActivity.DEFAULT_THEME)) {
+    private fun getSelectedTheme(): Int =
+        when (defPreferences.getString(SettingsActivity.THEME_KEY, SettingsActivity.DEFAULT_THEME)) {
             SettingsActivity.DEFAULT_THEME -> {
                 AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
                 R.style.Base_Theme_Bulletin_board_light
@@ -441,5 +463,4 @@ class EditAdsActivity : AppCompatActivity(), FragmentCloseInterface {
                 R.style.Base_Theme_Bulletin_board_dark
             }
         }
-    }
 }

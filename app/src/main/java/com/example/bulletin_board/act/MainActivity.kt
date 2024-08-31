@@ -48,7 +48,7 @@ import com.example.bulletin_board.dialoghelper.DialogHelper
 import com.example.bulletin_board.dialogs.DialogSpinnerHelper
 import com.example.bulletin_board.dialogs.RcViewDialogSpinnerAdapter
 import com.example.bulletin_board.dialogs.RcViewSearchSpinnerAdapter
-import com.example.bulletin_board.model.Announcement
+import com.example.bulletin_board.model.Ad
 import com.example.bulletin_board.model.DbManager
 import com.example.bulletin_board.model.SortOption
 import com.example.bulletin_board.settings.SettingsActivity
@@ -670,12 +670,12 @@ class MainActivity :
         }
     }
 
-    override fun onDeleteItem(ad: Announcement) {
+    override fun onDeleteItem(ad: Ad) {
         firebaseViewModel.deleteItem(ad)
         clearUpdate = true
     }
 
-    override fun onAdViewed(ad: Announcement) {
+    override fun onAdViewed(ad: Ad) {
         firebaseViewModel.adViewed(ad)
         val i = Intent(this, DescriptionActivity::class.java)
         i.putExtra("AD", ad)
@@ -683,8 +683,8 @@ class MainActivity :
     }
 
     override fun onFavClicked(
-        ad: Announcement,
-        adArray: ArrayList<Announcement>,
+        ad: Ad,
+        adArray: ArrayList<Ad>,
     ) {
         clearUpdate = true
         firebaseViewModel.onFavClick(ad, adArray)
@@ -755,7 +755,7 @@ class MainActivity :
             )
         }
 
-    private fun getAdsFromCat(adsList: List<Announcement>) {
+    private fun getAdsFromCat(adsList: List<Ad>) {
         adsList.lastOrNull()?.let {
             firebaseViewModel.loadAllAnnouncements(this, filterDb)
         }

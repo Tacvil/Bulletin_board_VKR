@@ -6,7 +6,7 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.bulletin_board.model.Announcement
+import com.example.bulletin_board.model.Ad
 import com.example.bulletin_board.model.DbManager
 import com.google.firebase.firestore.QueryDocumentSnapshot
 import kotlinx.coroutines.Dispatchers
@@ -20,9 +20,9 @@ import kotlinx.coroutines.launch
 @OptIn(FlowPreview::class)
 class FirebaseViewModel : ViewModel() {
     private val dbManager = DbManager()
-    val homeAdsData = MutableLiveData<List<Announcement>?>(emptyList())
-    val myAdsData = MutableLiveData<List<Announcement>?>(emptyList())
-    val favsData = MutableLiveData<List<Announcement>?>(emptyList())
+    val homeAdsData = MutableLiveData<List<Ad>?>(emptyList())
+    val myAdsData = MutableLiveData<List<Ad>?>(emptyList())
+    val favsData = MutableLiveData<List<Ad>?>(emptyList())
     private var currentSortOption: String? = null
     private var lastDocumentAds: QueryDocumentSnapshot? = null
     private val _isLoading = MutableLiveData<Boolean>()
@@ -50,7 +50,7 @@ class FirebaseViewModel : ViewModel() {
                                 readDataCallback =
                                     object : DbManager.ReadDataCallback {
                                         override fun readData(
-                                            list: ArrayList<Announcement>,
+                                            list: ArrayList<Ad>,
                                             lastDocument: QueryDocumentSnapshot?,
                                         ) {
                                             homeAdsData.value = list
@@ -95,8 +95,8 @@ class FirebaseViewModel : ViewModel() {
     }
 
     fun onFavClick(
-        ad: Announcement,
-        adArray: ArrayList<Announcement>,
+        ad: Ad,
+        adArray: ArrayList<Ad>,
     ) {
         dbManager.onFavClick(
             ad,
@@ -125,7 +125,7 @@ class FirebaseViewModel : ViewModel() {
         )
     }
 
-    fun adViewed(ad: Announcement) {
+    fun adViewed(ad: Ad) {
         dbManager.adViewed(ad)
     }
 
@@ -133,7 +133,7 @@ class FirebaseViewModel : ViewModel() {
         dbManager.getMyAnnouncement(
             object : DbManager.ReadDataCallback {
                 override fun readData(
-                    list: ArrayList<Announcement>,
+                    list: ArrayList<Ad>,
                     lastDocument: QueryDocumentSnapshot?,
                 ) {
                     myAdsData.value = list
@@ -155,7 +155,7 @@ class FirebaseViewModel : ViewModel() {
         dbManager.getMyFavs(
             object : DbManager.ReadDataCallback {
                 override fun readData(
-                    list: ArrayList<Announcement>,
+                    list: ArrayList<Ad>,
                     lastDocument: QueryDocumentSnapshot?,
                 ) {
                     favsData.value = list
@@ -173,7 +173,7 @@ class FirebaseViewModel : ViewModel() {
         )
     }
 
-    fun deleteItem(ad: Announcement) {
+    fun deleteItem(ad: Ad) {
         dbManager.deleteAnnouncement(
             ad,
             object : DbManager.FinishWorkListener {

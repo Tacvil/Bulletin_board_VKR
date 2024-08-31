@@ -1,5 +1,6 @@
 package com.example.bulletin_board.Room
 
+import com.example.bulletin_board.model.Ad
 import kotlinx.coroutines.flow.Flow
 
 interface AdDataSource {
@@ -11,5 +12,5 @@ interface AdDataSource {
 
     suspend fun updateAd(ad: Ad)
 
-    suspend fun deleteAd(ad: Ad)
+    suspend fun deleteAd(ad: Ad): Result<Boolean>
 }

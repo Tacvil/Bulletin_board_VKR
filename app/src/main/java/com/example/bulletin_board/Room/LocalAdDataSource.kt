@@ -1,5 +1,6 @@
 package com.example.bulletin_board.Room
 
+import com.example.bulletin_board.model.Ad
 import jakarta.inject.Inject
 import jakarta.inject.Singleton
 import kotlinx.coroutines.flow.Flow
