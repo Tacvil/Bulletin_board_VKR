@@ -66,25 +66,23 @@ class AdsRcAdapter(
 //            if (ad.isFav) imageButtonFav.setImageResource(R.drawable.ic_favorite_pressed) else imageButtonFav.setImageResource(R.drawable.ic_favorite_normal)
 
                 showEditPanel(isOwner(ad))
-                if (ad.isFav)
-                    {
-                        imageButtonFav1.pauseAnimation()
-                        imageButtonFav1.cancelAnimation()
-                        imageButtonFav1.setMinAndMaxProgress(0.38f, 0.38f)
-                    } else {
+                if (ad.isFav) {
+                    imageButtonFav1.pauseAnimation()
+                    imageButtonFav1.cancelAnimation()
+                    imageButtonFav1.setMinAndMaxProgress(0.38f, 0.38f)
+                } else {
                     imageButtonFav1.pauseAnimation()
                     imageButtonFav1.cancelAnimation()
                     imageButtonFav1.setMinAndMaxProgress(0.87f, 0.87f)
                 }
                 imageButtonFav1.setOnClickListener {
                     // Обработка клика
-                    if (!ad.isFav)
-                        {
-                            imageButtonFav1.pauseAnimation()
-                            imageButtonFav1.cancelAnimation()
-                            imageButtonFav1.setMinAndMaxProgress(0.0f, 0.38f)
-                            imageButtonFav1.speed = 1.5f
-                        } else {
+                    if (!ad.isFav) {
+                        imageButtonFav1.pauseAnimation()
+                        imageButtonFav1.cancelAnimation()
+                        imageButtonFav1.setMinAndMaxProgress(0.0f, 0.38f)
+                        imageButtonFav1.speed = 1.5f
+                    } else {
                         imageButtonFav1.pauseAnimation()
                         imageButtonFav1.cancelAnimation()
                         imageButtonFav1.setMinAndMaxProgress(0.6f, 0.87f)
@@ -129,7 +127,7 @@ class AdsRcAdapter(
                 }
             }
 
-        private fun getTimeFromMillis(timeMillis: String): String  {
+        private fun getTimeFromMillis(timeMillis: String): String {
             val c = Calendar.getInstance()
             c.timeInMillis = timeMillis.toLong()
             return formatter.format(c.time)
@@ -196,12 +194,12 @@ class AdsRcAdapter(
         notifyDataSetChanged()
     }
 
-    interface Listener  {
-        fun onDeleteItem(ad: Ad)
+    interface Listener {
+        suspend fun onDeleteItem(ad: Ad)
 
-        fun onAdViewed(ad: Ad)
+        suspend fun onAdViewed(ad: Ad)
 
-        fun onFavClicked(
+        suspend fun onFavClicked(
             ad: Ad,
             adArray: ArrayList<Ad>,
         )

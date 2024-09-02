@@ -27,5 +27,5 @@ object DatabaseModule {
             ).build()
 
     @Provides
-    fun provideAdDao(database: AppDatabase): AdDao = database.adDao()
+    fun provideAdDao(database: AppDatabase): AdDao = database.AdDao()
 }

@@ -1,6 +1,7 @@
 package com.example.bulletin_board.Room
 
 import com.example.bulletin_board.model.Ad
+import com.example.bulletin_board.model.DbManager
 import jakarta.inject.Inject
 import jakarta.inject.Singleton
 import kotlinx.coroutines.flow.Flow
@@ -19,7 +20,10 @@ class LocalAdDataSource
 
         override suspend fun updateAd(ad: Ad) = adDao.update(ad)
 
-        override suspend fun deleteAd(ad: Ad) = adDao.delete(ad)
+        override suspend fun deleteAd(
+            ad: Ad,
+            param: DbManager.FinishWorkListener,
+        ) = adDao.delete(ad)
 
         suspend fun deleteAllAds() = adDao.deleteAllAds()
     }

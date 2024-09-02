@@ -18,7 +18,6 @@ import android.text.style.ForegroundColorSpan
 import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
-import android.view.View
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
@@ -30,15 +29,20 @@ import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.view.GravityCompat
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.viewModelScope
+import androidx.paging.Pager
+import androidx.paging.cachedIn
 import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
-import com.airbnb.lottie.LottieDrawable
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.resource.bitmap.RoundedCorners
 import com.bumptech.glide.request.RequestOptions
 import com.example.bulletin_board.R
 import com.example.bulletin_board.accounthelper.AccountHelper
+import com.example.bulletin_board.adapterFirestore.AdHolderFactory
+import com.example.bulletin_board.adapterFirestore.AdsAdapter
+import com.example.bulletin_board.adapterFirestore.AdsPagingSource
 import com.example.bulletin_board.adapters.AdsRcAdapter
 import com.example.bulletin_board.adapters.FavsAdapter
 import com.example.bulletin_board.adapters.MyAdsAdapter
@@ -50,11 +54,13 @@ import com.example.bulletin_board.dialogs.RcViewDialogSpinnerAdapter
 import com.example.bulletin_board.dialogs.RcViewSearchSpinnerAdapter
 import com.example.bulletin_board.model.Ad
 import com.example.bulletin_board.model.DbManager
+import com.example.bulletin_board.model.DbManager.Companion.MAIN_NODE
 import com.example.bulletin_board.model.SortOption
 import com.example.bulletin_board.settings.SettingsActivity
 import com.example.bulletin_board.utils.BillingManager
 import com.example.bulletin_board.utils.BillingManager.Companion.REMOVE_ADS_PREF
 import com.example.bulletin_board.viewmodel.FirebaseViewModel
+import com.firebase.ui.firestore.paging.FirestorePagingOptions
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.common.api.ApiException
 import com.google.android.material.navigation.NavigationView.OnNavigationItemSelectedListener
@@ -62,6 +68,9 @@ import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.ktx.Firebase
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
+import timber.log.Timber
 import java.io.Serializable
 
 class MainActivity :
@@ -77,7 +86,6 @@ class MainActivity :
 
     private val dialog = DialogSpinnerHelper()
     val mAuth = Firebase.auth
-    val homeAdsAdapter = AdsRcAdapter(this)
     private val myAdsAdapter = MyAdsAdapter(this)
     private val favsAdapter = FavsAdapter(this)
     lateinit var googleSignInLauncher: ActivityResultLauncher<Intent>
@@ -130,7 +138,7 @@ class MainActivity :
         initRecyclerView()
         initViewModel()
         bottomMenuOnClick()
-        scrollListener()
+        // scrollListener()
         onActivityResultFilter()
     }
 
@@ -255,9 +263,9 @@ class MainActivity :
                 val titleValidate = queryValidate(querySearch)
 
                 filterDb["keyWords"] = titleValidate
-                Log.d("MainActSearch", "filterDb = $filterDb")
+                Timber.tag("MainActSearch").d("filterDb = " + filterDb)
                 clearUpdate = true
-                firebaseViewModel.loadAllAnnouncements(this@MainActivity, filterDb)
+                firebaseViewModel.getHomeAdsData(filterDb, this@MainActivity)
             }
             binding.mainContent.searchViewMainContent.hide()
 
@@ -272,13 +280,13 @@ class MainActivity :
                 .setText(textSearchBar)
         }
         binding.mainContent.searchViewMainContent.toolbar.setOnClickListener {
-            Log.d("MenuClick", "CLICK - $it")
+            Timber.tag("MenuClick").d("CLICK - " + it)
         }
     }
 
     private fun queryValidate(query: String): String {
         val validateData = query.split(" ").joinToString("-")
-        Log.d("MainActQueryValidate", "validateData = $validateData")
+        Timber.tag("MainActQueryValidate").d("validateData = " + validateData)
         return validateData
     }
 
@@ -307,9 +315,9 @@ class MainActivity :
                             mainContent.autoComplete.setText(item)
 
                             filterDb["orderBy"] = getSortOption(item)
-                            Log.d("MainActOnClickFilter", "filterDb = $filterDb")
+                            Timber.tag("MainActOnClickFilter").d("filterDb = " + filterDb)
                             clearUpdate = true
-                            firebaseViewModel.loadAllAnnouncements(this@MainActivity, filterDb)
+                            firebaseViewModel.getHomeAdsData(filterDb, this@MainActivity)
                         }
                     }
 
@@ -347,7 +355,7 @@ class MainActivity :
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        Log.d("MenuClick", "CLICK - $item")
+        Timber.tag("MenuClick").d("CLICK - " + item)
         when (item.itemId) {
             android.R.id.home -> {
                 binding.drawerLayout.openDrawer(GravityCompat.START)
@@ -358,9 +366,9 @@ class MainActivity :
                     // Текущая иконка НЕ является ic_search
                     binding.mainContent.searchBar.clearText()
                     filterDb["keyWords"] = ""
-                    Log.d("MainActR.id.id_search", "filterDb = $filterDb")
+                    Timber.tag("MainActR.id.id_search").d("filterDb = " + filterDb)
                     clearUpdate = true
-                    firebaseViewModel.loadAllAnnouncements(this@MainActivity, filterDb)
+                    firebaseViewModel.getHomeAdsData(filterDb, this@MainActivity)
                     item.setIcon(R.drawable.ic_search)
                 } else {
                     binding.mainContent.searchBar.performClick()
@@ -402,7 +410,7 @@ class MainActivity :
 
                 if (!results.isNullOrEmpty()) {
                     val spokenText = results[0]
-                    Log.d("VoiceSearch", "Распознанный текст: $spokenText")
+                    Timber.tag("VoiceSearch").d("Распознанный текст: " + spokenText)
 
                     binding.mainContent.searchBar.setText(spokenText)
                     binding.mainContent.searchBar.menu
@@ -412,11 +420,11 @@ class MainActivity :
                     val validateText = queryValidate(spokenText)
 
                     filterDb["keyWords"] = validateText
-                    Log.d("MainActSpokenText", "filterDb = $filterDb")
+                    Timber.tag("MainActSpokenText").d("filterDb = " + filterDb)
                     clearUpdate = true
-                    firebaseViewModel.loadAllAnnouncements(this@MainActivity, filterDb)
+                    firebaseViewModel.getHomeAdsData(filterDb, this@MainActivity)
                 } else {
-                    Log.d("VoiceSearch", "Распознавание речи не дало результатов.")
+                    Timber.tag("VoiceSearch").d("Распознавание речи не дало результатов.")
                 }
             }
         }
@@ -440,7 +448,7 @@ class MainActivity :
                     }
                 } catch (e: ApiException) {
                     Toast.makeText(this, "Api exception: ${e.message}", Toast.LENGTH_SHORT).show()
-                    Log.d("MyLog", "Api exception: ${e.message} ")
+                    Timber.tag("MyLog").d("Api exception: " + e.message + " ")
                 }
             }
     }
@@ -451,7 +459,7 @@ class MainActivity :
                 ActivityResultContracts.StartActivityForResult(),
             ) {
                 if (it.resultCode == RESULT_OK) {
-                    Log.d("MyLogMainAct", "filterDbBefore: $filterDb")
+                    Timber.tag("MyLogMainAct").d("filterDbBefore: " + filterDb)
                     val newFilterData = (it.data?.getSerializableExtra(FilterActivity.FILTER_KEY) as? MutableMap<String, String>)!!
                     filterDb.putAll(newFilterData)
                     if (filterDb["price_from"]?.isNotEmpty() == true || filterDb["price_to"]?.isNotEmpty() == true) {
@@ -481,7 +489,42 @@ class MainActivity :
         firebaseViewModel.favsData.observe(this) { list ->
             list?.let { favsAdapter.updateAdapter(it) } // Обновляем адаптер
         }
-        firebaseViewModel.homeAdsData.observe(this) {
+
+        val pagingConfig = firebaseViewModel.getPagingConfig()
+
+        val remoteAdDataSource = firebaseViewModel.remoteAdDataSource
+        val snapshotFlow =
+            Pager(pagingConfig) {
+                AdsPagingSource(remoteAdDataSource, filterDb, this)
+            }.flow.cachedIn(firebaseViewModel.viewModelScope) // Используйте firebaseViewModel.viewModelScope
+
+        val options =
+            FirestorePagingOptions
+                .Builder<Ad>()
+                .setLifecycleOwner(this)
+                .setQuery(
+                    FirebaseFirestore.getInstance().collection(MAIN_NODE),
+                    pagingConfig,
+                ) { snapshot ->
+                    snapshot.toObject(Ad::class.java)!!
+                }.build()
+
+        val adsAdapter = AdsAdapter(this, AdHolderFactory, options)
+
+        lifecycleScope.launch {
+            snapshotFlow.collectLatest { pagingData ->
+                if (clearUpdate) {
+                    adsAdapter.refresh()
+                    clearUpdate = false
+                }
+                adsAdapter.submitData(lifecycle, pagingData) // Используйте FirestorePagingAdapter.submitData()
+            }
+        }
+
+        binding.mainContent.recyclerViewMainContent.layoutManager = LinearLayoutManager(this@MainActivity)
+        binding.mainContent.recyclerViewMainContent.adapter = adsAdapter
+
+/*        firebaseViewModel.homeAdsData.observe(this) {
             it?.let { content ->
                 // val list = getAdsByCategory(content)
                 Log.d("MainActInitViewModel", "clearUpdate: $clearUpdate")
@@ -503,7 +546,7 @@ class MainActivity :
                     binding.mainContent.nothinkWhiteAnim.visibility = View.GONE
                 }
             }
-        }
+        }*/
     }
 
     private fun init() {
@@ -547,18 +590,18 @@ class MainActivity :
 
                     R.id.id_my_ads -> {
                         firebaseViewModel.loadMyAnnouncement()
-                        binding.mainContent.recyclerViewMainContent.adapter = myAdsAdapter
+                        // binding.mainContent.recyclerViewMainContent.adapter = myAdsAdapter
                         // mainContent.toolbar.title = getString(R.string.ad_my_ads)
                     }
 
                     R.id.id_favs -> {
                         firebaseViewModel.loadMyFavs()
-                        binding.mainContent.recyclerViewMainContent.adapter = favsAdapter
+                        // binding.mainContent.recyclerViewMainContent.adapter = favsAdapter
                         // mainContent.toolbar.title = getString(R.string.favs)
                     }
 
                     R.id.id_home -> {
-                        binding.mainContent.recyclerViewMainContent.adapter = homeAdsAdapter
+                        // binding.mainContent.recyclerViewMainContent.adapter = homeAdsAdapter
                         getAdsFromCat(getString(R.string.def))
                     }
                 }
@@ -567,11 +610,11 @@ class MainActivity :
         }
 
     private fun initRecyclerView() {
-        binding.apply {
+/*        binding.apply {
             mainContent.recyclerViewMainContent.layoutManager =
                 LinearLayoutManager(this@MainActivity)
             mainContent.recyclerViewMainContent.adapter = homeAdsAdapter
-        }
+        }*/
 
         val onItemSelectedListener =
             object : RcViewSearchSpinnerAdapter.OnItemSelectedListener {
@@ -639,12 +682,12 @@ class MainActivity :
 
     private fun getAdsFromCat(cat: String) {
         filterDb["category"] = cat
-        Log.d("MainActivityCAT", "firebaseViewModel.homeAdsData.value = ${firebaseViewModel.homeAdsData.value}")
-        Log.d("MainActivityCAT", "_isLoading.value = $viewModelIsLoading")
+        // Timber.tag("MainActivityCAT").d("firebaseViewModel.homeAdsData.value = " + firebaseViewModel.homeAdsData.value)
+        Timber.tag("MainActivityCAT").d("_isLoading.value = " + viewModelIsLoading)
         filterDb["orderBy"] = filterDb["orderBy"]?.let { getSortOption(it) }.toString()
-        Log.d("MainActivityCAT", "filterDb = $filterDb")
+        Timber.tag("MainActivityCAT").d("filterDb = " + filterDb)
 
-        firebaseViewModel.loadAllAnnouncements(this, filterDb)
+        firebaseViewModel.getHomeAdsData(filterDb, this)
     }
 
     fun uiUpdate(user: FirebaseUser?) {
@@ -670,24 +713,24 @@ class MainActivity :
         }
     }
 
-    override fun onDeleteItem(ad: Ad) {
+    override suspend fun onDeleteItem(ad: Ad) {
         firebaseViewModel.deleteItem(ad)
         clearUpdate = true
     }
 
-    override fun onAdViewed(ad: Ad) {
+    override suspend fun onAdViewed(ad: Ad) {
         firebaseViewModel.adViewed(ad)
         val i = Intent(this, DescriptionActivity::class.java)
         i.putExtra("AD", ad)
         startActivity(i)
     }
 
-    override fun onFavClicked(
+    override suspend fun onFavClicked(
         ad: Ad,
         adArray: ArrayList<Ad>,
     ) {
         clearUpdate = true
-        firebaseViewModel.onFavClick(ad, adArray)
+        firebaseViewModel.onFavClick(ad)
     }
 
     private fun navViewSetting() =
@@ -731,7 +774,7 @@ class MainActivity :
             accCat.title = spanAccCat
         }
 
-    private fun scrollListener() =
+    /*private fun scrollListener() =
         with(binding.mainContent) {
             recyclerViewMainContent.addOnScrollListener(
                 object : RecyclerView.OnScrollListener() {
@@ -757,14 +800,13 @@ class MainActivity :
 
     private fun getAdsFromCat(adsList: List<Ad>) {
         adsList.lastOrNull()?.let {
-            firebaseViewModel.loadAllAnnouncements(this, filterDb)
+            firebaseViewModel.getHomeAdsData(filterDb, this)
         }
-    }
+    }*/
 
     override fun onDestroy() {
         super.onDestroy()
         bManager?.closeConnection()
-        firebaseViewModel.clearCache()
     }
 
     private fun getSelectedTheme(): Int =

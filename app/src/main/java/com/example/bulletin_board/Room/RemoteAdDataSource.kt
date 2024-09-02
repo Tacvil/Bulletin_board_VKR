@@ -1,15 +1,18 @@
 package com.example.bulletin_board.Room
 
 import android.content.Context
-import androidx.lifecycle.get
-import androidx.lifecycle.map
 import com.example.bulletin_board.R
 import com.example.bulletin_board.model.Ad
+import com.example.bulletin_board.model.DbManager
+import com.example.bulletin_board.model.DbManager.Companion.USER_NODE
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.ktx.auth
+import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.QueryDocumentSnapshot
+import com.google.firebase.firestore.SetOptions
 import com.google.firebase.ktx.Firebase
 import jakarta.inject.Inject
 import jakarta.inject.Singleton
@@ -17,17 +20,14 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.tasks.await
 import timber.log.Timber
-import kotlin.text.get
-import kotlin.text.toLong
 
 @Singleton
 class RemoteAdDataSource
     @Inject
     constructor(
         private val firestore: FirebaseFirestore,
+        private val auth: FirebaseAuth = Firebase.auth,
     ) : AdDataSource {
-        private val auth = Firebase.auth
-
         companion object {
             private const val MAIN_COLLECTION = "main"
             private const val FAV_UIDS_FIELD = "favUids"
@@ -73,7 +73,10 @@ class RemoteAdDataSource
          * @return Result.Success(true) если объявление было успешно удалено,
          *         Result.Error(exception) в случае ошибки.
          */
-        override suspend fun deleteAd(ad: Ad): Result<Boolean> =
+        override suspend fun deleteAd(
+            ad: Ad,
+            param: DbManager.FinishWorkListener,
+        ): Result<Boolean> =
             try {
                 firestore
                     .collection(MAIN_COLLECTION)
@@ -111,7 +114,10 @@ class RemoteAdDataSource
          * @return Result.Success(true) если операция была успешной,
          *         Result.Error(exception) в случае ошибки.
          */
-        suspend fun onFavClick(ad: Ad): Result<Boolean> =
+        suspend fun onFavClick(
+            ad: Ad,
+            param: DbManager.FinishWorkListener,
+        ): Result<Boolean> =
             if (ad.isFav) {
                 removeFromFavs(ad)
             } else {
@@ -169,7 +175,7 @@ class RemoteAdDataSource
          *         или Result.Error(exception) в случае ошибки.
          */
 
-        fun getMyAds(): Flow<Result<List<Ad>>> =
+        fun getMyAds(param: DbManager.ReadDataCallback): Flow<Result<List<Ad>>> =
             flow {
                 try {
                     val ads =
@@ -199,7 +205,7 @@ class RemoteAdDataSource
          * @return Flow с Result.Success(list), содержащим список объявлений,
          *         или Result.Error(exception) в случае ошибки.
          */
-        fun getMyFavs(): Flow<Result<List<Ad>>> =
+        fun getMyFavs(param: DbManager.ReadDataCallback): Flow<Result<List<Ad>>> =
             flow {
                 try {
                     auth.uid?.let { uid ->
@@ -241,19 +247,12 @@ class RemoteAdDataSource
             time: String? = null,
             viewsCounter: Int? = null,
             lastDocument: QueryDocumentSnapshot? = null,
-        ): Flow<Result<Pair<List<Ad>, QueryDocumentSnapshot?>>> =
+        ): Flow<Result<Pair<List<DocumentSnapshot>, QueryDocumentSnapshot?>>> =
             flow {
                 try {
                     val query = buildAdsQuery(context, filter, time, viewsCounter, lastDocument)
                     val snapshot = query.get().await()
-                    val ads =
-                        snapshot.documents.map { document ->
-                            val ad = document.toObject(Ad::class.java)!!
-                            val favUids = document.get(FAV_UIDS_FIELD) as? List<String>
-                            ad.isFav = auth.uid?.let { favUids?.contains(it) } ?: false
-                            ad.favCounter = favUids?.size.toString()
-                            ad
-                        }
+                    val ads = snapshot.documents
                     emit(Result.Success(Pair(ads, snapshot.documents.lastOrNull() as? QueryDocumentSnapshot)))
                 } catch (e: Exception) {
                     Timber.e(e, "Error getting ads")
@@ -551,6 +550,28 @@ class RemoteAdDataSource
                     firestoreAdsCallback?.onError(task.exception ?: Exception("Unknown error"))
                 }
                 firestoreAdsCallback?.onComplete()
+            }
+        }
+
+        fun saveToken(token: String) {
+            if (auth.uid != null) {
+                val userRef = firestore.collection(USER_NODE).document(auth.uid ?: "empty")
+                // Создаем HashMap с полем "token"
+                val tokenData =
+                    hashMapOf(
+                        "token" to token,
+                    )
+                // Обновляем данные пользователя в Firestore, добавляя поле "token"
+                userRef
+                    .set(
+                        tokenData,
+                        SetOptions.merge(),
+                    ) // Используем SetOptions.merge(), чтобы добавить поле без удаления существующих данных
+                    .addOnSuccessListener {
+                        println("Токен успешно сохранен для пользователя с ID: ${auth.uid}")
+                    }.addOnFailureListener { e ->
+                        println("Ошибка при сохранении токена для пользователя с ID: ${auth.uid}, ошибка: $e")
+                    }
             }
         }
 

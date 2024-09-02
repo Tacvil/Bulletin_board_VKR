@@ -1,192 +1,140 @@
 package com.example.bulletin_board.viewmodel
 
 import android.content.Context
-import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.paging.Pager
+import androidx.paging.PagingConfig
+import androidx.paging.PagingData
+import androidx.paging.cachedIn
+import com.example.bulletin_board.Room.RemoteAdDataSource
+import com.example.bulletin_board.adapterFirestore.AdsAdapter
+import com.example.bulletin_board.adapterFirestore.AdsPagingSource
 import com.example.bulletin_board.model.Ad
 import com.example.bulletin_board.model.DbManager
+import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.QueryDocumentSnapshot
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.FlowPreview
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.flow.consumeAsFlow
-import kotlinx.coroutines.flow.debounce
+import dagger.hilt.android.lifecycle.HiltViewModel
+import jakarta.inject.Inject
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 
-@OptIn(FlowPreview::class)
-class FirebaseViewModel : ViewModel() {
-    private val dbManager = DbManager()
-    val homeAdsData = MutableLiveData<List<Ad>?>(emptyList())
-    val myAdsData = MutableLiveData<List<Ad>?>(emptyList())
-    val favsData = MutableLiveData<List<Ad>?>(emptyList())
-    private var currentSortOption: String? = null
-    private var lastDocumentAds: QueryDocumentSnapshot? = null
-    private val _isLoading = MutableLiveData<Boolean>()
-    val isLoading: LiveData<Boolean> = _isLoading
+@HiltViewModel
+class FirebaseViewModel
+    @Inject
+    constructor(
+        val remoteAdDataSource: RemoteAdDataSource,
+        private val adsAdapter: AdsAdapter,
+    ) : ViewModel() {
+        private val _isLoading = MutableLiveData<Boolean>()
+        val isLoading: LiveData<Boolean> = _isLoading
 
-    private val loadAllAnnouncementsChannel = Channel<Pair<Context, MutableMap<String, String>>>(Channel.CONFLATED)
-    private var currentJob: Job? = null
+        val myAdsData = MutableLiveData<List<Ad>?>(emptyList())
+        val favsData = MutableLiveData<List<Ad>?>(emptyList())
 
-    init {
-        viewModelScope.launch {
-            loadAllAnnouncementsChannel.consumeAsFlow().debounce(300).collect { (context, filter) ->
-                currentJob?.cancel()
-                currentJob =
-                    viewModelScope.launch(Dispatchers.IO) {
-                        _isLoading.postValue(true)
-                        try {
-                            if (currentSortOption != filter["orderBy"]) {
-                                lastDocumentAds = null
-                                currentSortOption = filter["orderBy"]
-                            }
-                            dbManager.getAllAnnouncements(
-                                context = context,
-                                filter = filter,
-                                lastDocumentAds = lastDocumentAds,
-                                readDataCallback =
-                                    object : DbManager.ReadDataCallback {
-                                        override fun readData(
-                                            list: ArrayList<Ad>,
-                                            lastDocument: QueryDocumentSnapshot?,
-                                        ) {
-                                            homeAdsData.value = list
-                                            lastDocumentAds = lastDocument
-                                            Log.d("FirebaseViewModel", "Список объявлений: $list")
-                                        }
+        fun getHomeAdsData(
+            filter: MutableMap<String, String>,
+            context: Context,
+        ): Flow<PagingData<DocumentSnapshot>> =
+            Pager(getPagingConfig()) {
+                AdsPagingSource(remoteAdDataSource, filter, context)
+            }.flow.cachedIn(viewModelScope)
 
-                                        override fun onComplete() {
-                                            _isLoading.value = false
-                                        }
+        fun getPagingConfig(): PagingConfig = PagingConfig(pageSize = 2)
 
-                                        override fun onError(e: Exception) {
-                                            Log.e("FirebaseViewModel", "Ошибка загрузки данных", e)
-                                            homeAdsData.postValue(null)
-                                        }
-                                    },
-                            )
-                        } catch (e: Exception) {
-                            Log.e("FirebaseViewModel", "Ошибка загрузки данных", e)
-                            homeAdsData.postValue(null)
-                            _isLoading.value = false
-                        }
+        // тут фигня с FinishWorkListener
+        suspend fun onFavClick(ad: Ad) {
+            remoteAdDataSource.onFavClick(
+                ad,
+                object : DbManager.FinishWorkListener {
+                    override fun onFinish(isDone: Boolean) {
+                        // Здесь можно обновить LiveData или использовать другой способ
+                        // уведомления адаптера об изменении состояния объявления
+                        // Например, можно использовать refresh() у Pager или PagingDataAdapter
                     }
+                },
+            )
+        }
+
+        suspend fun adViewed(ad: Ad) {
+            remoteAdDataSource.adViewed(ad)
+        }
+
+        fun loadMyAnnouncement() {
+            viewModelScope.launch {
+                _isLoading.postValue(true)
+                try {
+                    remoteAdDataSource.getMyAds(
+                        object : DbManager.ReadDataCallback {
+                            override fun readData(
+                                list: ArrayList<Ad>,
+                                lastDocument: QueryDocumentSnapshot?,
+                            ) {
+                                myAdsData.postValue(list)
+                            }
+
+                            override fun onComplete() {
+                                _isLoading.postValue(false)
+                            }
+
+                            override fun onError(e: Exception) {
+                                myAdsData.postValue(null)
+                                _isLoading.postValue(false)
+                            }
+                        },
+                    )
+                } catch (e: Exception) {
+                    myAdsData.postValue(null)
+                    _isLoading.postValue(false)
+                }
             }
         }
-    }
 
-    fun clearCache() {
-        homeAdsData.value = emptyList()
-        lastDocumentAds = null
-    }
+        fun loadMyFavs() {
+            viewModelScope.launch {
+                _isLoading.postValue(true)
+                try {
+                    remoteAdDataSource.getMyFavs(
+                        object : DbManager.ReadDataCallback {
+                            override fun readData(
+                                list: ArrayList<Ad>,
+                                lastDocument: QueryDocumentSnapshot?,
+                            ) {
+                                favsData.postValue(list)
+                            }
 
-    fun loadAllAnnouncements(
-        context: Context,
-        filter: MutableMap<String, String>,
-    ) {
-        if (_isLoading.value == true) return
-        Log.d("loadAllAnnouncements", "loadAllAnnouncements")
-        viewModelScope.launch {
-            loadAllAnnouncementsChannel.send(Pair(context, filter))
+                            override fun onComplete() {
+                                _isLoading.postValue(false)
+                            }
+
+                            override fun onError(e: Exception) {
+                                favsData.postValue(null)
+                                _isLoading.postValue(false)
+                            }
+                        },
+                    )
+                } catch (e: Exception) {
+                    favsData.postValue(null)
+                    _isLoading.postValue(false)
+                }
+            }
+        }
+
+        suspend fun deleteItem(ad: Ad) {
+            remoteAdDataSource.deleteAd(
+                ad,
+                object : DbManager.FinishWorkListener {
+                    override fun onFinish(isDone: Boolean) {
+                        // Здесь можно обновить LiveData или использовать другой способ
+                        // уведомления адаптера об удалении объявления
+                    }
+                },
+            )
+        }
+
+        fun saveTokenDB(token: String) {
+            remoteAdDataSource.saveToken(token)
         }
     }
-
-    fun onFavClick(
-        ad: Ad,
-        adArray: ArrayList<Ad>,
-    ) {
-        dbManager.onFavClick(
-            ad,
-            object : DbManager.FinishWorkListener {
-                override fun onFinish(isDone: Boolean) {
-                    Log.d("updateList", "updateList = $adArray")
-                    val pos = adArray.indexOf(ad)
-                    Log.d("ViewModelFav", "pos = $pos")
-
-                    if (pos != -1) {
-                        pos.let {
-                            val favCounter =
-                                if (ad.isFav) ad.favCounter.toInt() - 1 else ad.favCounter.toInt() + 1
-                            Log.d("ViewModelFav", "favCounter = $favCounter")
-                            adArray[pos] =
-                                adArray[pos].copy(
-                                    isFav = !ad.isFav,
-                                    favCounter = favCounter.toString(),
-                                )
-                            Log.d("ViewModelFav", "updateList[pos] = ${adArray[pos]}")
-                        }
-                    }
-                    homeAdsData.postValue(adArray)
-                }
-            },
-        )
-    }
-
-    fun adViewed(ad: Ad) {
-        dbManager.adViewed(ad)
-    }
-
-    fun loadMyAnnouncement() {
-        dbManager.getMyAnnouncement(
-            object : DbManager.ReadDataCallback {
-                override fun readData(
-                    list: ArrayList<Ad>,
-                    lastDocument: QueryDocumentSnapshot?,
-                ) {
-                    myAdsData.value = list
-                }
-
-                override fun onComplete() {
-                    _isLoading.value = false
-                }
-
-                override fun onError(e: Exception) {
-                    Log.e("FirebaseViewModel", "Ошибка загрузки данных", e)
-                    myAdsData.postValue(null)
-                }
-            },
-        )
-    }
-
-    fun loadMyFavs() {
-        dbManager.getMyFavs(
-            object : DbManager.ReadDataCallback {
-                override fun readData(
-                    list: ArrayList<Ad>,
-                    lastDocument: QueryDocumentSnapshot?,
-                ) {
-                    favsData.value = list
-                }
-
-                override fun onComplete() {
-                    _isLoading.value = false
-                }
-
-                override fun onError(e: Exception) {
-                    Log.e("FirebaseViewModel", "Ошибка загрузки данных", e)
-                    favsData.postValue(null)
-                }
-            },
-        )
-    }
-
-    fun deleteItem(ad: Ad) {
-        dbManager.deleteAnnouncement(
-            ad,
-            object : DbManager.FinishWorkListener {
-                override fun onFinish(isDone: Boolean) {
-                    val updatedList = homeAdsData.value?.toMutableList() // Создаем изменяемый список
-                    updatedList?.remove(ad)
-                    homeAdsData.postValue(updatedList)
-                }
-            },
-        )
-    }
-
-    fun saveTokenDB(token: String) {
-        dbManager.saveToken(token)
-    }
-}
