@@ -1,4 +1,4 @@
-package com.example.bulletin_board.Room
+package com.example.bulletin_board.packroom
 
 sealed class Result<out T> {
     data class Success<out T>(
@@ -6,6 +6,6 @@ sealed class Result<out T> {
     ) : Result<T>()
 
     data class Error(
-        val exception: Exception,
+        val exception: Throwable, // Используйте Throwable вместо Exception
     ) : Result<Nothing>()
 }

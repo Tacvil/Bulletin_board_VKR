@@ -40,7 +40,6 @@ import com.bumptech.glide.load.resource.bitmap.RoundedCorners
 import com.bumptech.glide.request.RequestOptions
 import com.example.bulletin_board.R
 import com.example.bulletin_board.accounthelper.AccountHelper
-import com.example.bulletin_board.adapterFirestore.AdHolderFactory
 import com.example.bulletin_board.adapterFirestore.AdsAdapter
 import com.example.bulletin_board.adapterFirestore.AdsPagingSource
 import com.example.bulletin_board.adapters.AdsRcAdapter
@@ -60,7 +59,6 @@ import com.example.bulletin_board.settings.SettingsActivity
 import com.example.bulletin_board.utils.BillingManager
 import com.example.bulletin_board.utils.BillingManager.Companion.REMOVE_ADS_PREF
 import com.example.bulletin_board.viewmodel.FirebaseViewModel
-import com.firebase.ui.firestore.paging.FirestorePagingOptions
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.common.api.ApiException
 import com.google.android.material.navigation.NavigationView.OnNavigationItemSelectedListener
@@ -68,11 +66,14 @@ import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.ktx.Firebase
+import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import java.io.Serializable
 
+@AndroidEntryPoint
 class MainActivity :
     AppCompatActivity(),
     OnNavigationItemSelectedListener,
@@ -466,7 +467,7 @@ class MainActivity :
                         filterDb["orderBy"] = "По возрастанию цены"
                         binding.mainContent.autoComplete.setText(filterDb["orderBy"])
                     }
-                    Log.d("MyLogMainAct", "filterDb: $filterDb")
+                    Timber.tag("MyLogMainAct").d("filterDb: " + filterDb)
                     // filterDb = FilterManager.getFilter(filter)
                 } else if (it.resultCode == RESULT_CANCELED) {
                     filterDb = mutableMapOf()
@@ -491,38 +492,30 @@ class MainActivity :
         }
 
         val pagingConfig = firebaseViewModel.getPagingConfig()
-
         val remoteAdDataSource = firebaseViewModel.remoteAdDataSource
-        val snapshotFlow =
-            Pager(pagingConfig) {
-                AdsPagingSource(remoteAdDataSource, filterDb, this)
-            }.flow.cachedIn(firebaseViewModel.viewModelScope) // Используйте firebaseViewModel.viewModelScope
-
-        val options =
-            FirestorePagingOptions
-                .Builder<Ad>()
-                .setLifecycleOwner(this)
-                .setQuery(
-                    FirebaseFirestore.getInstance().collection(MAIN_NODE),
-                    pagingConfig,
-                ) { snapshot ->
-                    snapshot.toObject(Ad::class.java)!!
-                }.build()
-
-        val adsAdapter = AdsAdapter(this, AdHolderFactory, options)
-
-        lifecycleScope.launch {
-            snapshotFlow.collectLatest { pagingData ->
-                if (clearUpdate) {
-                    adsAdapter.refresh()
-                    clearUpdate = false
-                }
-                adsAdapter.submitData(lifecycle, pagingData) // Используйте FirestorePagingAdapter.submitData()
-            }
-        }
-
+        val adsAdapter = AdsAdapter(this)
         binding.mainContent.recyclerViewMainContent.layoutManager = LinearLayoutManager(this@MainActivity)
         binding.mainContent.recyclerViewMainContent.adapter = adsAdapter
+
+        lifecycleScope.launch {
+            Timber.d("Paging: Starting paging flow")
+            Pager(pagingConfig) {
+                Timber.d("Paging: Creating AdsPagingSource")
+                AdsPagingSource(remoteAdDataSource, filterDb, this@MainActivity)
+            }.flow
+                .cachedIn(firebaseViewModel.viewModelScope)
+                .catch { e ->
+                    Timber.tag("MainActivity").e(e, "Error loading data")
+                }.collectLatest { pagingData ->
+                    Timber.d("Paging: Received paging data: $pagingData")
+                    Timber.d("clearUpdate = $clearUpdate")
+                    if (clearUpdate) {
+                        adsAdapter.refresh()
+                        clearUpdate = false
+                    }
+                    adsAdapter.submitData(lifecycle, pagingData)
+                }
+        }
 
 /*        firebaseViewModel.homeAdsData.observe(this) {
             it?.let { content ->

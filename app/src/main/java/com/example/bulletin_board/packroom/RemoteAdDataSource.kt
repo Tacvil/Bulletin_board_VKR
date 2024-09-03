@@ -1,4 +1,4 @@
-package com.example.bulletin_board.Room
+package com.example.bulletin_board.packroom
 
 import android.content.Context
 import com.example.bulletin_board.R
@@ -10,6 +10,7 @@ import com.google.firebase.auth.ktx.auth
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.FirebaseFirestoreException
 import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.QueryDocumentSnapshot
 import com.google.firebase.firestore.SetOptions
@@ -73,10 +74,7 @@ class RemoteAdDataSource
          * @return Result.Success(true) если объявление было успешно удалено,
          *         Result.Error(exception) в случае ошибки.
          */
-        override suspend fun deleteAd(
-            ad: Ad,
-            param: DbManager.FinishWorkListener,
-        ): Result<Boolean> =
+        override suspend fun deleteAd(ad: Ad): Result<Boolean> =
             try {
                 firestore
                     .collection(MAIN_COLLECTION)
@@ -241,24 +239,34 @@ class RemoteAdDataSource
          * @param lastDocument Последний документ из предыдущей страницы (для пагинации).
          * @param firestoreAdsCallback Callback для обработки результатов запроса.
          */
-        fun getAllAds(
+        suspend fun getAllAds(
             context: Context,
             filter: MutableMap<String, String>,
             time: String? = null,
             viewsCounter: Int? = null,
             lastDocument: QueryDocumentSnapshot? = null,
-        ): Flow<Result<Pair<List<DocumentSnapshot>, QueryDocumentSnapshot?>>> =
-            flow {
-                try {
-                    val query = buildAdsQuery(context, filter, time, viewsCounter, lastDocument)
-                    val snapshot = query.get().await()
-                    val ads = snapshot.documents
-                    emit(Result.Success(Pair(ads, snapshot.documents.lastOrNull() as? QueryDocumentSnapshot)))
-                } catch (e: Exception) {
-                    Timber.e(e, "Error getting ads")
-                    emit(Result.Error(e))
-                }
+        ): Pair<List<DocumentSnapshot>, QueryDocumentSnapshot?> {
+            val query = buildAdsQuery(context, filter, time, viewsCounter, lastDocument)
+            Timber.d("Query: $query")
+            if (lastDocument != null) {
+                query.startAfter(lastDocument)
             }
+            return try {
+                val snapshot = query.get().await()
+                val ads = snapshot.documents
+
+                // Логирование полученных данных
+                ads.forEach { ad ->
+                    Timber.d("Ad loaded: ${ad.data}")
+                }
+
+                val lastQueryDocument = snapshot.documents.lastOrNull { it is QueryDocumentSnapshot } as? QueryDocumentSnapshot
+                Pair(ads, lastQueryDocument)
+            } catch (e: FirebaseFirestoreException) {
+                Timber.e(e, "Error getting ads")
+                throw e
+            }
+        }
 
         /**
          * Создает запрос Firestore для получения объявлений с учетом фильтров.

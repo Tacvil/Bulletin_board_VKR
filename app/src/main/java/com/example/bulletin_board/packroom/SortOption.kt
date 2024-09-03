@@ -1,4 +1,4 @@
-package com.example.bulletin_board.Room
+package com.example.bulletin_board.packroom
 
 enum class SortOption(
     val id: String,

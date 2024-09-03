@@ -100,7 +100,7 @@ class AdsRcAdapter(
                                 // Вызов метода по завершению анимации
                                 // if(act.mAuth.currentUser?.isAnonymous == false)act.onFavClicked(ad)
                                 // act.onFavClicked(ad)
-                                act.onFavClicked(ad, adArray)
+                                // act.onFavClicked(ad, adArray)
                                 // (act.application as MyApplication).isAnimationRunning = false
                                 // Удаление слушателя, чтобы избежать многократного вызова
                                 imageButtonFav1.removeAnimatorListener(this)
@@ -119,11 +119,11 @@ class AdsRcAdapter(
                     imageButtonFav1.playAnimation()
                 }
                 itemView.setOnClickListener {
-                    act.onAdViewed(ad)
+                    // act.onAdViewed(ad)
                 }
                 imageButtonEditAd.setOnClickListener(onClickEdit(ad))
                 imageButtonDeleteAd.setOnClickListener {
-                    act.onDeleteItem(ad)
+                    // act.onDeleteItem(ad)
                 }
             }
 
@@ -164,6 +164,7 @@ class AdsRcAdapter(
 
     override fun getItemCount(): Int = adArray.size
 
+    @RequiresApi(Build.VERSION_CODES.O)
     override fun onBindViewHolder(
         holder: AdHolder,
         position: Int,

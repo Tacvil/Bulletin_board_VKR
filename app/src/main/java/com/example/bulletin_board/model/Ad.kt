@@ -2,15 +2,17 @@ package com.example.bulletin_board.model
 
 import android.os.Parcel
 import android.os.Parcelable
+import androidx.room.Entity
 import androidx.room.PrimaryKey
 import kotlinx.serialization.Serializable
 
+@Entity(tableName = "ads")
 @Serializable
 data class Ad
     @JvmOverloads
     constructor(
         @PrimaryKey
-        val key: String,
+        val key: String = "", // Значение по умолчанию для key
         val title: String? = null,
         val keyWords: List<String>? = null,
         val country: String? = null,
@@ -35,34 +37,6 @@ data class Ad
         var emailCounter: String = "0",
         var callsCounter: String = "0",
     ) : Parcelable {
-        fun toMap(): Map<String, Any?> =
-            mapOf(
-                "key" to key,
-                "title" to title,
-                "keyWords" to keyWords,
-                "country" to country,
-                "city" to city,
-                "index" to index,
-                "tel" to tel,
-                "withSend" to withSend,
-                "category" to category,
-                "price" to price,
-                "description" to description,
-                "email" to email,
-                "mainImage" to mainImage,
-                "image2" to image2,
-                "image3" to image3,
-                "uid" to uid,
-                "time" to time,
-                "isPublished" to isPublished,
-                "isFav" to isFav,
-                "favUids" to favUids,
-                "favCounter" to favCounter,
-                "viewsCounter" to viewsCounter,
-                "emailCounter" to emailCounter,
-                "callsCounter" to callsCounter,
-            )
-
         override fun describeContents(): Int = 0
 
         override fun writeToParcel(

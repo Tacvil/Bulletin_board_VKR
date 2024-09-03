@@ -7,6 +7,7 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.widget.Toast
+import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.net.toUri
@@ -38,6 +39,7 @@ class DescriptionActivity : AppCompatActivity() {
         binding.buttonEmail.setOnClickListener { sendEmail() }
     }
 
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     private fun init() {
         adapter = ImageAdapter()
         binding.apply {
@@ -47,8 +49,9 @@ class DescriptionActivity : AppCompatActivity() {
         imageChangeCounter()
     }
 
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     private fun getIntentFromMainAct() {
-        ad = intent.serializable<Ad>("AD")
+        ad = intent.getParcelableExtra("AD", Ad::class.java)
         if (ad != null) updateUI(ad!!)
     }
 

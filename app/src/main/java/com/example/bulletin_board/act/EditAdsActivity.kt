@@ -9,6 +9,7 @@ import android.os.Bundle
 import android.util.Log
 import android.view.View
 import android.widget.Toast
+import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.preference.PreferenceManager
@@ -47,6 +48,7 @@ class EditAdsActivity :
     private var ad: Ad? = null
     private lateinit var defPreferences: SharedPreferences
 
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     override fun onCreate(savedInstanceState: Bundle?) {
         defPreferences = PreferenceManager.getDefaultSharedPreferences(this)
         setTheme(getSelectedTheme())
@@ -62,10 +64,11 @@ class EditAdsActivity :
         imageChangeCounter()
     }
 
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     private fun checkEditState() {
         if (isEditState()) {
             isEditState = true
-            ad = intent.serializable<Ad>(MainActivity.ADS_DATA)
+            ad = intent.getParcelableExtra(MainActivity.ADS_DATA, Ad::class.java)
             ad?.let { fillViews(it) }
         }
     }

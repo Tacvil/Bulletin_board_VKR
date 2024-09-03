@@ -9,6 +9,8 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.annotation.RequiresApi
+import androidx.paging.PagingDataAdapter
+import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.resource.bitmap.RoundedCorners
@@ -18,21 +20,17 @@ import com.example.bulletin_board.act.EditAdsActivity
 import com.example.bulletin_board.act.MainActivity
 import com.example.bulletin_board.databinding.AdListItemBinding
 import com.example.bulletin_board.model.Ad
-import com.firebase.ui.firestore.paging.FirestorePagingAdapter
-import com.firebase.ui.firestore.paging.FirestorePagingOptions
-import dagger.hilt.android.AndroidEntryPoint
+import com.google.firebase.firestore.DocumentSnapshot
 import jakarta.inject.Inject
 import timber.log.Timber
 import java.util.Locale
+import kotlin.text.equals
 
-@AndroidEntryPoint
 class AdsAdapter
     @Inject
     constructor(
         private val act: MainActivity,
-        private val adHolderFactory: AdHolderFactory.Companion,
-        options: FirestorePagingOptions<Ad>,
-    ) : FirestorePagingAdapter<Ad, AdsAdapter.AdHolder>(options) {
+    ) : PagingDataAdapter<DocumentSnapshot, AdsAdapter.AdHolder>(AdDiffCallback()) {
         private var timeFormatter: SimpleDateFormat? = null
 
         init {
@@ -102,11 +100,9 @@ class AdsAdapter
                                         imageButtonFav1.removeAnimatorListener(this)
                                     }
 
-                                    override fun onAnimationCancel(animation: Animator) {
-                                    }
+                                    override fun onAnimationCancel(animation: Animator) {}
 
-                                    override fun onAnimationRepeat(animation: Animator) {
-                                    }
+                                    override fun onAnimationRepeat(animation: Animator) {}
                                 },
                             )
                             imageButtonFav1.playAnimation()
@@ -154,25 +150,75 @@ class AdsAdapter
             parent: ViewGroup,
             viewType: Int,
         ): AdHolder {
-            val binding =
-                AdListItemBinding.inflate(LayoutInflater.from(parent.context), parent, false)
-            return adHolderFactory.create(act, timeFormatter!!, binding)
+            val binding = AdListItemBinding.inflate(LayoutInflater.from(parent.context), parent, false)
+            return AdHolder(binding, act, timeFormatter!!)
         }
 
         @RequiresApi(Build.VERSION_CODES.O)
         override fun onBindViewHolder(
             holder: AdHolder,
             position: Int,
-            model: Ad,
         ) {
-            holder.bind(model)
-        }
-
-        interface Listener {
-            fun onDeleteItem(ad: Ad)
-
-            fun onAdViewed(ad: Ad)
-
-            fun onFavClicked(ad: Ad)
+            val ad = getItem(position)?.toObject(Ad::class.java)
+            if (ad != null) {
+                Timber.d("Ad data in onBindViewHolder: $ad")
+                holder.bind(ad)
+            }
         }
     }
+
+class AdDiffCallback : DiffUtil.ItemCallback<DocumentSnapshot>() {
+    override fun areItemsTheSame(
+        oldItem: DocumentSnapshot,
+        newItem: DocumentSnapshot,
+    ): Boolean = oldItem.id == newItem.id
+
+    override fun areContentsTheSame(
+        oldItem: DocumentSnapshot,
+        newItem: DocumentSnapshot,
+    ): Boolean = oldItem.data.toString() == newItem.data.toString()
+/*    @SuppressLint("DiffUtilEquals")
+    override fun areContentsTheSame(
+        oldItem: DocumentSnapshot,
+        newItem: DocumentSnapshot,
+    ): Boolean {
+        val oldData = oldItem.data
+        val newData = newItem.data
+
+        if (oldData.isNullOrEmpty() || newData.isNullOrEmpty()) return false
+
+        if (oldData.keys != newData.keys) return false
+
+        for (key in oldData.keys) {
+            val oldValue = oldData[key]
+            val newValue = newData[key]
+
+            if (oldValue == null && newValue == null) continue
+            if (oldValue == null || newValue == null) return false
+            if (oldValue::class != newValue::class) return false
+
+            when (oldValue) {
+                is String -> if (oldValue != newValue as String) return false
+                is Int -> if (oldValue != newValue as Int) return false
+                is Boolean -> if (oldValue != newValue as Boolean) return false
+                is List<*> -> if (!areListsEqual(oldValue, newValue as List<*>)) return false
+                is Long -> if (oldValue != newValue as Long) return false // Добавлено для Long
+                // Добавьте другие типы данных из вашего дата-класса Ad (Double, Float, etc.)
+                else -> if (oldValue != newValue) return false
+            }
+        }
+
+        return true
+    }
+
+    private fun areListsEqual(
+        list1: List<*>,
+        list2: List<*>,
+    ): Boolean {
+        if (list1.size != list2.size) return false
+        for (i in list1.indices) {
+            if (list1[i] != list2[i]) return false
+        }
+        return true
+    }*/
+}

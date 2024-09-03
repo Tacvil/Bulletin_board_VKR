@@ -9,24 +9,23 @@ import androidx.paging.Pager
 import androidx.paging.PagingConfig
 import androidx.paging.PagingData
 import androidx.paging.cachedIn
-import com.example.bulletin_board.Room.RemoteAdDataSource
-import com.example.bulletin_board.adapterFirestore.AdsAdapter
 import com.example.bulletin_board.adapterFirestore.AdsPagingSource
 import com.example.bulletin_board.model.Ad
 import com.example.bulletin_board.model.DbManager
+import com.example.bulletin_board.packroom.RemoteAdDataSource
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.QueryDocumentSnapshot
 import dagger.hilt.android.lifecycle.HiltViewModel
-import jakarta.inject.Inject
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
+import timber.log.Timber
+import javax.inject.Inject
 
 @HiltViewModel
 class FirebaseViewModel
     @Inject
     constructor(
         val remoteAdDataSource: RemoteAdDataSource,
-        private val adsAdapter: AdsAdapter,
     ) : ViewModel() {
         private val _isLoading = MutableLiveData<Boolean>()
         val isLoading: LiveData<Boolean> = _isLoading
@@ -37,10 +36,21 @@ class FirebaseViewModel
         fun getHomeAdsData(
             filter: MutableMap<String, String>,
             context: Context,
-        ): Flow<PagingData<DocumentSnapshot>> =
-            Pager(getPagingConfig()) {
-                AdsPagingSource(remoteAdDataSource, filter, context)
-            }.flow.cachedIn(viewModelScope)
+        ): Flow<PagingData<DocumentSnapshot>> {
+            Timber.d("getHomeAdsData: Starting with filter: $filter")
+
+            val flow =
+                Pager(getPagingConfig()) {
+                    Timber.d("getHomeAdsData: Creating Pager with config: ${getPagingConfig()}")
+                    AdsPagingSource(remoteAdDataSource, filter, context)
+                }.flow.cachedIn(viewModelScope).also {
+                    Timber.d("getHomeAdsData: Flow cached in viewModelScope")
+                }
+            Timber.d("getHomeAdsData: flow = $flow")
+
+            Timber.d("getHomeAdsData: Finished")
+            return flow
+        }
 
         fun getPagingConfig(): PagingConfig = PagingConfig(pageSize = 2)
 
@@ -125,12 +135,6 @@ class FirebaseViewModel
         suspend fun deleteItem(ad: Ad) {
             remoteAdDataSource.deleteAd(
                 ad,
-                object : DbManager.FinishWorkListener {
-                    override fun onFinish(isDone: Boolean) {
-                        // Здесь можно обновить LiveData или использовать другой способ
-                        // уведомления адаптера об удалении объявления
-                    }
-                },
             )
         }
 

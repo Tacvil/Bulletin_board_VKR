@@ -2,8 +2,8 @@ package com.example.bulletin_board.di
 
 import android.content.Context
 import androidx.room.Room
-import com.example.bulletin_board.Room.AdDao
-import com.example.bulletin_board.Room.AppDatabase
+import com.example.bulletin_board.packroom.AdDao
+import com.example.bulletin_board.packroom.AppDatabase
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn

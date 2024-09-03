@@ -1,6 +1,6 @@
 package com.example.bulletin_board.di
 
-import com.example.bulletin_board.Room.RemoteAdDataSource
+import com.example.bulletin_board.packroom.RemoteAdDataSource
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import dagger.Module

@@ -1,4 +1,4 @@
-package com.example.bulletin_board.Room
+package com.example.bulletin_board.packroom
 
 import androidx.room.Database
 import androidx.room.RoomDatabase

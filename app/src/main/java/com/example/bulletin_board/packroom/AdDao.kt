@@ -1,4 +1,4 @@
-package com.example.bulletin_board.Room
+package com.example.bulletin_board.packroom
 
 import androidx.room.Dao
 import androidx.room.Delete
@@ -19,12 +19,12 @@ interface AdDao {
     @Delete
     suspend fun delete(ad: Ad)
 
-    @Query("SELECT * FROM Ad") //  Имя таблицы должно соответствовать имени класса Ad
+    @Query("SELECT * FROM ads")
     fun getAll(): Flow<List<Ad>>
 
-    @Query("SELECT * FROM Ad WHERE key = :key") //  Имя таблицы должно соответствовать имени класса Ad
+    @Query("SELECT * FROM ads WHERE ads.`key` = :key")
     fun getById(key: String): Flow<Ad>
 
-    @Query("DELETE FROM Ad")
+    @Query("DELETE FROM ads")
     suspend fun deleteAllAds()
 }
