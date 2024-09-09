@@ -35,7 +35,7 @@ class RemoteAdDataSource
             private const val VIEWS_COUNTER_FIELD = "viewsCounter"
             private const val TIME_FIELD = "time"
             private const val UID_FIELD = "uid"
-            private const val IS_PUBLISHED_FIELD = "isPublished"
+            private const val IS_PUBLISHED_FIELD = "published"
             private const val KEYWORDS_FIELD = "keyWords"
             private const val COUNTRY_FIELD = "country"
             private const val CITY_FIELD = "city"
@@ -234,56 +234,45 @@ class RemoteAdDataSource
          *
          * @param context Контекст приложения.
          * @param filter Фильтры для запроса.
-         * @param time Время для пагинации (для сортировки по времени).
-         * @param viewsCounter Счетчик просмотров для пагинации (для сортировки по популярности).
-         * @param lastDocument Последний документ из предыдущей страницы (для пагинации).
-         * @param firestoreAdsCallback Callback для обработки результатов запроса.
          */
         suspend fun getAllAds(
             context: Context,
             filter: MutableMap<String, String>,
-            time: String? = null,
-            viewsCounter: Int? = null,
-            lastDocument: QueryDocumentSnapshot? = null,
-        ): Pair<List<DocumentSnapshot>, QueryDocumentSnapshot?> {
-            val query = buildAdsQuery(context, filter, time, viewsCounter, lastDocument)
-            Timber.d("Query: $query")
-            if (lastDocument != null) {
-                query.startAfter(lastDocument)
-            }
-            return try {
-                val snapshot = query.get().await()
-                val ads = snapshot.documents
+            key: DocumentSnapshot? = null,
+            limit: Long = ADS_LIMIT.toLong(),
+        ): Pair<List<DocumentSnapshot>, DocumentSnapshot?> =
+            try {
+                val query = buildAdsQuery(context, filter, key)
+                Timber.d("Query: $query")
+                Timber.d("Query filter: $filter")
+                Timber.d("Query key: $key")
 
-                // Логирование полученных данных
+                val snapshot = query.limit(limit).get().await()
+                Timber.d("Query snapshot: $snapshot")
+                val ads = snapshot.documents
+                Timber.d("Query ads: $ads")
                 ads.forEach { ad ->
-                    Timber.d("Ad loaded: ${ad.data}")
+                    Timber.d("Ad loaded getAllAds: ${ad.data}")
                 }
 
-                val lastQueryDocument = snapshot.documents.lastOrNull { it is QueryDocumentSnapshot } as? QueryDocumentSnapshot
-                Pair(ads, lastQueryDocument)
+                val nextKey = snapshot.documents.lastOrNull()
+                Pair(ads, nextKey)
             } catch (e: FirebaseFirestoreException) {
                 Timber.e(e, "Error getting ads")
-                throw e
+                Pair(emptyList(), null) // Возвращаем пустой список и null в случае ошибки
             }
-        }
 
         /**
          * Создает запрос Firestore для получения объявлений с учетом фильтров.
          *
          * @param context Контекст приложения.
          * @param filter Фильтры для запроса.
-         * @param time Время для пагинации (для сортировки по времени).
-         * @param viewsCounter Счетчик просмотров для пагинации (для сортировки по популярности).
-         * @param lastDocument Последний документ из предыдущей страницы (для пагинации).
          * @return Запрос Firestore.
          */
         private fun buildAdsQuery(
             context: Context,
             filter: MutableMap<String, String>,
-            time: String? = null,
-            viewsCounter: Int? = null,
-            lastDocument: QueryDocumentSnapshot? = null,
+            key: DocumentSnapshot? = null,
         ): Query {
             var query = firestore.collection(MAIN_COLLECTION).whereEqualTo(IS_PUBLISHED_FIELD, true)
             query = sortByKeyWords(query, filter)
@@ -291,9 +280,9 @@ class RemoteAdDataSource
             query = sortByCategory(query, filter, context)
             query = sortByWithSend(query, filter)
             query = sortByPrice(query, filter)
-            query = sortByOrder(query, filter, time, viewsCounter)
-            query = applyPagination(query, filter, lastDocument)
-            return query.limit(ADS_LIMIT.toLong())
+            query = sortByOrder(query, filter)
+            query = applyPagination(query, filter, key)
+            return query
         }
 
         /**
@@ -414,52 +403,36 @@ class RemoteAdDataSource
          *
          * @param initialQuery Исходный запрос.
          * @param filter Фильтры для запроса.
-         * @param time Время для пагинации (для сортировки по времени).
-         * @param viewsCounter Счетчик просмотров для пагинации (для сортировки по популярности).
          * @return Отсортированный запрос.
          */
         private fun sortByOrder(
             initialQuery: Query,
             filter: MutableMap<String, String>,
-            time: String?,
-            viewsCounter: Int?,
         ): Query {
             var query = initialQuery
             query =
                 when (filter[ORDER_BY_FIELD]) {
                     SortOption.BY_NEWEST.id -> {
-                        if (time != null) query.whereLessThan(TIME_FIELD, time)
+                        Timber.d("byNewest")
                         query.orderBy(TIME_FIELD, Query.Direction.DESCENDING)
                     }
 
-                    SortOption.BY_POPULARITY.id -> {
-                        if (viewsCounter != null) {
-                            query.whereLessThanOrEqualTo(
-                                VIEWS_COUNTER_FIELD,
-                                viewsCounter,
-                            )
-                        }
+                    SortOption.BY_POPULARITY.id ->
                         query
                             .orderBy(VIEWS_COUNTER_FIELD, Query.Direction.DESCENDING)
                             .orderBy(KEY_FIELD, Query.Direction.DESCENDING)
-                    }
 
-                    SortOption.BY_PRICE_ASC.id -> {
+                    SortOption.BY_PRICE_ASC.id ->
                         query
                             .orderBy(PRICE_FIELD, Query.Direction.ASCENDING)
                             .orderBy(KEY_FIELD, Query.Direction.ASCENDING)
-                    }
 
-                    SortOption.BY_PRICE_DESC.id -> {
+                    SortOption.BY_PRICE_DESC.id ->
                         query
                             .orderBy(PRICE_FIELD, Query.Direction.DESCENDING)
                             .orderBy(KEY_FIELD, Query.Direction.DESCENDING)
-                    }
 
-                    else -> {
-                        if (time != null) query.whereLessThan(TIME_FIELD, time)
-                        query.orderBy(TIME_FIELD, Query.Direction.DESCENDING)
-                    }
+                    else -> query.orderBy(TIME_FIELD, Query.Direction.DESCENDING)
                 }
             return query
         }
@@ -475,15 +448,15 @@ class RemoteAdDataSource
         private fun applyPagination(
             initialQuery: Query,
             filter: MutableMap<String, String>,
-            lastDocument: QueryDocumentSnapshot?,
+            key: DocumentSnapshot?,
         ): Query {
             var query = initialQuery
-            if (lastDocument != null) {
+            if (key != null) {
                 query =
                     when (filter[ORDER_BY_FIELD]) {
                         SortOption.BY_PRICE_ASC.id, SortOption.BY_PRICE_DESC.id -> {
-                            val lastPrice = lastDocument.getLong(PRICE_FIELD)?.toInt()
-                            val lastKey = lastDocument.get(KEY_FIELD) as? String
+                            val lastPrice = key.getLong(PRICE_FIELD)?.toInt()
+                            val lastKey = key.get(KEY_FIELD) as? String
                             if (lastPrice != null && lastKey != null) {
                                 query.startAfter(lastPrice, lastKey)
                             } else {
@@ -492,8 +465,8 @@ class RemoteAdDataSource
                         }
 
                         SortOption.BY_POPULARITY.id -> {
-                            val lastViewsCounter = lastDocument.getLong(VIEWS_COUNTER_FIELD)?.toInt()
-                            val lastKey = lastDocument.get(KEY_FIELD) as? String
+                            val lastViewsCounter = key.getLong(VIEWS_COUNTER_FIELD)?.toInt()
+                            val lastKey = key.get(KEY_FIELD) as? String
                             if (lastViewsCounter != null && lastKey != null) {
                                 query.startAfter(lastViewsCounter, lastKey)
                             } else {
@@ -502,7 +475,7 @@ class RemoteAdDataSource
                         }
 
                         SortOption.BY_NEWEST.id -> {
-                            val lastTime = lastDocument.get(TIME_FIELD) as? String
+                            val lastTime = key.get(TIME_FIELD) as? String
                             if (lastTime != null) {
                                 query.startAfter(lastTime)
                             } else {
@@ -511,7 +484,7 @@ class RemoteAdDataSource
                         }
 
                         else -> {
-                            val lastTime = lastDocument.get(TIME_FIELD) as? String
+                            val lastTime = key.get(TIME_FIELD) as? String
                             if (lastTime != null) {
                                 query.startAfter(lastTime)
                             } else {

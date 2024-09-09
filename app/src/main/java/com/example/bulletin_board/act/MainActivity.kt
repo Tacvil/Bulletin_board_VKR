@@ -497,6 +497,8 @@ class MainActivity :
         binding.mainContent.recyclerViewMainContent.layoutManager = LinearLayoutManager(this@MainActivity)
         binding.mainContent.recyclerViewMainContent.adapter = adsAdapter
 
+        filterDb["orderBy"] = filterDb["orderBy"]?.let { getSortOption(it) }.toString()
+
         lifecycleScope.launch {
             Timber.d("Paging: Starting paging flow")
             Pager(pagingConfig) {

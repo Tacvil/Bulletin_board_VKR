@@ -7,7 +7,7 @@ import com.example.bulletin_board.packroom.RemoteAdDataSource
 import com.google.firebase.firestore.DocumentSnapshot
 import timber.log.Timber
 
-class AdsPagingSource(
+class FavoriteAdsPagingSource(
     private val remoteAdDataSource: RemoteAdDataSource,
     private val filter: MutableMap<String, String>,
     private val context: Context,
