@@ -203,30 +203,39 @@ class RemoteAdDataSource
          * @return Flow с Result.Success(list), содержащим список объявлений,
          *         или Result.Error(exception) в случае ошибки.
          */
-        fun getMyFavs(param: DbManager.ReadDataCallback): Flow<Result<List<Ad>>> =
-            flow {
-                try {
-                    auth.uid?.let { uid ->
-                        val ads =
-                            firestore
-                                .collection(MAIN_COLLECTION)
-                                .whereArrayContains(FAV_UIDS_FIELD, uid)
-                                .orderBy(TIME_FIELD, Query.Direction.DESCENDING)
-                                .get()
-                                .await()
-                                .toObjects(Ad::class.java)
-                                .map { ad ->
-                                    val favUids = ad.favUids
-                                    ad.isFav = auth.uid?.let { favUids.contains(it) } ?: false
-                                    ad.favCounter = favUids.size.toString()
-                                    ad
-                                }
-                        emit(Result.Success(ads))
+        suspend fun getMyFavs(
+            limit: Long = ADS_LIMIT.toLong(),
+            startAfter: DocumentSnapshot? = null,
+        ): Pair<List<Ad>, DocumentSnapshot?> =
+            try {
+                auth.uid?.let { uid ->
+                    var query =
+                        firestore
+                            .collection(MAIN_COLLECTION)
+                            .whereArrayContains(FAV_UIDS_FIELD, uid)
+                            .orderBy(TIME_FIELD, Query.Direction.DESCENDING)
+                            .limit(limit)
+
+                    if (startAfter != null) {
+                        query = query.startAfter(startAfter.get(TIME_FIELD))
                     }
-                } catch (e: Exception) {
-                    Timber.e(e, "Error getting my favorite ads")
-                    emit(Result.Error(e))
-                }
+
+                    val snapshot = query.get().await()
+                    val ads =
+                        snapshot.documents.map { document ->
+                            document.toObject(Ad::class.java)!!.apply {
+                                val favUids = this.favUids
+                                isFav = favUids.contains(uid)
+                                favCounter = favUids.size.toString()
+                            }
+                        }
+
+                    val nextKey = snapshot.documents.lastOrNull()
+                    Pair(ads, nextKey)
+                } ?: Pair(emptyList(), null)
+            } catch (e: Exception) {
+                Timber.e(e, "Error getting my favorite ads")
+                Pair(emptyList(), null)
             }
 
         /**

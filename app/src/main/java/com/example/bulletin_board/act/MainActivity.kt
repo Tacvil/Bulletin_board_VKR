@@ -10,6 +10,7 @@ import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
+import android.os.Parcelable
 import android.speech.RecognizerIntent
 import android.text.Editable
 import android.text.SpannableString
@@ -23,6 +24,7 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.result.launch
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
@@ -30,21 +32,17 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.view.GravityCompat
 import androidx.lifecycle.lifecycleScope
-import androidx.lifecycle.viewModelScope
-import androidx.paging.Pager
-import androidx.paging.cachedIn
 import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.resource.bitmap.RoundedCorners
 import com.bumptech.glide.request.RequestOptions
 import com.example.bulletin_board.R
 import com.example.bulletin_board.accounthelper.AccountHelper
 import com.example.bulletin_board.adapterFirestore.AdsAdapter
-import com.example.bulletin_board.adapterFirestore.AdsPagingSource
+import com.example.bulletin_board.adapterFirestore.FavoriteAdsAdapter
 import com.example.bulletin_board.adapters.AdsRcAdapter
-import com.example.bulletin_board.adapters.FavsAdapter
-import com.example.bulletin_board.adapters.MyAdsAdapter
 import com.example.bulletin_board.databinding.ActivityMainBinding
 import com.example.bulletin_board.dialoghelper.DialogConst
 import com.example.bulletin_board.dialoghelper.DialogHelper
@@ -87,8 +85,6 @@ class MainActivity :
 
     private val dialog = DialogSpinnerHelper()
     val mAuth = Firebase.auth
-    private val myAdsAdapter = MyAdsAdapter(this)
-    private val favsAdapter = FavsAdapter(this)
     lateinit var googleSignInLauncher: ActivityResultLauncher<Intent>
     private lateinit var filterLauncher: ActivityResultLauncher<Intent>
     private val firebaseViewModel: FirebaseViewModel by viewModels()
@@ -101,6 +97,10 @@ class MainActivity :
     private var adapterSearch = RcViewSearchSpinnerAdapter(onItemSelectedListener)
     private lateinit var defPreferences: SharedPreferences
     private var viewModelIsLoading = false
+    private val favAdsAdapter = FavoriteAdsAdapter(this)
+    private val adsAdapter = AdsAdapter(this)
+    private val scrollStateMap = mutableMapOf<Int, Parcelable?>()
+    private var currentTabPosition: Int = 0
 
     override fun onCreate(savedInstanceState: Bundle?) {
         defPreferences = PreferenceManager.getDefaultSharedPreferences(this)
@@ -161,6 +161,26 @@ class MainActivity :
                 return
             }
         }
+    }
+
+    private fun switchAdapter(
+        adapter: RecyclerView.Adapter<*>,
+        tabPosition: Int,
+    ) {
+        // Сохранение текущего состояния
+        scrollStateMap[currentTabPosition] =
+            binding.mainContent.recyclerViewMainContent.layoutManager
+                ?.onSaveInstanceState()
+
+        // Переключение адаптера
+        binding.mainContent.recyclerViewMainContent.adapter = adapter
+
+        // Восстановление состояния для новой вкладки
+        binding.mainContent.recyclerViewMainContent.layoutManager
+            ?.onRestoreInstanceState(scrollStateMap[tabPosition])
+
+        // Обновляем текущую позицию вкладки
+        currentTabPosition = tabPosition
     }
 
     private fun searchAdd() {
@@ -484,14 +504,25 @@ class MainActivity :
         firebaseViewModel.isLoading.observe(this) { isLoading ->
             viewModelIsLoading = isLoading
         }
-        firebaseViewModel.myAdsData.observe(this) { list ->
-            list?.let { myAdsAdapter.updateAdapter(it) } // Обновляем адаптер
-        }
-        firebaseViewModel.favsData.observe(this) { list ->
-            list?.let { favsAdapter.updateAdapter(it) } // Обновляем адаптер
+
+        lifecycleScope.launch {
+            firebaseViewModel
+                .getFavoriteAdsData()
+                .collectLatest { pagingData ->
+                    favAdsAdapter.submitData(pagingData)
+                }
         }
 
-        val pagingConfig = firebaseViewModel.getPagingConfig()
+        lifecycleScope.launch {
+            firebaseViewModel
+                .getHomeAdsData(filterDb, this@MainActivity)
+                .catch { e ->
+                    Timber.tag("MainActivity").e(e, "Error loading data")
+                }.collectLatest { pagingData ->
+                    adsAdapter.submitData(lifecycle, pagingData)
+                }
+        }
+/*        val pagingConfig = firebaseViewModel.getPagingConfig()
         val remoteAdDataSource = firebaseViewModel.remoteAdDataSource
         val adsAdapter = AdsAdapter(this)
         binding.mainContent.recyclerViewMainContent.layoutManager = LinearLayoutManager(this@MainActivity)
@@ -517,7 +548,7 @@ class MainActivity :
                     }
                     adsAdapter.submitData(lifecycle, pagingData)
                 }
-        }
+        }*/
 
 /*        firebaseViewModel.homeAdsData.observe(this) {
             it?.let { content ->
@@ -561,20 +592,6 @@ class MainActivity :
 
     private fun bottomMenuOnClick() =
         with(binding) {
-            mainContent.floatingActButton.setOnClickListener {
-                if (mAuth.currentUser?.isAnonymous == true) {
-                    Toast
-                        .makeText(
-                            this@MainActivity,
-                            "Чтобы создавать объявления - зарегистрируйтесь!",
-                            Toast.LENGTH_SHORT,
-                        ).show()
-                } else {
-                    val i = Intent(this@MainActivity, EditAdsActivity::class.java)
-                    startActivity(i)
-                }
-            }
-
             mainContent.bottomNavView.setOnItemSelectedListener { item ->
                 clearUpdate = false
                 when (item.itemId) {
@@ -585,19 +602,20 @@ class MainActivity :
 
                     R.id.id_my_ads -> {
                         firebaseViewModel.loadMyAnnouncement()
-                        // binding.mainContent.recyclerViewMainContent.adapter = myAdsAdapter
+                        // switchAdapter(myAdsAdapter, 1)
                         // mainContent.toolbar.title = getString(R.string.ad_my_ads)
                     }
 
                     R.id.id_favs -> {
-                        firebaseViewModel.loadMyFavs()
-                        // binding.mainContent.recyclerViewMainContent.adapter = favsAdapter
+                        switchAdapter(favAdsAdapter, 2)
+                        firebaseViewModel.getFavoriteAdsData()
                         // mainContent.toolbar.title = getString(R.string.favs)
                     }
 
                     R.id.id_home -> {
-                        // binding.mainContent.recyclerViewMainContent.adapter = homeAdsAdapter
+                        switchAdapter(adsAdapter, 0)
                         getAdsFromCat(getString(R.string.def))
+                        // binding.mainContent.recyclerViewMainContent.adapter = homeAdsAdapter
                     }
                 }
                 true
@@ -605,11 +623,11 @@ class MainActivity :
         }
 
     private fun initRecyclerView() {
-/*        binding.apply {
+        binding.apply {
             mainContent.recyclerViewMainContent.layoutManager =
                 LinearLayoutManager(this@MainActivity)
-            mainContent.recyclerViewMainContent.adapter = homeAdsAdapter
-        }*/
+            mainContent.recyclerViewMainContent.adapter = adsAdapter
+        }
 
         val onItemSelectedListener =
             object : RcViewSearchSpinnerAdapter.OnItemSelectedListener {

@@ -20,7 +20,6 @@ import com.example.bulletin_board.act.EditAdsActivity
 import com.example.bulletin_board.act.MainActivity
 import com.example.bulletin_board.databinding.AdListItemBinding
 import com.example.bulletin_board.model.Ad
-import com.google.firebase.firestore.DocumentSnapshot
 import jakarta.inject.Inject
 import timber.log.Timber
 import java.util.Locale
@@ -29,7 +28,7 @@ class FavoriteAdsAdapter
     @Inject
     constructor(
         private val act: MainActivity,
-    ) : PagingDataAdapter<DocumentSnapshot, FavoriteAdsAdapter.AdHolder>(FavoriteAdDiffCallback()) {
+    ) : PagingDataAdapter<Ad, FavoriteAdsAdapter.AdHolder>(FavoriteAdDiffCallback()) {
         private var timeFormatter: SimpleDateFormat? = null
 
         init {
@@ -159,7 +158,7 @@ class FavoriteAdsAdapter
             holder: AdHolder,
             position: Int,
         ) {
-            val ad = getItem(position)?.toObject(Ad::class.java)
+            val ad = getItem(position)
             if (ad != null) {
                 Timber.d("Ad data in onBindViewHolder: $ad")
                 holder.bind(ad)
@@ -167,16 +166,16 @@ class FavoriteAdsAdapter
         }
     }
 
-class FavoriteAdDiffCallback : DiffUtil.ItemCallback<DocumentSnapshot>() {
+class FavoriteAdDiffCallback : DiffUtil.ItemCallback<Ad>() {
     override fun areItemsTheSame(
-        oldItem: DocumentSnapshot,
-        newItem: DocumentSnapshot,
-    ): Boolean = oldItem.id == newItem.id
+        oldItem: Ad,
+        newItem: Ad,
+    ): Boolean = oldItem.uid == newItem.uid
 
     override fun areContentsTheSame(
-        oldItem: DocumentSnapshot,
-        newItem: DocumentSnapshot,
-    ): Boolean = oldItem.data.toString() == newItem.data.toString()
+        oldItem: Ad,
+        newItem: Ad,
+    ): Boolean = oldItem == newItem
     /*    @SuppressLint("DiffUtilEquals")
         override fun areContentsTheSame(
             oldItem: DocumentSnapshot,

@@ -10,6 +10,8 @@ import androidx.paging.PagingConfig
 import androidx.paging.PagingData
 import androidx.paging.cachedIn
 import com.example.bulletin_board.adapterFirestore.AdsPagingSource
+import com.example.bulletin_board.adapterFirestore.FavoriteAdsPagingSource
+import com.example.bulletin_board.adapterFirestore.MyAdsPagingSource
 import com.example.bulletin_board.model.Ad
 import com.example.bulletin_board.model.DbManager
 import com.example.bulletin_board.packroom.RemoteAdDataSource
@@ -18,7 +20,6 @@ import com.google.firebase.firestore.QueryDocumentSnapshot
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
-import timber.log.Timber
 import javax.inject.Inject
 
 @HiltViewModel
@@ -36,23 +37,27 @@ class FirebaseViewModel
         fun getHomeAdsData(
             filter: MutableMap<String, String>,
             context: Context,
-        ): Flow<PagingData<DocumentSnapshot>> {
-            Timber.d("getHomeAdsData: Starting with filter: $filter")
-
-            val flow =
-                Pager(getPagingConfig()) {
-                    Timber.d("getHomeAdsData: Creating Pager with config: ${getPagingConfig()}")
-                    AdsPagingSource(remoteAdDataSource, filter, context)
-                }.flow.cachedIn(viewModelScope).also {
-                    Timber.d("getHomeAdsData: Flow cached in viewModelScope")
-                }
-            Timber.d("getHomeAdsData: flow = $flow")
-
-            Timber.d("getHomeAdsData: Finished")
-            return flow
-        }
+        ): Flow<PagingData<DocumentSnapshot>> =
+            Pager(getPagingConfig()) {
+                AdsPagingSource(remoteAdDataSource, filter, context)
+            }.flow.cachedIn(viewModelScope)
 
         fun getPagingConfig(): PagingConfig = PagingConfig(pageSize = 2)
+
+        fun getFavoriteAdsData(): Flow<PagingData<Ad>> =
+            Pager(getPagingConfig()) {
+                FavoriteAdsPagingSource(
+                    remoteAdDataSource,
+                ) // Используем FavoriteAdsPagingSource
+            }.flow.cachedIn(viewModelScope)
+
+        fun getMyAdsData(
+            filter: MutableMap<String, String>,
+            context: Context,
+        ): Flow<PagingData<DocumentSnapshot>> =
+            Pager(getPagingConfig()) {
+                MyAdsPagingSource(remoteAdDataSource, filter, context) // Используем MyAdsPagingSource
+            }.flow.cachedIn(viewModelScope)
 
         // тут фигня с FinishWorkListener
         suspend fun onFavClick(ad: Ad) {
@@ -97,36 +102,6 @@ class FirebaseViewModel
                     )
                 } catch (e: Exception) {
                     myAdsData.postValue(null)
-                    _isLoading.postValue(false)
-                }
-            }
-        }
-
-        fun loadMyFavs() {
-            viewModelScope.launch {
-                _isLoading.postValue(true)
-                try {
-                    remoteAdDataSource.getMyFavs(
-                        object : DbManager.ReadDataCallback {
-                            override fun readData(
-                                list: ArrayList<Ad>,
-                                lastDocument: QueryDocumentSnapshot?,
-                            ) {
-                                favsData.postValue(list)
-                            }
-
-                            override fun onComplete() {
-                                _isLoading.postValue(false)
-                            }
-
-                            override fun onError(e: Exception) {
-                                favsData.postValue(null)
-                                _isLoading.postValue(false)
-                            }
-                        },
-                    )
-                } catch (e: Exception) {
-                    favsData.postValue(null)
                     _isLoading.postValue(false)
                 }
             }
