@@ -170,7 +170,7 @@ class FavoriteAdDiffCallback : DiffUtil.ItemCallback<Ad>() {
     override fun areItemsTheSame(
         oldItem: Ad,
         newItem: Ad,
-    ): Boolean = oldItem.uid == newItem.uid
+    ): Boolean = oldItem.key == newItem.key
 
     override fun areContentsTheSame(
         oldItem: Ad,

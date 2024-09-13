@@ -16,7 +16,6 @@ import android.text.Editable
 import android.text.SpannableString
 import android.text.TextWatcher
 import android.text.style.ForegroundColorSpan
-import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import android.widget.ImageView
@@ -65,6 +64,7 @@ import com.google.firebase.auth.ktx.auth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.ktx.Firebase
 import dagger.hilt.android.AndroidEntryPoint
+import jakarta.inject.Inject
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -79,10 +79,7 @@ class MainActivity :
     private lateinit var textViewAccount: TextView
     private lateinit var imageViewAccount: ImageView
     private lateinit var binding: ActivityMainBinding
-    // private val dialogHelper = DialogHelper(this)
-
     private val dialogHelper = DialogHelper(this) { AccountHelper(this) }
-
     private val dialog = DialogSpinnerHelper()
     val mAuth = Firebase.auth
     lateinit var googleSignInLauncher: ActivityResultLauncher<Intent>
@@ -98,7 +95,9 @@ class MainActivity :
     private lateinit var defPreferences: SharedPreferences
     private var viewModelIsLoading = false
     private val favAdsAdapter = FavoriteAdsAdapter(this)
-    private val adsAdapter = AdsAdapter(this)
+
+    @Inject
+    lateinit var adsAdapter: AdsAdapter
     private val scrollStateMap = mutableMapOf<Int, Parcelable?>()
     private var currentTabPosition: Int = 0
 
@@ -130,7 +129,7 @@ class MainActivity :
             ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.POST_NOTIFICATIONS), PERMISSION_REQUEST_CODE)
         } else {
             // Разрешение уже предоставлено, можно отправлять уведомления
-            Log.d("POST_NOTIFICATIONS_PER_TRUE", "POST_NOTIFICATIONS_PER_TRUE")
+            Timber.tag("POST_NOTIFICATIONS_PER_TRUE").d("POST_NOTIFICATIONS_PER_TRUE")
         }
 
         init()
@@ -153,34 +152,14 @@ class MainActivity :
             PERMISSION_REQUEST_CODE -> {
                 if ((grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED)) {
                     // Разрешение предоставлено, можно отправлять уведомления
-                    Log.d("POST_NOTIFICATIONS_PER_TRUE", "POST_NOTIFICATIONS_PER_TRUE")
+                    Timber.tag("POST_NOTIFICATIONS_PER_TRUE").d("POST_NOTIFICATIONS_PER_TRUE")
                 } else {
-                    Log.d("POST_NOTIFICATIONS_PER_FALSE", "POST_NOTIFICATIONS_PER_FALSE")
+                    Timber.tag("POST_NOTIFICATIONS_PER_FALSE").d("POST_NOTIFICATIONS_PER_FALSE")
                     Toast.makeText(this, "Permission denied, notifications cannot be sent", Toast.LENGTH_SHORT).show()
                 }
                 return
             }
         }
-    }
-
-    private fun switchAdapter(
-        adapter: RecyclerView.Adapter<*>,
-        tabPosition: Int,
-    ) {
-        // Сохранение текущего состояния
-        scrollStateMap[currentTabPosition] =
-            binding.mainContent.recyclerViewMainContent.layoutManager
-                ?.onSaveInstanceState()
-
-        // Переключение адаптера
-        binding.mainContent.recyclerViewMainContent.adapter = adapter
-
-        // Восстановление состояния для новой вкладки
-        binding.mainContent.recyclerViewMainContent.layoutManager
-            ?.onRestoreInstanceState(scrollStateMap[tabPosition])
-
-        // Обновляем текущую позицию вкладки
-        currentTabPosition = tabPosition
     }
 
     private fun searchAdd() {
@@ -211,38 +190,39 @@ class MainActivity :
                         adapterSearch.setOnDataChangedListener {
                         }
                     }
-                    Log.d(
-                        "MActTextChanged",
-                        "searchQuery = $searchQuery, isEmpty = ${searchQuery.isEmpty()}",
-                    )
+                    Timber
+                        .tag("MActTextChanged")
+                        .d("searchQuery = " + searchQuery + ", isEmpty = " + searchQuery.isEmpty())
                     if (searchQuery.trim().isNotEmpty()) {
                         // Убираем пробелы в начале строки
                         searchQuery = searchQuery.trimStart()
 
                         // Убираем двойные, тройные и т.д. пробелы во всей строке
                         searchQuery = searchQuery.replace(Regex("\\s{2,}"), " ")
-                        Log.d("MActTextChanged", "searchQueryAfterValid = $searchQuery}")
+                        Timber
+                            .tag("MActTextChanged")
+                            .d("searchQueryAfterValid = " + searchQuery + "}")
 
                         val db = FirebaseFirestore.getInstance()
                         val collectionReference = db.collection(DbManager.MAIN_NODE)
                         val query = collectionReference.whereGreaterThanOrEqualTo("title", searchQuery)
                         val spaceCount = searchQuery.count { it == ' ' }
-                        Log.d("MActTextChanged", "spaceCount = $spaceCount")
+                        Timber.tag("MActTextChanged").d("spaceCount = " + spaceCount)
                         val phraseBuilder = StringBuilder()
                         val results = mutableListOf<String>()
                         var pairsResultSearch: ArrayList<Pair<String, String>>
                         query.get().addOnSuccessListener { documents ->
                             for (document in documents) {
                                 val title = document.getString("title") ?: ""
-                                Log.d("MActTextChanged", "title = $title")
+                                Timber.tag("MActTextChanged").d("title = " + title)
                                 val words = title.split("\\s+".toRegex())
-                                Log.d("MActTextChanged", "words = $words")
+                                Timber.tag("MActTextChanged").d("words = " + words)
                                 when {
                                     spaceCount == 0 -> {
                                         val phrase = words[spaceCount]
-                                        Log.d("MActTextChanged", "phrase = $phrase")
+                                        Timber.tag("MActTextChanged").d("phrase = " + phrase)
                                         results.add(phrase)
-                                        Log.d("MActTextChanged", "results = $results")
+                                        Timber.tag("MActTextChanged").d("results = " + results)
                                     }
 
                                     spaceCount > 0 -> {
@@ -254,13 +234,15 @@ class MainActivity :
                                         }
                                         val phrase = phraseBuilder.toString()
                                         phraseBuilder.clear()
-                                        Log.d("MActTextChanged", "phrase = $phrase")
+                                        Timber.tag("MActTextChanged").d("phrase = " + phrase)
                                         results.add(phrase)
                                     }
                                 }
                             }
                             pairsResultSearch = ArrayList(results.map { Pair(it, "search") })
-                            Log.d("MActTextChanged", "pairsResultSearch = $pairsResultSearch")
+                            Timber
+                                .tag("MActTextChanged")
+                                .d("pairsResultSearch = " + pairsResultSearch)
                             adapterSearch.updateAdapter(pairsResultSearch)
                         }
                     }
@@ -508,12 +490,18 @@ class MainActivity :
         lifecycleScope.launch {
             firebaseViewModel
                 .getFavoriteAdsData()
-                .collectLatest { pagingData ->
-                    favAdsAdapter.submitData(pagingData)
+                .catch { e ->
+                    Timber.tag("MainActivity").e(e, "Error loading favorite ads data")
+                }.collectLatest { pagingData ->
+                    favAdsAdapter.submitData(lifecycle, pagingData)
                 }
         }
 
         lifecycleScope.launch {
+/*            adsAdapter.loadStateFlow.collectLatest { loadStates ->
+                // Обработка loadStates.refresh, loadStates.append, loadStates.prepend
+                // Например, отобразить индикатор загрузки, если loadStates.refresh is LoadState.Loading
+            }*/
             firebaseViewModel
                 .getHomeAdsData(filterDb, this@MainActivity)
                 .catch { e ->
@@ -522,33 +510,6 @@ class MainActivity :
                     adsAdapter.submitData(lifecycle, pagingData)
                 }
         }
-/*        val pagingConfig = firebaseViewModel.getPagingConfig()
-        val remoteAdDataSource = firebaseViewModel.remoteAdDataSource
-        val adsAdapter = AdsAdapter(this)
-        binding.mainContent.recyclerViewMainContent.layoutManager = LinearLayoutManager(this@MainActivity)
-        binding.mainContent.recyclerViewMainContent.adapter = adsAdapter
-
-        filterDb["orderBy"] = filterDb["orderBy"]?.let { getSortOption(it) }.toString()
-
-        lifecycleScope.launch {
-            Timber.d("Paging: Starting paging flow")
-            Pager(pagingConfig) {
-                Timber.d("Paging: Creating AdsPagingSource")
-                AdsPagingSource(remoteAdDataSource, filterDb, this@MainActivity)
-            }.flow
-                .cachedIn(firebaseViewModel.viewModelScope)
-                .catch { e ->
-                    Timber.tag("MainActivity").e(e, "Error loading data")
-                }.collectLatest { pagingData ->
-                    Timber.d("Paging: Received paging data: $pagingData")
-                    Timber.d("clearUpdate = $clearUpdate")
-                    if (clearUpdate) {
-                        adsAdapter.refresh()
-                        clearUpdate = false
-                    }
-                    adsAdapter.submitData(lifecycle, pagingData)
-                }
-        }*/
 
 /*        firebaseViewModel.homeAdsData.observe(this) {
             it?.let { content ->
@@ -601,13 +562,14 @@ class MainActivity :
                     }
 
                     R.id.id_my_ads -> {
-                        firebaseViewModel.loadMyAnnouncement()
+                        switchAdapter(favAdsAdapter, 2)
+                        firebaseViewModel.getMyAdsData()
                         // switchAdapter(myAdsAdapter, 1)
                         // mainContent.toolbar.title = getString(R.string.ad_my_ads)
                     }
 
                     R.id.id_favs -> {
-                        switchAdapter(favAdsAdapter, 2)
+                        switchAdapter(favAdsAdapter, 1)
                         firebaseViewModel.getFavoriteAdsData()
                         // mainContent.toolbar.title = getString(R.string.favs)
                     }
@@ -738,14 +700,6 @@ class MainActivity :
         startActivity(i)
     }
 
-    override suspend fun onFavClicked(
-        ad: Ad,
-        adArray: ArrayList<Ad>,
-    ) {
-        clearUpdate = true
-        firebaseViewModel.onFavClick(ad)
-    }
-
     private fun navViewSetting() =
         with(binding) {
             val menu = navigationView.menu
@@ -816,6 +770,26 @@ class MainActivity :
             firebaseViewModel.getHomeAdsData(filterDb, this)
         }
     }*/
+
+    private fun switchAdapter(
+        adapter: RecyclerView.Adapter<*>,
+        tabPosition: Int,
+    ) {
+        // Сохранение текущего состояния
+        scrollStateMap[currentTabPosition] =
+            binding.mainContent.recyclerViewMainContent.layoutManager
+                ?.onSaveInstanceState()
+
+        // Переключение адаптера
+        binding.mainContent.recyclerViewMainContent.adapter = adapter
+
+        // Восстановление состояния для новой вкладки
+        binding.mainContent.recyclerViewMainContent.layoutManager
+            ?.onRestoreInstanceState(scrollStateMap[tabPosition])
+
+        // Обновляем текущую позицию вкладки
+        currentTabPosition = tabPosition
+    }
 
     override fun onDestroy() {
         super.onDestroy()

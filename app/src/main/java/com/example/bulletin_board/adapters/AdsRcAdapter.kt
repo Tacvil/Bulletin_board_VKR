@@ -199,10 +199,5 @@ class AdsRcAdapter(
         suspend fun onDeleteItem(ad: Ad)
 
         suspend fun onAdViewed(ad: Ad)
-
-        suspend fun onFavClicked(
-            ad: Ad,
-            adArray: ArrayList<Ad>,
-        )
     }
 }

@@ -12,7 +12,7 @@ class FavoriteAdsPagingSource(
 ) : PagingSource<DocumentSnapshot, Ad>() {
     override suspend fun load(params: LoadParams<DocumentSnapshot>): LoadResult<DocumentSnapshot, Ad> =
         try {
-            Timber.d("Paging: Loading ads : getAllAds")
+            Timber.d("Paging: Loading ads : getMyFavs")
             Timber.d("Paging: params.key : ${params.key}")
             val (ads, nextKey) = remoteAdDataSource.getMyFavs(params.loadSize.toLong(), params.key)
 

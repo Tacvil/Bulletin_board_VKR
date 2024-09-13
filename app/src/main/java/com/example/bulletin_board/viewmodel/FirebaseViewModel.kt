@@ -1,6 +1,8 @@
 package com.example.bulletin_board.viewmodel
 
 import android.content.Context
+import androidx.activity.result.launch
+import androidx.fragment.app.add
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -13,14 +15,17 @@ import com.example.bulletin_board.adapterFirestore.AdsPagingSource
 import com.example.bulletin_board.adapterFirestore.FavoriteAdsPagingSource
 import com.example.bulletin_board.adapterFirestore.MyAdsPagingSource
 import com.example.bulletin_board.model.Ad
-import com.example.bulletin_board.model.DbManager
 import com.example.bulletin_board.packroom.RemoteAdDataSource
-import com.google.firebase.firestore.DocumentSnapshot
-import com.google.firebase.firestore.QueryDocumentSnapshot
+import com.example.bulletin_board.packroom.Result
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import kotlin.collections.remove
+import kotlin.collections.toMutableSet
 
 @HiltViewModel
 class FirebaseViewModel
@@ -31,13 +36,15 @@ class FirebaseViewModel
         private val _isLoading = MutableLiveData<Boolean>()
         val isLoading: LiveData<Boolean> = _isLoading
 
-        val myAdsData = MutableLiveData<List<Ad>?>(emptyList())
-        val favsData = MutableLiveData<List<Ad>?>(emptyList())
+        private val _favoriteAds = MutableStateFlow<Set<String>>(emptySet())
+        val favoriteAds: StateFlow<Set<String>> = _favoriteAds.asStateFlow()
+
+        fun isAdFavorite(adKey: String): Boolean = favoriteAds.value.contains(adKey)
 
         fun getHomeAdsData(
             filter: MutableMap<String, String>,
             context: Context,
-        ): Flow<PagingData<DocumentSnapshot>> =
+        ): Flow<PagingData<Ad>> =
             Pager(getPagingConfig()) {
                 AdsPagingSource(remoteAdDataSource, filter, context)
             }.flow.cachedIn(viewModelScope)
@@ -51,60 +58,28 @@ class FirebaseViewModel
                 ) // Используем FavoriteAdsPagingSource
             }.flow.cachedIn(viewModelScope)
 
-        fun getMyAdsData(
-            filter: MutableMap<String, String>,
-            context: Context,
-        ): Flow<PagingData<DocumentSnapshot>> =
+        fun getMyAdsData(): Flow<PagingData<Ad>> =
             Pager(getPagingConfig()) {
-                MyAdsPagingSource(remoteAdDataSource, filter, context) // Используем MyAdsPagingSource
+                MyAdsPagingSource(remoteAdDataSource) // Используем MyAdsPagingSource
             }.flow.cachedIn(viewModelScope)
 
-        // тут фигня с FinishWorkListener
         suspend fun onFavClick(ad: Ad) {
-            remoteAdDataSource.onFavClick(
-                ad,
-                object : DbManager.FinishWorkListener {
-                    override fun onFinish(isDone: Boolean) {
-                        // Здесь можно обновить LiveData или использовать другой способ
-                        // уведомления адаптера об изменении состояния объявления
-                        // Например, можно использовать refresh() у Pager или PagingDataAdapter
+            viewModelScope.launch {
+                val result = remoteAdDataSource.onFavClick(ad)
+                if (result is Result.Success) {
+                    val updatedFavorites = _favoriteAds.value.toMutableSet()
+                    if (ad.isFav) {
+                        updatedFavorites.remove(ad.key)
+                    } else {
+                        updatedFavorites.add(ad.key)
                     }
-                },
-            )
+                    _favoriteAds.value = updatedFavorites
+                }
+            }
         }
 
         suspend fun adViewed(ad: Ad) {
             remoteAdDataSource.adViewed(ad)
-        }
-
-        fun loadMyAnnouncement() {
-            viewModelScope.launch {
-                _isLoading.postValue(true)
-                try {
-                    remoteAdDataSource.getMyAds(
-                        object : DbManager.ReadDataCallback {
-                            override fun readData(
-                                list: ArrayList<Ad>,
-                                lastDocument: QueryDocumentSnapshot?,
-                            ) {
-                                myAdsData.postValue(list)
-                            }
-
-                            override fun onComplete() {
-                                _isLoading.postValue(false)
-                            }
-
-                            override fun onError(e: Exception) {
-                                myAdsData.postValue(null)
-                                _isLoading.postValue(false)
-                            }
-                        },
-                    )
-                } catch (e: Exception) {
-                    myAdsData.postValue(null)
-                    _isLoading.postValue(false)
-                }
-            }
         }
 
         suspend fun deleteItem(ad: Ad) {

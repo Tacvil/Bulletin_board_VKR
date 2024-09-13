@@ -3,7 +3,6 @@ package com.example.bulletin_board.packroom
 import android.content.Context
 import com.example.bulletin_board.R
 import com.example.bulletin_board.model.Ad
-import com.example.bulletin_board.model.DbManager
 import com.example.bulletin_board.model.DbManager.Companion.USER_NODE
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.ktx.auth
@@ -16,13 +15,9 @@ import com.google.firebase.firestore.QueryDocumentSnapshot
 import com.google.firebase.firestore.SetOptions
 import com.google.firebase.ktx.Firebase
 import jakarta.inject.Inject
-import jakarta.inject.Singleton
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.tasks.await
 import timber.log.Timber
 
-@Singleton
 class RemoteAdDataSource
     @Inject
     constructor(
@@ -112,57 +107,24 @@ class RemoteAdDataSource
          * @return Result.Success(true) если операция была успешной,
          *         Result.Error(exception) в случае ошибки.
          */
-        suspend fun onFavClick(
-            ad: Ad,
-            param: DbManager.FinishWorkListener,
-        ): Result<Boolean> =
-            if (ad.isFav) {
-                removeFromFavs(ad)
-            } else {
-                addToFavs(ad)
-            }
-
-        /**
-         * Добавляет объявление в избранное текущего пользователя.
-         *
-         * @param ad Объявление для добавления в избранное.
-         * @return Result.Success(true) если объявление было успешно добавлено,
-         *         Result.Error(exception) в случае ошибки.
-         */
-        private suspend fun addToFavs(ad: Ad): Result<Boolean> =
+        suspend fun onFavClick(ad: Ad): Result<Boolean> =
             try {
                 auth.uid?.let { uid ->
+                    val update =
+                        if (ad.isFav) {
+                            FieldValue.arrayRemove(uid)
+                        } else {
+                            FieldValue.arrayUnion(uid)
+                        }
                     firestore
                         .collection(MAIN_COLLECTION)
                         .document(ad.key)
-                        .update(FAV_UIDS_FIELD, FieldValue.arrayUnion(uid))
+                        .update(FAV_UIDS_FIELD, update)
                         .await()
                     Result.Success(true)
                 } ?: Result.Error(Exception("User not authenticated"))
             } catch (e: Exception) {
-                Timber.e(e, "Error adding ad to favorites")
-                Result.Error(e)
-            }
-
-        /**
-         * Удаляет объявление из избранного текущего пользователя.
-         *
-         * @param ad Объявление для удаления из избранного.
-         * @return Result.Success(true) если объявление было успешно удалено,
-         *         Result.Error(exception) в случае ошибки.
-         */
-        private suspend fun removeFromFavs(ad: Ad): Result<Boolean> =
-            try {
-                auth.uid?.let { uid ->
-                    firestore
-                        .collection(MAIN_COLLECTION)
-                        .document(ad.key)
-                        .update(FAV_UIDS_FIELD, FieldValue.arrayRemove(uid))
-                        .await()
-                    Result.Success(true)
-                } ?: Result.Error(Exception("User not authenticated"))
-            } catch (e: Exception) {
-                Timber.e(e, "Error removing ad from favorites")
+                Timber.e(e, "Error updating favorites")
                 Result.Error(e)
             }
 
@@ -173,28 +135,36 @@ class RemoteAdDataSource
          *         или Result.Error(exception) в случае ошибки.
          */
 
-        fun getMyAds(param: DbManager.ReadDataCallback): Flow<Result<List<Ad>>> =
-            flow {
-                try {
-                    val ads =
-                        firestore
-                            .collection(MAIN_COLLECTION)
-                            .whereEqualTo(UID_FIELD, auth.uid)
-                            .orderBy(TIME_FIELD, Query.Direction.DESCENDING)
-                            .get()
-                            .await()
-                            .toObjects(Ad::class.java)
-                            .map { ad ->
-                                val favUids = ad.favUids
-                                ad.isFav = auth.uid?.let { favUids.contains(it) } ?: false
-                                ad.favCounter = favUids.size.toString()
-                                ad
-                            }
-                    emit(Result.Success(ads))
-                } catch (e: Exception) {
-                    Timber.e(e, "Error getting my ads")
-                    emit(Result.Error(e))
+        suspend fun getMyAds(
+            key: DocumentSnapshot? = null,
+            limit: Long = ADS_LIMIT.toLong(),
+        ): Pair<List<Ad>, DocumentSnapshot?> =
+            try {
+                val query =
+                    firestore
+                        .collection(MAIN_COLLECTION)
+                        .whereEqualTo(UID_FIELD, auth.uid)
+                        .orderBy(TIME_FIELD, Query.Direction.DESCENDING)
+
+                if (key != null) {
+                    query.startAfter(key)
                 }
+
+                val snapshot = query.limit(limit).get().await()
+                val ads =
+                    snapshot.documents.map { ad ->
+                        val adObj = ad.toObject(Ad::class.java)!!
+                        val favUids = adObj.favUids
+                        adObj.isFav = auth.uid?.let { favUids.contains(it) } ?: false
+                        adObj.favCounter = favUids.size.toString()
+                        adObj
+                    }
+
+                val nextKey = snapshot.documents.lastOrNull()
+                Pair(ads, nextKey)
+            } catch (e: Exception) {
+                Timber.e(e, "Error getting my ads")
+                Pair(emptyList(), null)
             }
 
         /**
@@ -249,7 +219,7 @@ class RemoteAdDataSource
             filter: MutableMap<String, String>,
             key: DocumentSnapshot? = null,
             limit: Long = ADS_LIMIT.toLong(),
-        ): Pair<List<DocumentSnapshot>, DocumentSnapshot?> =
+        ): Pair<List<Ad>, DocumentSnapshot?> =
             try {
                 val query = buildAdsQuery(context, filter, key)
                 Timber.d("Query: $query")
@@ -258,10 +228,10 @@ class RemoteAdDataSource
 
                 val snapshot = query.limit(limit).get().await()
                 Timber.d("Query snapshot: $snapshot")
-                val ads = snapshot.documents
+                val ads = snapshot.documents.map { it.toObject(Ad::class.java)!! } // Преобразование в List<Ad>
                 Timber.d("Query ads: $ads")
                 ads.forEach { ad ->
-                    Timber.d("Ad loaded getAllAds: ${ad.data}")
+                    Timber.d("Ad loaded getAllAds: $ad")
                 }
 
                 val nextKey = snapshot.documents.lastOrNull()

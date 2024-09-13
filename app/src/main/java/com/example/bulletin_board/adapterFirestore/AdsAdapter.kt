@@ -9,6 +9,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.annotation.RequiresApi
+import androidx.lifecycle.viewModelScope
 import androidx.paging.PagingDataAdapter
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
@@ -20,33 +21,47 @@ import com.example.bulletin_board.act.EditAdsActivity
 import com.example.bulletin_board.act.MainActivity
 import com.example.bulletin_board.databinding.AdListItemBinding
 import com.example.bulletin_board.model.Ad
-import com.google.firebase.firestore.DocumentSnapshot
+import com.example.bulletin_board.viewmodel.FirebaseViewModel
+import com.google.firebase.auth.FirebaseAuth
 import jakarta.inject.Inject
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
 import timber.log.Timber
 import java.util.Locale
-import kotlin.text.equals
 
 class AdsAdapter
     @Inject
     constructor(
-        private val act: MainActivity,
-    ) : PagingDataAdapter<DocumentSnapshot, AdsAdapter.AdHolder>(AdDiffCallback()) {
-        private var timeFormatter: SimpleDateFormat? = null
-
-        init {
-            timeFormatter = SimpleDateFormat("dd/MM/yyyy - hh:mm", Locale.getDefault())
-        }
-
+        private val viewModel: FirebaseViewModel,
+        private val auth: FirebaseAuth,
+    ) : PagingDataAdapter<Ad, AdsAdapter.AdHolder>(AdDiffCallback()) {
         class AdHolder
             @Inject
             constructor(
                 val binding: AdListItemBinding,
-                val act: MainActivity,
-                private val formatter: SimpleDateFormat,
+                private val auth: FirebaseAuth,
+                private val viewModel: FirebaseViewModel, // ViewModel здесь
             ) : RecyclerView.ViewHolder(binding.root) {
+                private val formatter = SimpleDateFormat("dd/MM/yyyy - hh:mm", Locale.getDefault())
+
+                private var favoriteJob: Job? = null
+
                 @RequiresApi(Build.VERSION_CODES.O)
                 fun bind(ad: Ad) =
                     with(binding) {
+                        val isFavoriteFlow = MutableStateFlow(viewModel.isAdFavorite(ad.key))
+
+                        favoriteJob?.cancel()
+                        favoriteJob =
+                            viewModel.viewModelScope.launch {
+                                viewModel.favoriteAds.collectLatest { newFavorites ->
+                                    isFavoriteFlow.value = ad.key in newFavorites
+                                    ad.isFav = isFavoriteFlow.value // Обновляем isFav в ad
+                                }
+                            }
+
                         textViewDescription.setText(ad.description)
                         textViewPrice.text = ad.price.toString()
                         textViewTitleD.setText(ad.title)
@@ -56,7 +71,7 @@ class AdsAdapter
                             .tag("ADSRCADAPTER")
                             .d("favCounter = " + ad.favCounter + " | uids = " + ad.favUids)
                         imageButtonFav1.isClickable = true
-                        val publishTimeLabel = act.getString(R.string.publication_time)
+                        val publishTimeLabel = binding.root.context.getString(R.string.publication_time)
                         val publishTime = "$publishTimeLabel: ${getTimeFromMillis(ad.time)}"
                         textViewData.text = publishTime
 
@@ -97,6 +112,9 @@ class AdsAdapter
                                     }
 
                                     override fun onAnimationEnd(animation: Animator) {
+                                        viewModel.viewModelScope.launch {
+                                            viewModel.onFavClick(ad)
+                                        }
                                         imageButtonFav1.removeAnimatorListener(this)
                                     }
 
@@ -127,15 +145,14 @@ class AdsAdapter
 
                 private fun onClickEdit(ad: Ad): View.OnClickListener =
                     View.OnClickListener {
-                        val editIntent =
-                            Intent(act, EditAdsActivity::class.java).apply {
-                                putExtra(MainActivity.EDIT_STATE, true)
-                                putExtra(MainActivity.ADS_DATA, ad)
-                            }
-                        act.startActivity(editIntent)
+                        Intent(binding.root.context, EditAdsActivity::class.java).also {
+                            it.putExtra(MainActivity.EDIT_STATE, true)
+                            it.putExtra(MainActivity.ADS_DATA, ad)
+                            binding.root.context.startActivity(it)
+                        }
                     }
 
-                private fun isOwner(ad: Ad): Boolean = ad.uid == act.mAuth.uid
+                private fun isOwner(ad: Ad): Boolean = ad.uid == auth.uid
 
                 private fun showEditPanel(isOwner: Boolean) {
                     if (isOwner) {
@@ -151,7 +168,7 @@ class AdsAdapter
             viewType: Int,
         ): AdHolder {
             val binding = AdListItemBinding.inflate(LayoutInflater.from(parent.context), parent, false)
-            return AdHolder(binding, act, timeFormatter!!)
+            return AdHolder(binding, auth, viewModel) // Передача auth и listener
         }
 
         @RequiresApi(Build.VERSION_CODES.O)
@@ -159,7 +176,7 @@ class AdsAdapter
             holder: AdHolder,
             position: Int,
         ) {
-            val ad = getItem(position)?.toObject(Ad::class.java)
+            val ad = getItem(position)
             if (ad != null) {
                 Timber.d("Ad data in onBindViewHolder: $ad")
                 holder.bind(ad)
@@ -167,58 +184,58 @@ class AdsAdapter
         }
     }
 
-class AdDiffCallback : DiffUtil.ItemCallback<DocumentSnapshot>() {
+class AdDiffCallback : DiffUtil.ItemCallback<Ad>() {
     override fun areItemsTheSame(
-        oldItem: DocumentSnapshot,
-        newItem: DocumentSnapshot,
-    ): Boolean = oldItem.id == newItem.id
+        oldItem: Ad,
+        newItem: Ad,
+    ): Boolean = oldItem.key == newItem.key
 
     override fun areContentsTheSame(
-        oldItem: DocumentSnapshot,
-        newItem: DocumentSnapshot,
-    ): Boolean = oldItem.data.toString() == newItem.data.toString()
-/*    @SuppressLint("DiffUtilEquals")
-    override fun areContentsTheSame(
-        oldItem: DocumentSnapshot,
-        newItem: DocumentSnapshot,
-    ): Boolean {
-        val oldData = oldItem.data
-        val newData = newItem.data
+        oldItem: Ad,
+        newItem: Ad,
+    ): Boolean = oldItem == newItem
+    /*    @SuppressLint("DiffUtilEquals")
+        override fun areContentsTheSame(
+            oldItem: DocumentSnapshot,
+            newItem: DocumentSnapshot,
+        ): Boolean {
+            val oldData = oldItem.data
+            val newData = newItem.data
 
-        if (oldData.isNullOrEmpty() || newData.isNullOrEmpty()) return false
+            if (oldData.isNullOrEmpty() || newData.isNullOrEmpty()) return false
 
-        if (oldData.keys != newData.keys) return false
+            if (oldData.keys != newData.keys) return false
 
-        for (key in oldData.keys) {
-            val oldValue = oldData[key]
-            val newValue = newData[key]
+            for (key in oldData.keys) {
+                val oldValue = oldData[key]
+                val newValue = newData[key]
 
-            if (oldValue == null && newValue == null) continue
-            if (oldValue == null || newValue == null) return false
-            if (oldValue::class != newValue::class) return false
+                if (oldValue == null && newValue == null) continue
+                if (oldValue == null || newValue == null) return false
+                if (oldValue::class != newValue::class) return false
 
-            when (oldValue) {
-                is String -> if (oldValue != newValue as String) return false
-                is Int -> if (oldValue != newValue as Int) return false
-                is Boolean -> if (oldValue != newValue as Boolean) return false
-                is List<*> -> if (!areListsEqual(oldValue, newValue as List<*>)) return false
-                is Long -> if (oldValue != newValue as Long) return false // Добавлено для Long
-                // Добавьте другие типы данных из вашего дата-класса Ad (Double, Float, etc.)
-                else -> if (oldValue != newValue) return false
+                when (oldValue) {
+                    is String -> if (oldValue != newValue as String) return false
+                    is Int -> if (oldValue != newValue as Int) return false
+                    is Boolean -> if (oldValue != newValue as Boolean) return false
+                    is List<*> -> if (!areListsEqual(oldValue, newValue as List<*>)) return false
+                    is Long -> if (oldValue != newValue as Long) return false // Добавлено для Long
+                    // Добавьте другие типы данных из вашего дата-класса Ad (Double, Float, etc.)
+                    else -> if (oldValue != newValue) return false
+                }
             }
+
+            return true
         }
 
-        return true
-    }
-
-    private fun areListsEqual(
-        list1: List<*>,
-        list2: List<*>,
-    ): Boolean {
-        if (list1.size != list2.size) return false
-        for (i in list1.indices) {
-            if (list1[i] != list2[i]) return false
-        }
-        return true
-    }*/
+        private fun areListsEqual(
+            list1: List<*>,
+            list2: List<*>,
+        ): Boolean {
+            if (list1.size != list2.size) return false
+            for (i in list1.indices) {
+                if (list1[i] != list2[i]) return false
+            }
+            return true
+        }*/
 }
