@@ -38,7 +38,7 @@ class AdsAdapter(
     init {
         viewModel.viewModelScope.launch {
             viewModel.adUpdated.collectLatest { updatedAd ->
-                updateAd(updatedAd)
+                updateAd(updatedAd) // f
             }
         }
     }
