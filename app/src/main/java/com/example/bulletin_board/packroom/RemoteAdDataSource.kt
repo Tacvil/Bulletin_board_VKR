@@ -1,7 +1,5 @@
 package com.example.bulletin_board.packroom
 
-import android.content.Context
-import com.example.bulletin_board.R
 import com.example.bulletin_board.model.Ad
 import com.example.bulletin_board.model.DbManager.Companion.USER_NODE
 import com.google.firebase.auth.FirebaseAuth
@@ -23,7 +21,7 @@ class RemoteAdDataSource
     constructor(
         private val firestore: FirebaseFirestore,
         private val auth: FirebaseAuth = Firebase.auth,
-    ) : AdDataSource {
+    ) {
         companion object {
             private const val MAIN_COLLECTION = "main"
             private const val FAV_UIDS_FIELD = "favUids"
@@ -50,7 +48,7 @@ class RemoteAdDataSource
          *
          * @param ad Объявление для вставки.
          */
-        override suspend fun insertAd(ad: Ad) {
+        suspend fun insertAd(ad: Ad) {
             try {
                 firestore
                     .collection(MAIN_COLLECTION)
@@ -69,7 +67,7 @@ class RemoteAdDataSource
          * @return Result.Success(true) если объявление было успешно удалено,
          *         Result.Error(exception) в случае ошибки.
          */
-        override suspend fun deleteAd(ad: Ad): Result<Boolean> =
+        suspend fun deleteAd(ad: Ad): Result<Boolean> =
             try {
                 firestore
                     .collection(MAIN_COLLECTION)
@@ -107,7 +105,7 @@ class RemoteAdDataSource
          * @return Result.Success(true) если операция была успешной,
          *         Result.Error(exception) в случае ошибки.
          */
-        suspend fun onFavClick(ad: Ad): Result<Boolean> =
+        suspend fun onFavClick(ad: Ad): Result<Ad?> =
             try {
                 auth.uid?.let { uid ->
                     val update =
@@ -121,7 +119,23 @@ class RemoteAdDataSource
                         .document(ad.key)
                         .update(FAV_UIDS_FIELD, update)
                         .await()
-                    Result.Success(true)
+
+                    // Получаем обновленное объявление
+                    val updatedAd =
+                        firestore
+                            .collection(MAIN_COLLECTION)
+                            .document(ad.key)
+                            .get()
+                            .await()
+                            .toObject(Ad::class.java)
+
+                    // Пересчитываем isFav и favCounter
+                    updatedAd?.let {
+                        it.isFav = it.favUids.contains(auth.uid)
+                        it.favCounter = it.favUids.size.toString()
+                    }
+
+                    Result.Success(updatedAd)
                 } ?: Result.Error(Exception("User not authenticated"))
             } catch (e: Exception) {
                 Timber.e(e, "Error updating favorites")
@@ -211,34 +225,44 @@ class RemoteAdDataSource
         /**
          * Получает все объявления из Firestore с учетом фильтров и пагинации.
          *
-         * @param context Контекст приложения.
          * @param filter Фильтры для запроса.
          */
         suspend fun getAllAds(
-            context: Context,
             filter: MutableMap<String, String>,
             key: DocumentSnapshot? = null,
             limit: Long = ADS_LIMIT.toLong(),
         ): Pair<List<Ad>, DocumentSnapshot?> =
             try {
-                val query = buildAdsQuery(context, filter, key)
+                val query = buildAdsQuery(filter, key)
                 Timber.d("Query: $query")
                 Timber.d("Query filter: $filter")
                 Timber.d("Query key: $key")
 
                 val snapshot = query.limit(limit).get().await()
                 Timber.d("Query snapshot: $snapshot")
-                val ads = snapshot.documents.map { it.toObject(Ad::class.java)!! } // Преобразование в List<Ad>
+                val ads =
+                    snapshot.documents.map { it.toObject(Ad::class.java)!! } // Преобразование в List<Ad>
+                val processedAds = processAds(ads) // Обрабатываем список объявлений
+
                 Timber.d("Query ads: $ads")
                 ads.forEach { ad ->
                     Timber.d("Ad loaded getAllAds: $ad")
                 }
 
                 val nextKey = snapshot.documents.lastOrNull()
-                Pair(ads, nextKey)
+                Pair(processedAds, nextKey)
             } catch (e: FirebaseFirestoreException) {
                 Timber.e(e, "Error getting ads")
                 Pair(emptyList(), null) // Возвращаем пустой список и null в случае ошибки
+            }
+
+        private fun processAds(ads: List<Ad>): List<Ad> =
+            ads.map { ad ->
+                ad.apply {
+                    val favUids = this.favUids
+                    isFav = favUids.contains(auth.uid)
+                    favCounter = favUids.size.toString()
+                }
             }
 
         /**
@@ -249,14 +273,13 @@ class RemoteAdDataSource
          * @return Запрос Firestore.
          */
         private fun buildAdsQuery(
-            context: Context,
             filter: MutableMap<String, String>,
             key: DocumentSnapshot? = null,
         ): Query {
             var query = firestore.collection(MAIN_COLLECTION).whereEqualTo(IS_PUBLISHED_FIELD, true)
             query = sortByKeyWords(query, filter)
             query = sortByLocation(query, filter)
-            query = sortByCategory(query, filter, context)
+            query = sortByCategory(query, filter)
             query = sortByWithSend(query, filter)
             query = sortByPrice(query, filter)
             query = sortByOrder(query, filter)
@@ -310,23 +333,16 @@ class RemoteAdDataSource
          *
          * @param query Исходный запрос.
          * @param filter Фильтры для запроса.
-         * @param context Контекст приложения.
          * @return Отсортированный запрос.
          */
         private fun sortByCategory(
             query: Query,
             filter: MutableMap<String, String>,
-            context: Context,
         ): Query =
-            if (!filter[CATEGORY_FIELD].isNullOrEmpty() &&
-                filter[CATEGORY_FIELD] !=
-                context.getString(
-                    R.string.def,
-                )
-            ) {
-                query.whereEqualTo(CATEGORY_FIELD, filter[CATEGORY_FIELD])
-            } else {
+            if (filter[CATEGORY_FIELD].isNullOrEmpty()) {
                 query
+            } else {
+                query.whereEqualTo(CATEGORY_FIELD, filter[CATEGORY_FIELD])
             }
 
         /**

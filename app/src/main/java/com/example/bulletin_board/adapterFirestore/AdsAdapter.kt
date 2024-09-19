@@ -23,168 +23,175 @@ import com.example.bulletin_board.databinding.AdListItemBinding
 import com.example.bulletin_board.model.Ad
 import com.example.bulletin_board.viewmodel.FirebaseViewModel
 import com.google.firebase.auth.FirebaseAuth
-import jakarta.inject.Inject
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import java.util.Locale
 
-class AdsAdapter
-    @Inject
-    constructor(
-        private val viewModel: FirebaseViewModel,
-        private val auth: FirebaseAuth,
-    ) : PagingDataAdapter<Ad, AdsAdapter.AdHolder>(AdDiffCallback()) {
-        class AdHolder
-            @Inject
-            constructor(
-                val binding: AdListItemBinding,
-                private val auth: FirebaseAuth,
-                private val viewModel: FirebaseViewModel, // ViewModel здесь
-            ) : RecyclerView.ViewHolder(binding.root) {
-                private val formatter = SimpleDateFormat("dd/MM/yyyy - hh:mm", Locale.getDefault())
+class AdsAdapter(
+    private val viewModel: FirebaseViewModel,
+    private val auth: FirebaseAuth,
+) : PagingDataAdapter<Ad, AdsAdapter.AdHolder>(AdDiffCallback) {
+    // Map для быстрого доступа к объявлениям по ключу
+    private val adMap = mutableMapOf<String, Ad>()
 
-                private var favoriteJob: Job? = null
-
-                @RequiresApi(Build.VERSION_CODES.O)
-                fun bind(ad: Ad) =
-                    with(binding) {
-                        val isFavoriteFlow = MutableStateFlow(viewModel.isAdFavorite(ad.key))
-
-                        favoriteJob?.cancel()
-                        favoriteJob =
-                            viewModel.viewModelScope.launch {
-                                viewModel.favoriteAds.collectLatest { newFavorites ->
-                                    isFavoriteFlow.value = ad.key in newFavorites
-                                    ad.isFav = isFavoriteFlow.value // Обновляем isFav в ad
-                                }
-                            }
-
-                        textViewDescription.setText(ad.description)
-                        textViewPrice.text = ad.price.toString()
-                        textViewTitleD.setText(ad.title)
-                        textViewViewCounter.text = ad.viewsCounter.toString()
-                        textViewFav.text = ad.favCounter
-                        Timber
-                            .tag("ADSRCADAPTER")
-                            .d("favCounter = " + ad.favCounter + " | uids = " + ad.favUids)
-                        imageButtonFav1.isClickable = true
-                        val publishTimeLabel = binding.root.context.getString(R.string.publication_time)
-                        val publishTime = "$publishTimeLabel: ${getTimeFromMillis(ad.time)}"
-                        textViewData.text = publishTime
-
-                        Glide
-                            .with(binding.root)
-                            .load(ad.mainImage)
-                            .apply(RequestOptions().transform(RoundedCorners(20)))
-                            .into(imageViewMainImage)
-
-                        showEditPanel(isOwner(ad))
-                        if (ad.isFav) {
-                            imageButtonFav1.pauseAnimation()
-                            imageButtonFav1.cancelAnimation()
-                            imageButtonFav1.setMinAndMaxProgress(0.38f, 0.38f)
-                        } else {
-                            imageButtonFav1.pauseAnimation()
-                            imageButtonFav1.cancelAnimation()
-                            imageButtonFav1.setMinAndMaxProgress(0.87f, 0.87f)
-                        }
-
-                        imageButtonFav1.setOnClickListener {
-                            if (!ad.isFav) {
-                                imageButtonFav1.pauseAnimation()
-                                imageButtonFav1.cancelAnimation()
-                                imageButtonFav1.setMinAndMaxProgress(0.0f, 0.38f)
-                                imageButtonFav1.speed = 1.5f
-                            } else {
-                                imageButtonFav1.pauseAnimation()
-                                imageButtonFav1.cancelAnimation()
-                                imageButtonFav1.setMinAndMaxProgress(0.6f, 0.87f)
-                                imageButtonFav1.speed = 1.5f
-                            }
-
-                            imageButtonFav1.addAnimatorListener(
-                                object : Animator.AnimatorListener {
-                                    override fun onAnimationStart(animation: Animator) {
-                                        imageButtonFav1.isClickable = false
-                                    }
-
-                                    override fun onAnimationEnd(animation: Animator) {
-                                        viewModel.viewModelScope.launch {
-                                            viewModel.onFavClick(ad)
-                                        }
-                                        imageButtonFav1.removeAnimatorListener(this)
-                                    }
-
-                                    override fun onAnimationCancel(animation: Animator) {}
-
-                                    override fun onAnimationRepeat(animation: Animator) {}
-                                },
-                            )
-                            imageButtonFav1.playAnimation()
-                        }
-
-                        itemView.setOnClickListener {
-                            // act.onAdViewed(ad)
-                        }
-
-                        imageButtonEditAd.setOnClickListener(onClickEdit(ad))
-
-                        imageButtonDeleteAd.setOnClickListener {
-                            // act.onDeleteItem(ad)
-                        }
-                    }
-
-                private fun getTimeFromMillis(timeMillis: String): String {
-                    val c = Calendar.getInstance()
-                    c.timeInMillis = timeMillis.toLong()
-                    return formatter.format(c.time)
-                }
-
-                private fun onClickEdit(ad: Ad): View.OnClickListener =
-                    View.OnClickListener {
-                        Intent(binding.root.context, EditAdsActivity::class.java).also {
-                            it.putExtra(MainActivity.EDIT_STATE, true)
-                            it.putExtra(MainActivity.ADS_DATA, ad)
-                            binding.root.context.startActivity(it)
-                        }
-                    }
-
-                private fun isOwner(ad: Ad): Boolean = ad.uid == auth.uid
-
-                private fun showEditPanel(isOwner: Boolean) {
-                    if (isOwner) {
-                        binding.editPanel.visibility = View.VISIBLE
-                    } else {
-                        binding.editPanel.visibility = View.GONE
-                    }
-                }
-            }
-
-        override fun onCreateViewHolder(
-            parent: ViewGroup,
-            viewType: Int,
-        ): AdHolder {
-            val binding = AdListItemBinding.inflate(LayoutInflater.from(parent.context), parent, false)
-            return AdHolder(binding, auth, viewModel) // Передача auth и listener
-        }
-
-        @RequiresApi(Build.VERSION_CODES.O)
-        override fun onBindViewHolder(
-            holder: AdHolder,
-            position: Int,
-        ) {
-            val ad = getItem(position)
-            if (ad != null) {
-                Timber.d("Ad data in onBindViewHolder: $ad")
-                holder.bind(ad)
+    init {
+        viewModel.viewModelScope.launch {
+            viewModel.adUpdated.collectLatest { updatedAd ->
+                updateAd(updatedAd)
             }
         }
     }
 
-class AdDiffCallback : DiffUtil.ItemCallback<Ad>() {
+    fun updateAd(updatedAd: Ad) {
+        adMap[updatedAd.key]?.let { ad ->
+            ad.isFav = updatedAd.isFav
+            ad.favCounter = updatedAd.favCounter
+            val snapshot = snapshot()
+            val index = snapshot.indexOfFirst { it?.key == updatedAd.key }
+            if (index != -1) {
+                notifyItemChanged(index)
+            }
+        }
+    }
+
+    class AdHolder(
+        val binding: AdListItemBinding,
+    ) : RecyclerView.ViewHolder(binding.root) {
+        private val formatter = SimpleDateFormat("dd/MM/yyyy - hh:mm", Locale.getDefault())
+
+        @RequiresApi(Build.VERSION_CODES.O)
+        fun bind(
+            ad: Ad,
+            auth: FirebaseAuth,
+            viewModel: FirebaseViewModel,
+        ) = with(binding) {
+            textViewDescription.setText(ad.description)
+            textViewPrice.text = ad.price.toString()
+            textViewTitleD.setText(ad.title)
+            textViewViewCounter.text = ad.viewsCounter.toString()
+            textViewFav.text = ad.favCounter
+            Timber
+                .tag("ADSRCADAPTER")
+                .d("ifFav = " + ad.isFav + "favCounter = " + ad.favCounter + " | uids = " + ad.favUids)
+            imageButtonFav1.isClickable = true
+            val publishTimeLabel = binding.root.context.getString(R.string.publication_time)
+            val publishTime = "$publishTimeLabel: ${getTimeFromMillis(ad.time)}"
+            textViewData.text = publishTime
+
+            Glide
+                .with(binding.root)
+                .load(ad.mainImage)
+                .apply(RequestOptions().transform(RoundedCorners(20)))
+                .into(imageViewMainImage)
+
+            showEditPanel(isOwner(ad, auth))
+            if (ad.isFav) {
+                imageButtonFav1.pauseAnimation()
+                imageButtonFav1.cancelAnimation()
+                imageButtonFav1.setMinAndMaxProgress(0.38f, 0.38f)
+            } else {
+                imageButtonFav1.pauseAnimation()
+                imageButtonFav1.cancelAnimation()
+                imageButtonFav1.setMinAndMaxProgress(0.87f, 0.87f)
+            }
+
+            imageButtonFav1.setOnClickListener {
+                if (!ad.isFav) {
+                    imageButtonFav1.pauseAnimation()
+                    imageButtonFav1.cancelAnimation()
+                    imageButtonFav1.setMinAndMaxProgress(0.0f, 0.38f)
+                    imageButtonFav1.speed = 1.5f
+                } else {
+                    imageButtonFav1.pauseAnimation()
+                    imageButtonFav1.cancelAnimation()
+                    imageButtonFav1.setMinAndMaxProgress(0.6f, 0.87f)
+                    imageButtonFav1.speed = 1.5f
+                }
+
+                imageButtonFav1.addAnimatorListener(
+                    object : Animator.AnimatorListener {
+                        override fun onAnimationStart(animation: Animator) {
+                            imageButtonFav1.isClickable = false
+                        }
+
+                        override fun onAnimationEnd(animation: Animator) {
+                            viewModel.viewModelScope.launch {
+                                viewModel.onFavClick(ad)
+                            }
+                            imageButtonFav1.removeAnimatorListener(this)
+                        }
+
+                        override fun onAnimationCancel(animation: Animator) {}
+
+                        override fun onAnimationRepeat(animation: Animator) {}
+                    },
+                )
+                imageButtonFav1.playAnimation()
+            }
+
+            itemView.setOnClickListener {
+                // act.onAdViewed(ad)
+            }
+
+            imageButtonEditAd.setOnClickListener(onClickEdit(ad))
+
+            imageButtonDeleteAd.setOnClickListener {
+                // act.onDeleteItem(ad)
+            }
+        }
+
+        private fun getTimeFromMillis(timeMillis: String): String {
+            val c = Calendar.getInstance()
+            c.timeInMillis = timeMillis.toLong()
+            return formatter.format(c.time)
+        }
+
+        private fun onClickEdit(ad: Ad): View.OnClickListener =
+            View.OnClickListener {
+                Intent(binding.root.context, EditAdsActivity::class.java).also {
+                    it.putExtra(MainActivity.EDIT_STATE, true)
+                    it.putExtra(MainActivity.ADS_DATA, ad)
+                    binding.root.context.startActivity(it)
+                }
+            }
+
+        private fun isOwner(
+            ad: Ad,
+            auth: FirebaseAuth,
+        ): Boolean = ad.uid == auth.uid
+
+        private fun showEditPanel(isOwner: Boolean) {
+            if (isOwner) {
+                binding.editPanel.visibility = View.VISIBLE
+            } else {
+                binding.editPanel.visibility = View.GONE
+            }
+        }
+    }
+
+    override fun onCreateViewHolder(
+        parent: ViewGroup,
+        viewType: Int,
+    ): AdHolder {
+        val binding = AdListItemBinding.inflate(LayoutInflater.from(parent.context), parent, false)
+        return AdHolder(binding)
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    override fun onBindViewHolder(
+        holder: AdHolder,
+        position: Int,
+    ) {
+        val ad = getItem(position)
+        if (ad != null) {
+            adMap[ad.key] = ad
+            holder.bind(ad, auth, viewModel)
+        }
+    }
+}
+
+object AdDiffCallback : DiffUtil.ItemCallback<Ad>() {
     override fun areItemsTheSame(
         oldItem: Ad,
         newItem: Ad,

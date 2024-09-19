@@ -1,22 +1,14 @@
 package com.example.bulletin_board.packroom
 
 import com.example.bulletin_board.model.Ad
-import jakarta.inject.Inject
-import jakarta.inject.Singleton
+import com.example.bulletin_board.packroom.RemoteAdDataSource.Companion.ADS_LIMIT
+import com.google.firebase.firestore.DocumentSnapshot
+import kotlin.text.toLong
 
-@Singleton
-class AdRepository
-    @Inject
-    constructor(
-        private val localDataSource: LocalAdDataSource,
-        private val remoteDataSource: RemoteAdDataSource,
-    ) : AdDataSource {
-        override suspend fun insertAd(ad: Ad) {
-            localDataSource.insertAd(ad)
-            remoteDataSource.insertAd(ad)
-        }
-
-        override suspend fun deleteAd(ad: Ad): Result<Boolean> {
-            TODO("Not yet implemented")
-        }
-    }
+interface AdRepository {
+    suspend fun getAllAds(
+        filter: MutableMap<String, String>,
+        key: DocumentSnapshot? = null,
+        limit: Long = ADS_LIMIT.toLong(),
+    ): Pair<List<Ad>, DocumentSnapshot?>
+}

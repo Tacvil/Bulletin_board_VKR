@@ -1,23 +1,22 @@
 package com.example.bulletin_board.adapterFirestore
 
-import android.content.Context
 import androidx.paging.PagingSource
 import androidx.paging.PagingState
 import com.example.bulletin_board.model.Ad
-import com.example.bulletin_board.packroom.RemoteAdDataSource
+import com.example.bulletin_board.packroom.AdRepository
+import com.example.bulletin_board.viewmodel.FirebaseViewModel
 import com.google.firebase.firestore.DocumentSnapshot
 import timber.log.Timber
 
 class AdsPagingSource(
-    private val remoteAdDataSource: RemoteAdDataSource,
-    private val filter: MutableMap<String, String>,
-    private val context: Context,
+    private val adRepository: AdRepository,
+    private val viewModel: FirebaseViewModel,
 ) : PagingSource<DocumentSnapshot, Ad>() {
     override suspend fun load(params: LoadParams<DocumentSnapshot>): LoadResult<DocumentSnapshot, Ad> =
         try {
-            Timber.d("Paging: Loading ads : getAllAds")
+            Timber.d("Paging: Loading ads : getMyFavs")
             Timber.d("Paging: params.key : ${params.key}")
-            val (ads, nextKey) = remoteAdDataSource.getAllAds(context, filter, params.key)
+            val (ads, nextKey) = adRepository.getAllAds(viewModel.filter.value, params.key, params.loadSize.toLong())
 
             LoadResult.Page(ads, null, nextKey)
         } catch (e: Exception) {

@@ -2,16 +2,12 @@ package com.example.bulletin_board.model
 
 import android.os.Parcel
 import android.os.Parcelable
-import androidx.room.Entity
-import androidx.room.PrimaryKey
 import kotlinx.serialization.Serializable
 
-@Entity(tableName = "ads")
 @Serializable
 data class Ad
     @JvmOverloads
     constructor(
-        @PrimaryKey
         val key: String = "", // Значение по умолчанию для key
         val title: String? = null,
         val keyWords: List<String>? = null,

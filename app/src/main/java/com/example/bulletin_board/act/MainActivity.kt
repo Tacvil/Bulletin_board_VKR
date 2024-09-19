@@ -64,12 +64,10 @@ import com.google.firebase.auth.ktx.auth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.ktx.Firebase
 import dagger.hilt.android.AndroidEntryPoint
-import jakarta.inject.Inject
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import timber.log.Timber
-import java.io.Serializable
 
 @AndroidEntryPoint
 class MainActivity :
@@ -86,7 +84,7 @@ class MainActivity :
     private lateinit var filterLauncher: ActivityResultLauncher<Intent>
     private val firebaseViewModel: FirebaseViewModel by viewModels()
     private var clearUpdate: Boolean = false
-    private var filterDb: MutableMap<String, String> = mutableMapOf()
+
     private var pref: SharedPreferences? = null
     private var isPremiumUser: Boolean = false
     private var bManager: BillingManager? = null
@@ -96,8 +94,9 @@ class MainActivity :
     private var viewModelIsLoading = false
     private val favAdsAdapter = FavoriteAdsAdapter(this)
 
-    @Inject
-    lateinit var adsAdapter: AdsAdapter
+    private val adsAdapter by lazy {
+        AdsAdapter(firebaseViewModel, mAuth)
+    }
     private val scrollStateMap = mutableMapOf<Int, Parcelable?>()
     private var currentTabPosition: Int = 0
 
@@ -124,9 +123,17 @@ class MainActivity :
             notificationManager.createNotificationChannel(mChannel)
         }
 
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+        if (ContextCompat.checkSelfPermission(
+                this,
+                Manifest.permission.POST_NOTIFICATIONS,
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
             // Запрос разрешения
-            ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.POST_NOTIFICATIONS), PERMISSION_REQUEST_CODE)
+            ActivityCompat.requestPermissions(
+                this,
+                arrayOf(Manifest.permission.POST_NOTIFICATIONS),
+                PERMISSION_REQUEST_CODE,
+            )
         } else {
             // Разрешение уже предоставлено, можно отправлять уведомления
             Timber.tag("POST_NOTIFICATIONS_PER_TRUE").d("POST_NOTIFICATIONS_PER_TRUE")
@@ -155,7 +162,12 @@ class MainActivity :
                     Timber.tag("POST_NOTIFICATIONS_PER_TRUE").d("POST_NOTIFICATIONS_PER_TRUE")
                 } else {
                     Timber.tag("POST_NOTIFICATIONS_PER_FALSE").d("POST_NOTIFICATIONS_PER_FALSE")
-                    Toast.makeText(this, "Permission denied, notifications cannot be sent", Toast.LENGTH_SHORT).show()
+                    Toast
+                        .makeText(
+                            this,
+                            "Permission denied, notifications cannot be sent",
+                            Toast.LENGTH_SHORT,
+                        ).show()
                 }
                 return
             }
@@ -205,7 +217,8 @@ class MainActivity :
 
                         val db = FirebaseFirestore.getInstance()
                         val collectionReference = db.collection(DbManager.MAIN_NODE)
-                        val query = collectionReference.whereGreaterThanOrEqualTo("title", searchQuery)
+                        val query =
+                            collectionReference.whereGreaterThanOrEqualTo("title", searchQuery)
                         val spaceCount = searchQuery.count { it == ' ' }
                         Timber.tag("MActTextChanged").d("spaceCount = " + spaceCount)
                         val phraseBuilder = StringBuilder()
@@ -265,10 +278,10 @@ class MainActivity :
 
                 val titleValidate = queryValidate(querySearch)
 
-                filterDb["keyWords"] = titleValidate
-                Timber.tag("MainActSearch").d("filterDb = " + filterDb)
+                firebaseViewModel.addToFilter("keyWords", titleValidate)
+                firebaseViewModel.updateFilter()
                 clearUpdate = true
-                firebaseViewModel.getHomeAdsData(filterDb, this@MainActivity)
+                firebaseViewModel.getHomeAdsData()
             }
             binding.mainContent.searchViewMainContent.hide()
 
@@ -295,10 +308,16 @@ class MainActivity :
 
     private fun onClickSelectOrderByFilter() =
         with(binding) {
-            mainContent.autoComplete.setText(filterDb["orderBy"])
+            mainContent.autoComplete.setText(firebaseViewModel.getFilterValue("orderBy"))
             mainContent.autoComplete.setOnClickListener {
                 val listVariant: ArrayList<Pair<String, String>> =
-                    if (filterDb["price_from"]?.isNotEmpty() == true || filterDb["price_to"]?.isNotEmpty() == true) {
+                    if (firebaseViewModel
+                            .getFilterValue("price_from")
+                            ?.isNotEmpty() == true ||
+                        firebaseViewModel
+                            .getFilterValue("price_to")
+                            ?.isNotEmpty() == true
+                    ) {
                         arrayListOf(
                             Pair(getString(R.string.sort_by_ascending_price), "single"),
                             Pair(getString(R.string.sort_by_descending_price), "single"),
@@ -314,13 +333,15 @@ class MainActivity :
                 val onItemSelectedListener =
                     object : RcViewDialogSpinnerAdapter.OnItemSelectedListener {
                         override fun onItemSelected(item: String) {
-                            Toast.makeText(this@MainActivity, "Item: $item", Toast.LENGTH_SHORT).show()
+                            Toast
+                                .makeText(this@MainActivity, "Item: $item", Toast.LENGTH_SHORT)
+                                .show()
                             mainContent.autoComplete.setText(item)
 
-                            filterDb["orderBy"] = getSortOption(item)
-                            Timber.tag("MainActOnClickFilter").d("filterDb = " + filterDb)
+                            firebaseViewModel.addToFilter("orderBy", getSortOption(item))
+                            firebaseViewModel.updateFilter()
                             clearUpdate = true
-                            firebaseViewModel.getHomeAdsData(filterDb, this@MainActivity)
+                            firebaseViewModel.getHomeAdsData()
                         }
                     }
 
@@ -335,10 +356,7 @@ class MainActivity :
             }
 
             mainContent.filterButtonMain.setOnClickListener {
-                val i =
-                    Intent(this@MainActivity, FilterActivity::class.java).apply {
-                        putExtra(FilterActivity.FILTER_KEY, filterDb as Serializable)
-                    }
+                val i = Intent(this@MainActivity, FilterActivity::class.java)
                 filterLauncher.launch(i)
             }
         }
@@ -365,13 +383,13 @@ class MainActivity :
             }
 
             R.id.id_search -> {
-                if (!filterDb["keyWords"].isNullOrEmpty()) {
+                if (!firebaseViewModel.getFilterValue("keyWords").isNullOrEmpty()) {
                     // Текущая иконка НЕ является ic_search
                     binding.mainContent.searchBar.clearText()
-                    filterDb["keyWords"] = ""
-                    Timber.tag("MainActR.id.id_search").d("filterDb = " + filterDb)
+                    firebaseViewModel.addToFilter("keyWords", "")
+                    firebaseViewModel.updateFilter()
                     clearUpdate = true
-                    firebaseViewModel.getHomeAdsData(filterDb, this@MainActivity)
+                    firebaseViewModel.getHomeAdsData()
                     item.setIcon(R.drawable.ic_search)
                 } else {
                     binding.mainContent.searchBar.performClick()
@@ -422,10 +440,10 @@ class MainActivity :
 
                     val validateText = queryValidate(spokenText)
 
-                    filterDb["keyWords"] = validateText
-                    Timber.tag("MainActSpokenText").d("filterDb = " + filterDb)
+                    firebaseViewModel.addToFilter("keyWords", validateText)
+                    firebaseViewModel.updateFilter()
                     clearUpdate = true
-                    firebaseViewModel.getHomeAdsData(filterDb, this@MainActivity)
+                    firebaseViewModel.getHomeAdsData()
                 } else {
                     Timber.tag("VoiceSearch").d("Распознавание речи не дало результатов.")
                 }
@@ -462,17 +480,13 @@ class MainActivity :
                 ActivityResultContracts.StartActivityForResult(),
             ) {
                 if (it.resultCode == RESULT_OK) {
-                    Timber.tag("MyLogMainAct").d("filterDbBefore: " + filterDb)
-                    val newFilterData = (it.data?.getSerializableExtra(FilterActivity.FILTER_KEY) as? MutableMap<String, String>)!!
-                    filterDb.putAll(newFilterData)
-                    if (filterDb["price_from"]?.isNotEmpty() == true || filterDb["price_to"]?.isNotEmpty() == true) {
+                    /*if (filterDb["price_from"]?.isNotEmpty() == true || filterDb["price_to"]?.isNotEmpty() == true) {
                         filterDb["orderBy"] = "По возрастанию цены"
                         binding.mainContent.autoComplete.setText(filterDb["orderBy"])
-                    }
-                    Timber.tag("MyLogMainAct").d("filterDb: " + filterDb)
+                    }*/
                     // filterDb = FilterManager.getFilter(filter)
                 } else if (it.resultCode == RESULT_CANCELED) {
-                    filterDb = mutableMapOf()
+                    // filterDb = mutableMapOf()
                 }
             }
     }
@@ -503,7 +517,7 @@ class MainActivity :
                 // Например, отобразить индикатор загрузки, если loadStates.refresh is LoadState.Loading
             }*/
             firebaseViewModel
-                .getHomeAdsData(filterDb, this@MainActivity)
+                .getHomeAdsData()
                 .catch { e ->
                     Timber.tag("MainActivity").e(e, "Error loading data")
                 }.collectLatest { pagingData ->
@@ -511,34 +525,35 @@ class MainActivity :
                 }
         }
 
-/*        firebaseViewModel.homeAdsData.observe(this) {
-            it?.let { content ->
-                // val list = getAdsByCategory(content)
-                Log.d("MainActInitViewModel", "clearUpdate: $clearUpdate")
+        /*        firebaseViewModel.homeAdsData.observe(this) {
+                    it?.let { content ->
+                        // val list = getAdsByCategory(content)
+                        Log.d("MainActInitViewModel", "clearUpdate: $clearUpdate")
 
-                if (!clearUpdate) {
-                    homeAdsAdapter.updateAdapter(content)
-                } else {
-                    homeAdsAdapter.updateAdapterWithClear(content)
-                }
+                        if (!clearUpdate) {
+                            homeAdsAdapter.updateAdapter(content)
+                        } else {
+                            homeAdsAdapter.updateAdapterWithClear(content)
+                        }
 
-                if (homeAdsAdapter.itemCount == 0) {
-                    binding.mainContent.recyclerViewMainContent.visibility = View.INVISIBLE
-                    binding.mainContent.nothinkWhiteAnim.visibility = View.VISIBLE
-                    binding.mainContent.nothinkWhiteAnim.repeatCount = LottieDrawable.INFINITE
-                    binding.mainContent.nothinkWhiteAnim.playAnimation()
-                } else {
-                    binding.mainContent.recyclerViewMainContent.visibility = View.VISIBLE
-                    binding.mainContent.nothinkWhiteAnim.cancelAnimation()
-                    binding.mainContent.nothinkWhiteAnim.visibility = View.GONE
-                }
-            }
-        }*/
+                        if (homeAdsAdapter.itemCount == 0) {
+                            binding.mainContent.recyclerViewMainContent.visibility = View.INVISIBLE
+                            binding.mainContent.nothinkWhiteAnim.visibility = View.VISIBLE
+                            binding.mainContent.nothinkWhiteAnim.repeatCount = LottieDrawable.INFINITE
+                            binding.mainContent.nothinkWhiteAnim.playAnimation()
+                        } else {
+                            binding.mainContent.recyclerViewMainContent.visibility = View.VISIBLE
+                            binding.mainContent.nothinkWhiteAnim.cancelAnimation()
+                            binding.mainContent.nothinkWhiteAnim.visibility = View.GONE
+                        }
+                    }
+                }*/
     }
 
     private fun init() {
-        filterDb["category"] = getString(R.string.def)
-        filterDb["orderBy"] = getString(R.string.sort_by_newest)
+        firebaseViewModel.addToFilter("category", "")
+        firebaseViewModel.addToFilter("orderBy", getString(R.string.sort_by_newest))
+        firebaseViewModel.updateFilter()
         setSupportActionBar(binding.mainContent.searchBar)
         onActivityResult()
         navViewSetting()
@@ -576,7 +591,7 @@ class MainActivity :
 
                     R.id.id_home -> {
                         switchAdapter(adsAdapter, 0)
-                        getAdsFromCat(getString(R.string.def))
+                        getAdsFromCat("")
                         // binding.mainContent.recyclerViewMainContent.adapter = homeAdsAdapter
                     }
                 }
@@ -656,13 +671,10 @@ class MainActivity :
     }
 
     private fun getAdsFromCat(cat: String) {
-        filterDb["category"] = cat
-        // Timber.tag("MainActivityCAT").d("firebaseViewModel.homeAdsData.value = " + firebaseViewModel.homeAdsData.value)
-        Timber.tag("MainActivityCAT").d("_isLoading.value = " + viewModelIsLoading)
-        filterDb["orderBy"] = filterDb["orderBy"]?.let { getSortOption(it) }.toString()
-        Timber.tag("MainActivityCAT").d("filterDb = " + filterDb)
-
-        firebaseViewModel.getHomeAdsData(filterDb, this)
+        firebaseViewModel.addToFilter("category", cat)
+        firebaseViewModel.addToFilter("orderBy", getSortOption(firebaseViewModel.getFilterValue("orderBy") ?: ""))
+        firebaseViewModel.updateFilter()
+        firebaseViewModel.getHomeAdsData()
     }
 
     fun uiUpdate(user: FirebaseUser?) {
@@ -797,11 +809,17 @@ class MainActivity :
     }
 
     private fun getSelectedTheme(): Int =
-        when (defPreferences.getString(SettingsActivity.THEME_KEY, SettingsActivity.DEFAULT_THEME)) {
+        when (
+            defPreferences.getString(
+                SettingsActivity.THEME_KEY,
+                SettingsActivity.DEFAULT_THEME,
+            )
+        ) {
             SettingsActivity.DEFAULT_THEME -> {
                 AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
                 R.style.Base_Theme_Bulletin_board_light
             }
+
             else -> {
                 AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
                 R.style.Base_Theme_Bulletin_board_dark

@@ -7,7 +7,7 @@ plugins {
     id("com.google.gms.google-services")
     id("io.gitlab.arturbosch.detekt") version "1.23.6"
     id("com.google.dagger.hilt.android")
-    id("com.google.devtools.ksp") version "2.0.20-1.0.24"
+    id("com.google.devtools.ksp") version "2.0.20-1.0.25"
     kotlin("plugin.serialization") version "2.0.20"
 }
 
@@ -143,14 +143,6 @@ dependencies {
     implementation("androidx.compose.ui:ui-text-android:1.6.8")
 
 //    implementation  ("io.ak1.pix:piximagepicker:1.6.3")
-
-    // Room
-    val room_version = "2.6.1"
-
-    implementation("androidx.room:room-runtime:$room_version")
-    annotationProcessor("androidx.room:room-compiler:$room_version")
-    ksp("androidx.room:room-compiler:$room_version")
-    implementation("androidx.room:room-ktx:$room_version")
 
     // Timber
     implementation("com.jakewharton.timber:timber:5.0.1")

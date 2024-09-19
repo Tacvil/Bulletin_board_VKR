@@ -1,8 +1,5 @@
 package com.example.bulletin_board.viewmodel
 
-import android.content.Context
-import androidx.activity.result.launch
-import androidx.fragment.app.add
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -15,23 +12,24 @@ import com.example.bulletin_board.adapterFirestore.AdsPagingSource
 import com.example.bulletin_board.adapterFirestore.FavoriteAdsPagingSource
 import com.example.bulletin_board.adapterFirestore.MyAdsPagingSource
 import com.example.bulletin_board.model.Ad
+import com.example.bulletin_board.packroom.AdRepository
 import com.example.bulletin_board.packroom.RemoteAdDataSource
 import com.example.bulletin_board.packroom.Result
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.launch
 import javax.inject.Inject
-import kotlin.collections.remove
-import kotlin.collections.toMutableSet
 
 @HiltViewModel
 class FirebaseViewModel
     @Inject
     constructor(
-        val remoteAdDataSource: RemoteAdDataSource,
+        private val remoteAdDataSource: RemoteAdDataSource,
+        private val adRepository: AdRepository,
     ) : ViewModel() {
         private val _isLoading = MutableLiveData<Boolean>()
         val isLoading: LiveData<Boolean> = _isLoading
@@ -39,17 +37,23 @@ class FirebaseViewModel
         private val _favoriteAds = MutableStateFlow<Set<String>>(emptySet())
         val favoriteAds: StateFlow<Set<String>> = _favoriteAds.asStateFlow()
 
-        fun isAdFavorite(adKey: String): Boolean = favoriteAds.value.contains(adKey)
+        private val _favoriteAdChanged = MutableSharedFlow<Ad>()
+        val favoriteAdChanged = _favoriteAdChanged.asSharedFlow()
 
-        fun getHomeAdsData(
-            filter: MutableMap<String, String>,
-            context: Context,
-        ): Flow<PagingData<Ad>> =
-            Pager(getPagingConfig()) {
-                AdsPagingSource(remoteAdDataSource, filter, context)
+        private val _adUpdated = MutableSharedFlow<Ad>()
+        val adUpdated = _adUpdated.asSharedFlow()
+
+        private val _filter = MutableStateFlow<MutableMap<String, String>>(mutableMapOf())
+        val filter: StateFlow<MutableMap<String, String>> = _filter.asStateFlow()
+
+        private val currentFilter = mutableMapOf<String, String>()
+
+        fun getHomeAdsData(): Flow<PagingData<Ad>> =
+            Pager(config = getPagingConfig()) {
+                AdsPagingSource(adRepository, this)
             }.flow.cachedIn(viewModelScope)
 
-        fun getPagingConfig(): PagingConfig = PagingConfig(pageSize = 2)
+        private fun getPagingConfig(): PagingConfig = PagingConfig(pageSize = 2)
 
         fun getFavoriteAdsData(): Flow<PagingData<Ad>> =
             Pager(getPagingConfig()) {
@@ -64,16 +68,10 @@ class FirebaseViewModel
             }.flow.cachedIn(viewModelScope)
 
         suspend fun onFavClick(ad: Ad) {
-            viewModelScope.launch {
-                val result = remoteAdDataSource.onFavClick(ad)
-                if (result is Result.Success) {
-                    val updatedFavorites = _favoriteAds.value.toMutableSet()
-                    if (ad.isFav) {
-                        updatedFavorites.remove(ad.key)
-                    } else {
-                        updatedFavorites.add(ad.key)
-                    }
-                    _favoriteAds.value = updatedFavorites
+            val result = remoteAdDataSource.onFavClick(ad)
+            if (result is Result.Success) {
+                result.data?.let { updatedAd ->
+                    _adUpdated.emit(updatedAd)
                 }
             }
         }
@@ -90,5 +88,19 @@ class FirebaseViewModel
 
         fun saveTokenDB(token: String) {
             remoteAdDataSource.saveToken(token)
+        }
+
+        fun addToFilter(
+            key: String,
+            value: String,
+        ) {
+            currentFilter[key] = value
+        }
+
+        fun getFilterValue(key: String): String? = currentFilter[key]
+
+        fun updateFilter() {
+            _filter.value =
+                currentFilter.toMutableMap() // Создаем копию, чтобы избежать изменений currentFilter извне
         }
     }
