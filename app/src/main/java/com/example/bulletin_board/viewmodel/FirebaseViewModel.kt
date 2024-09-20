@@ -34,12 +34,6 @@ class FirebaseViewModel
         private val _isLoading = MutableLiveData<Boolean>()
         val isLoading: LiveData<Boolean> = _isLoading
 
-        private val _favoriteAds = MutableStateFlow<Set<String>>(emptySet())
-        val favoriteAds: StateFlow<Set<String>> = _favoriteAds.asStateFlow()
-
-        private val _favoriteAdChanged = MutableSharedFlow<Ad>()
-        val favoriteAdChanged = _favoriteAdChanged.asSharedFlow()
-
         private val _adUpdated = MutableSharedFlow<Ad>()
         val adUpdated = _adUpdated.asSharedFlow()
 
@@ -47,6 +41,8 @@ class FirebaseViewModel
         val filter: StateFlow<MutableMap<String, String>> = _filter.asStateFlow()
 
         private val currentFilter = mutableMapOf<String, String>()
+
+        private val favoriteAdsPagingSource = MutableStateFlow<FavoriteAdsPagingSource?>(null)
 
         fun getHomeAdsData(): Flow<PagingData<Ad>> =
             Pager(config = getPagingConfig()) {
@@ -57,14 +53,14 @@ class FirebaseViewModel
 
         fun getFavoriteAdsData(): Flow<PagingData<Ad>> =
             Pager(getPagingConfig()) {
-                FavoriteAdsPagingSource(
-                    remoteAdDataSource,
-                ) // Используем FavoriteAdsPagingSource
+                val source = FavoriteAdsPagingSource(remoteAdDataSource)
+                favoriteAdsPagingSource.value = source
+                source
             }.flow.cachedIn(viewModelScope)
 
         fun getMyAdsData(): Flow<PagingData<Ad>> =
             Pager(getPagingConfig()) {
-                MyAdsPagingSource(remoteAdDataSource) // Используем MyAdsPagingSource
+                MyAdsPagingSource(remoteAdDataSource)
             }.flow.cachedIn(viewModelScope)
 
         suspend fun onFavClick(ad: Ad) {
@@ -72,6 +68,7 @@ class FirebaseViewModel
             if (result is Result.Success) {
                 result.data?.let { updatedAd ->
                     _adUpdated.emit(updatedAd)
+                    favoriteAdsPagingSource.value?.invalidate()
                 }
             }
         }

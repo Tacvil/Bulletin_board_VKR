@@ -92,7 +92,10 @@ class MainActivity :
     private var adapterSearch = RcViewSearchSpinnerAdapter(onItemSelectedListener)
     private lateinit var defPreferences: SharedPreferences
     private var viewModelIsLoading = false
-    private val favAdsAdapter = FavoriteAdsAdapter(this)
+
+    private val favAdsAdapter by lazy {
+        FavoriteAdsAdapter(firebaseViewModel, mAuth)
+    }
 
     private val adsAdapter by lazy {
         AdsAdapter(firebaseViewModel, mAuth)

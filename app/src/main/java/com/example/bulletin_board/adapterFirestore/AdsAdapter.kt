@@ -32,9 +32,6 @@ class AdsAdapter(
     private val viewModel: FirebaseViewModel,
     private val auth: FirebaseAuth,
 ) : PagingDataAdapter<Ad, AdsAdapter.AdHolder>(AdDiffCallback) {
-    // Map для быстрого доступа к объявлениям по ключу
-    private val adMap = mutableMapOf<String, Ad>()
-
     init {
         viewModel.viewModelScope.launch {
             viewModel.adUpdated.collectLatest { updatedAd ->
@@ -43,15 +40,23 @@ class AdsAdapter(
         }
     }
 
-    fun updateAd(updatedAd: Ad) {
-        adMap[updatedAd.key]?.let { ad ->
-            ad.isFav = updatedAd.isFav
-            ad.favCounter = updatedAd.favCounter
-            val snapshot = snapshot()
-            val index = snapshot.indexOfFirst { it?.key == updatedAd.key }
-            if (index != -1) {
-                notifyItemChanged(index)
-            }
+    private fun updateAd(updatedAd: Ad) {
+        // Получаем список элементов из PagingDataAdapter
+        val items = snapshot().items
+
+        // Находим нужный объект Ad по ключу
+        val adToUpdate = items.find { it.key == updatedAd.key }
+
+        // Обновляем поля объекта
+        adToUpdate?.isFav = updatedAd.isFav
+        adToUpdate?.favCounter = updatedAd.favCounter
+
+        // Находим позицию элемента в адаптере
+        val position = items.indexOf(adToUpdate)
+
+        // Обновляем отображение элемента
+        if (position != -1) {
+            notifyItemChanged(position)
         }
     }
 
@@ -86,6 +91,7 @@ class AdsAdapter(
                 .into(imageViewMainImage)
 
             showEditPanel(isOwner(ad, auth))
+
             if (ad.isFav) {
                 imageButtonFav1.pauseAnimation()
                 imageButtonFav1.cancelAnimation()
@@ -185,7 +191,6 @@ class AdsAdapter(
     ) {
         val ad = getItem(position)
         if (ad != null) {
-            adMap[ad.key] = ad
             holder.bind(ad, auth, viewModel)
         }
     }
@@ -201,48 +206,4 @@ object AdDiffCallback : DiffUtil.ItemCallback<Ad>() {
         oldItem: Ad,
         newItem: Ad,
     ): Boolean = oldItem == newItem
-    /*    @SuppressLint("DiffUtilEquals")
-        override fun areContentsTheSame(
-            oldItem: DocumentSnapshot,
-            newItem: DocumentSnapshot,
-        ): Boolean {
-            val oldData = oldItem.data
-            val newData = newItem.data
-
-            if (oldData.isNullOrEmpty() || newData.isNullOrEmpty()) return false
-
-            if (oldData.keys != newData.keys) return false
-
-            for (key in oldData.keys) {
-                val oldValue = oldData[key]
-                val newValue = newData[key]
-
-                if (oldValue == null && newValue == null) continue
-                if (oldValue == null || newValue == null) return false
-                if (oldValue::class != newValue::class) return false
-
-                when (oldValue) {
-                    is String -> if (oldValue != newValue as String) return false
-                    is Int -> if (oldValue != newValue as Int) return false
-                    is Boolean -> if (oldValue != newValue as Boolean) return false
-                    is List<*> -> if (!areListsEqual(oldValue, newValue as List<*>)) return false
-                    is Long -> if (oldValue != newValue as Long) return false // Добавлено для Long
-                    // Добавьте другие типы данных из вашего дата-класса Ad (Double, Float, etc.)
-                    else -> if (oldValue != newValue) return false
-                }
-            }
-
-            return true
-        }
-
-        private fun areListsEqual(
-            list1: List<*>,
-            list2: List<*>,
-        ): Boolean {
-            if (list1.size != list2.size) return false
-            for (i in list1.indices) {
-                if (list1[i] != list2[i]) return false
-            }
-            return true
-        }*/
 }
