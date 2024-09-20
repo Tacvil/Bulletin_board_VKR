@@ -2,6 +2,8 @@ package com.example.bulletin_board.packroom
 
 import com.example.bulletin_board.model.Ad
 import com.example.bulletin_board.model.DbManager.Companion.USER_NODE
+import com.example.bulletin_board.model.FavClickData
+import com.example.bulletin_board.model.FavData
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.firestore.DocumentSnapshot
@@ -105,18 +107,18 @@ class RemoteAdDataSource
          * @return Result.Success(true) если операция была успешной,
          *         Result.Error(exception) в случае ошибки.
          */
-        suspend fun onFavClick(ad: Ad): Result<Ad?> =
+        suspend fun onFavClick(favClickData: FavClickData): Result<FavData?> =
             try {
                 auth.uid?.let { uid ->
                     val update =
-                        if (ad.isFav) {
+                        if (favClickData.isFav) {
                             FieldValue.arrayRemove(uid)
                         } else {
                             FieldValue.arrayUnion(uid)
                         }
                     firestore
                         .collection(MAIN_COLLECTION)
-                        .document(ad.key)
+                        .document(favClickData.key)
                         .update(FAV_UIDS_FIELD, update)
                         .await()
 
@@ -124,10 +126,10 @@ class RemoteAdDataSource
                     val updatedAd =
                         firestore
                             .collection(MAIN_COLLECTION)
-                            .document(ad.key)
+                            .document(favClickData.key)
                             .get()
                             .await()
-                            .toObject(Ad::class.java)
+                            .toObject(FavData::class.java)
 
                     // Пересчитываем isFav и favCounter
                     updatedAd?.let {

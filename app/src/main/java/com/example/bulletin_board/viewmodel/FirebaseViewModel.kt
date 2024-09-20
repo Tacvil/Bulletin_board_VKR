@@ -12,6 +12,8 @@ import com.example.bulletin_board.adapterFirestore.AdsPagingSource
 import com.example.bulletin_board.adapterFirestore.FavoriteAdsPagingSource
 import com.example.bulletin_board.adapterFirestore.MyAdsPagingSource
 import com.example.bulletin_board.model.Ad
+import com.example.bulletin_board.model.FavClickData
+import com.example.bulletin_board.model.FavData
 import com.example.bulletin_board.packroom.AdRepository
 import com.example.bulletin_board.packroom.RemoteAdDataSource
 import com.example.bulletin_board.packroom.Result
@@ -34,7 +36,7 @@ class FirebaseViewModel
         private val _isLoading = MutableLiveData<Boolean>()
         val isLoading: LiveData<Boolean> = _isLoading
 
-        private val _adUpdated = MutableSharedFlow<Ad>()
+        private val _adUpdated = MutableSharedFlow<FavData>()
         val adUpdated = _adUpdated.asSharedFlow()
 
         private val _filter = MutableStateFlow<MutableMap<String, String>>(mutableMapOf())
@@ -63,8 +65,8 @@ class FirebaseViewModel
                 MyAdsPagingSource(remoteAdDataSource)
             }.flow.cachedIn(viewModelScope)
 
-        suspend fun onFavClick(ad: Ad) {
-            val result = remoteAdDataSource.onFavClick(ad)
+        suspend fun onFavClick(favClickData: FavClickData) {
+            val result = remoteAdDataSource.onFavClick(favClickData)
             if (result is Result.Success) {
                 result.data?.let { updatedAd ->
                     _adUpdated.emit(updatedAd)

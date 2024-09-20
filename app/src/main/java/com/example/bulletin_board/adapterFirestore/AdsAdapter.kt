@@ -21,6 +21,8 @@ import com.example.bulletin_board.act.EditAdsActivity
 import com.example.bulletin_board.act.MainActivity
 import com.example.bulletin_board.databinding.AdListItemBinding
 import com.example.bulletin_board.model.Ad
+import com.example.bulletin_board.model.FavClickData
+import com.example.bulletin_board.model.FavData
 import com.example.bulletin_board.viewmodel.FirebaseViewModel
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.flow.collectLatest
@@ -40,7 +42,7 @@ class AdsAdapter(
         }
     }
 
-    private fun updateAd(updatedAd: Ad) {
+    private fun updateAd(updatedAd: FavData) {
         // Получаем список элементов из PagingDataAdapter
         val items = snapshot().items
 
@@ -123,7 +125,7 @@ class AdsAdapter(
 
                         override fun onAnimationEnd(animation: Animator) {
                             viewModel.viewModelScope.launch {
-                                viewModel.onFavClick(ad)
+                                viewModel.onFavClick(FavClickData(ad.key, ad.isFav))
                             }
                             imageButtonFav1.removeAnimatorListener(this)
                         }
