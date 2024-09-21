@@ -9,6 +9,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.annotation.RequiresApi
+import androidx.compose.ui.input.key.key
 import androidx.lifecycle.viewModelScope
 import androidx.paging.PagingDataAdapter
 import androidx.recyclerview.widget.DiffUtil
@@ -21,8 +22,9 @@ import com.example.bulletin_board.act.EditAdsActivity
 import com.example.bulletin_board.act.MainActivity
 import com.example.bulletin_board.databinding.AdListItemBinding
 import com.example.bulletin_board.model.Ad
-import com.example.bulletin_board.model.FavClickData
+import com.example.bulletin_board.model.AdUpdateEvent
 import com.example.bulletin_board.model.FavData
+import com.example.bulletin_board.model.ViewData
 import com.example.bulletin_board.viewmodel.FirebaseViewModel
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.flow.collectLatest
@@ -36,13 +38,40 @@ class AdsAdapter(
 ) : PagingDataAdapter<Ad, AdsAdapter.AdHolder>(AdDiffCallback) {
     init {
         viewModel.viewModelScope.launch {
-            viewModel.adUpdated.collectLatest { updatedAd ->
-                updateAd(updatedAd)
+            viewModel.adUpdated.collectLatest { event ->
+                when (event) {
+                    is AdUpdateEvent.FavUpdated -> updateFav(event.favData, event.position)
+                    is AdUpdateEvent.ViewCountUpdated -> updateViewCount(event.viewData, event.position)
+                }
             }
         }
     }
 
-    private fun updateAd(updatedAd: FavData) {
+    private fun updateFav(
+        favData: FavData,
+        position: Int,
+    ) {
+        val adToUpdate = snapshot().items.getOrNull(position)
+        if (adToUpdate != null) {
+            adToUpdate.isFav = favData.isFav
+            adToUpdate.favCounter = favData.favCounter
+            notifyItemChanged(position)
+        }
+    }
+
+    private fun updateViewCount(viewData: ViewData) {
+        val items = snapshot().items
+        val adToUpdate = items.find { it.key == viewData.key }
+        if (adToUpdate != null) {
+            adToUpdate.viewsCounter = viewData.viewsCounter
+            val position = items.indexOf(adToUpdate)
+            if (position != -1) {
+                notifyItemChanged(position)
+            }
+        }
+    }
+
+    private fun updateAd(updatedAd: AdUpdateEvent.FavUpdated) {
         // Получаем список элементов из PagingDataAdapter
         val items = snapshot().items
 
@@ -125,7 +154,7 @@ class AdsAdapter(
 
                         override fun onAnimationEnd(animation: Animator) {
                             viewModel.viewModelScope.launch {
-                                viewModel.onFavClick(FavClickData(ad.key, ad.isFav))
+                                viewModel.onFavClick(FavData(ad.favCounter, ad.isFav, ad.key), position = absoluteAdapterPosition)
                             }
                             imageButtonFav1.removeAnimatorListener(this)
                         }
@@ -139,7 +168,9 @@ class AdsAdapter(
             }
 
             itemView.setOnClickListener {
-                // act.onAdViewed(ad)
+                viewModel.viewModelScope.launch {
+                    viewModel.adViewed(ViewData(ad.key, ad.viewsCounter))
+                }
             }
 
             imageButtonEditAd.setOnClickListener(onClickEdit(ad))

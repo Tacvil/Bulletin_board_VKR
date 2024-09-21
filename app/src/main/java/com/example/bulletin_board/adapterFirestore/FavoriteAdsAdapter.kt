@@ -22,7 +22,7 @@ import com.example.bulletin_board.act.EditAdsActivity
 import com.example.bulletin_board.act.MainActivity
 import com.example.bulletin_board.databinding.AdListItemBinding
 import com.example.bulletin_board.model.Ad
-import com.example.bulletin_board.model.FavClickData
+import com.example.bulletin_board.model.FavData
 import com.example.bulletin_board.viewmodel.FirebaseViewModel
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.launch
@@ -96,7 +96,7 @@ class FavoriteAdsAdapter(
 
                         override fun onAnimationEnd(animation: Animator) {
                             viewModel.viewModelScope.launch {
-                                viewModel.onFavClick(FavClickData(ad.key, ad.isFav))
+                                viewModel.onFavClick(FavData(ad.favCounter, ad.isFav, ad.key))
                             }
                             imageButtonFav1.removeAnimatorListener(this)
                         }

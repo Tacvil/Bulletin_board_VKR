@@ -2,8 +2,8 @@ package com.example.bulletin_board.packroom
 
 import com.example.bulletin_board.model.Ad
 import com.example.bulletin_board.model.DbManager.Companion.USER_NODE
-import com.example.bulletin_board.model.FavClickData
 import com.example.bulletin_board.model.FavData
+import com.example.bulletin_board.model.ViewData
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.firestore.DocumentSnapshot
@@ -17,6 +17,8 @@ import com.google.firebase.ktx.Firebase
 import jakarta.inject.Inject
 import kotlinx.coroutines.tasks.await
 import timber.log.Timber
+import kotlin.coroutines.resume
+import kotlin.coroutines.suspendCoroutine
 
 class RemoteAdDataSource
     @Inject
@@ -87,18 +89,22 @@ class RemoteAdDataSource
          *
          * @param ad Объявление, счетчик просмотров которого нужно увеличить.
          */
-        suspend fun adViewed(ad: Ad) {
-            try {
-                val viewsCounter = ad.viewsCounter + 1
+        suspend fun adViewed(viewData: ViewData): Result<ViewData> =
+            suspendCoroutine { continuation ->
+                val viewsCounter = viewData.viewsCounter + 1
                 firestore
                     .collection(MAIN_COLLECTION)
-                    .document(ad.key)
+                    .document(viewData.key)
                     .update(VIEWS_COUNTER_FIELD, viewsCounter)
-                    .await()
-            } catch (e: Exception) {
-                Timber.e(e, "Error updating views counter for ad: ${ad.key}")
+                    .addOnSuccessListener {
+                        Timber.d("Views counter updated for ad: ${viewData.key}")
+                        val updatedViewData = viewData.copy(viewsCounter = viewsCounter)
+                        continuation.resume(Result.Success(updatedViewData))
+                    }.addOnFailureListener { e ->
+                        Timber.e(e, "Error updating views counter for ad: ${viewData.key}")
+                        continuation.resume(Result.Error(e))
+                    }
             }
-        }
 
         /**
          * Обрабатывает нажатие на кнопку "Избранное" для объявления.
@@ -107,41 +113,34 @@ class RemoteAdDataSource
          * @return Result.Success(true) если операция была успешной,
          *         Result.Error(exception) в случае ошибки.
          */
-        suspend fun onFavClick(favClickData: FavClickData): Result<FavData?> =
-            try {
+        suspend fun onFavClick(favData: FavData): Result<FavData> =
+            suspendCoroutine { continuation ->
                 auth.uid?.let { uid ->
-                    val update =
-                        if (favClickData.isFav) {
-                            FieldValue.arrayRemove(uid)
-                        } else {
-                            FieldValue.arrayUnion(uid)
-                        }
                     firestore
                         .collection(MAIN_COLLECTION)
-                        .document(favClickData.key)
-                        .update(FAV_UIDS_FIELD, update)
-                        .await()
+                        .document(favData.key)
+                        .update(FAV_UIDS_FIELD, if (favData.isFav) FieldValue.arrayUnion(uid) else FieldValue.arrayRemove(uid))
+                        .addOnSuccessListener {
+                            val favCounter =
+                                if (favData.isFav) {
+                                    favData.favCounter.toInt() + 1
+                                } else {
+                                    favData.favCounter.toInt() - 1
+                                }
 
-                    // Получаем обновленное объявление
-                    val updatedAd =
-                        firestore
-                            .collection(MAIN_COLLECTION)
-                            .document(favClickData.key)
-                            .get()
-                            .await()
-                            .toObject(FavData::class.java)
+                            val updatedAd =
+                                FavData(
+                                    key = favData.key,
+                                    favCounter = favCounter.toString(),
+                                    isFav = favData.isFav,
+                                )
 
-                    // Пересчитываем isFav и favCounter
-                    updatedAd?.let {
-                        it.isFav = it.favUids.contains(auth.uid)
-                        it.favCounter = it.favUids.size.toString()
-                    }
-
-                    Result.Success(updatedAd)
-                } ?: Result.Error(Exception("User not authenticated"))
-            } catch (e: Exception) {
-                Timber.e(e, "Error updating favorites")
-                Result.Error(e)
+                            continuation.resume(Result.Success(updatedAd))
+                        }.addOnFailureListener { e ->
+                            Timber.e(e, "Error updating favorites")
+                            continuation.resume(Result.Error(e))
+                        }
+                } ?: continuation.resume(Result.Error(Exception("User not authenticated")))
             }
 
         /**
