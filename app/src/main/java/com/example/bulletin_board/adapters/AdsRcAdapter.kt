@@ -194,10 +194,4 @@ class AdsRcAdapter(
         Log.d("adapter", "adArray = $adArray")
         notifyDataSetChanged()
     }
-
-    interface Listener {
-        suspend fun onDeleteItem(ad: Ad)
-
-        suspend fun onAdViewed(ad: Ad)
-    }
 }

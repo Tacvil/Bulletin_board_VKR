@@ -71,16 +71,16 @@ class RemoteAdDataSource
          * @return Result.Success(true) если объявление было успешно удалено,
          *         Result.Error(exception) в случае ошибки.
          */
-        suspend fun deleteAd(ad: Ad): Result<Boolean> =
+        suspend fun deleteAd(adKey: String): Result<Boolean> =
             try {
                 firestore
                     .collection(MAIN_COLLECTION)
-                    .document(ad.key)
+                    .document(adKey)
                     .delete()
                     .await()
                 Result.Success(true)
             } catch (e: Exception) {
-                Timber.e(e, "Error deleting ad: ${ad.key}")
+                Timber.e(e, "Error deleting ad: $adKey")
                 Result.Error(e)
             }
 
@@ -119,10 +119,10 @@ class RemoteAdDataSource
                     firestore
                         .collection(MAIN_COLLECTION)
                         .document(favData.key)
-                        .update(FAV_UIDS_FIELD, if (favData.isFav) FieldValue.arrayUnion(uid) else FieldValue.arrayRemove(uid))
+                        .update(FAV_UIDS_FIELD, if (!favData.isFav) FieldValue.arrayUnion(uid) else FieldValue.arrayRemove(uid))
                         .addOnSuccessListener {
                             val favCounter =
-                                if (favData.isFav) {
+                                if (!favData.isFav) {
                                     favData.favCounter.toInt() + 1
                                 } else {
                                     favData.favCounter.toInt() - 1
@@ -132,7 +132,7 @@ class RemoteAdDataSource
                                 FavData(
                                     key = favData.key,
                                     favCounter = favCounter.toString(),
-                                    isFav = favData.isFav,
+                                    isFav = !favData.isFav,
                                 )
 
                             continuation.resume(Result.Success(updatedAd))

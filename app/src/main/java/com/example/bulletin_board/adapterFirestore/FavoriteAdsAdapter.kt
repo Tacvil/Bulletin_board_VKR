@@ -22,9 +22,13 @@ import com.example.bulletin_board.act.EditAdsActivity
 import com.example.bulletin_board.act.MainActivity
 import com.example.bulletin_board.databinding.AdListItemBinding
 import com.example.bulletin_board.model.Ad
+import com.example.bulletin_board.model.AdItemClickListener
+import com.example.bulletin_board.model.AdUpdateEvent
 import com.example.bulletin_board.model.FavData
+import com.example.bulletin_board.model.ViewData
 import com.example.bulletin_board.viewmodel.FirebaseViewModel
 import com.google.firebase.auth.FirebaseAuth
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import java.util.Locale
@@ -33,6 +37,29 @@ class FavoriteAdsAdapter(
     private val viewModel: FirebaseViewModel,
     private val auth: FirebaseAuth,
 ) : PagingDataAdapter<Ad, FavoriteAdsAdapter.AdHolder>(FavoriteAdDiffCallback()) {
+    init {
+        viewModel.viewModelScope.launch {
+            viewModel.adUpdated.collectLatest { event ->
+                when (event) {
+                    is AdUpdateEvent.FavUpdated -> {}
+                    is AdUpdateEvent.ViewCountUpdated ->
+                        updateViewCount(
+                            event.viewData,
+                        )
+                }
+            }
+        }
+    }
+
+    private fun updateViewCount(viewData: ViewData) {
+        val position = snapshot().items.indexOfFirst { it.key == viewData.key }
+        if (position != -1) {
+            val adToUpdate = snapshot().items[position]
+            adToUpdate.viewsCounter = viewData.viewsCounter
+            notifyItemChanged(position)
+        }
+    }
+
     class AdHolder(
         val binding: AdListItemBinding,
     ) : RecyclerView.ViewHolder(binding.root) {
@@ -42,7 +69,6 @@ class FavoriteAdsAdapter(
         fun bind(
             ad: Ad,
             auth: FirebaseAuth,
-            viewModel: FirebaseViewModel,
         ) = with(binding) {
             textViewDescription.setText(ad.description)
             textViewPrice.text = ad.price.toString()
@@ -95,9 +121,9 @@ class FavoriteAdsAdapter(
                         }
 
                         override fun onAnimationEnd(animation: Animator) {
-                            viewModel.viewModelScope.launch {
-                                viewModel.onFavClick(FavData(ad.favCounter, ad.isFav, ad.key))
-                            }
+                            (binding.root.context as? AdItemClickListener)?.onFavClick(
+                                FavData(ad.favCounter, ad.isFav, ad.key),
+                            )
                             imageButtonFav1.removeAnimatorListener(this)
                         }
 
@@ -110,7 +136,7 @@ class FavoriteAdsAdapter(
             }
 
             itemView.setOnClickListener {
-                // act.onAdViewed(ad)
+                (binding.root.context as? AdItemClickListener)?.onAdClick(ad)
             }
 
             imageButtonEditAd.setOnClickListener(onClickEdit(ad))
@@ -164,7 +190,7 @@ class FavoriteAdsAdapter(
     ) {
         val ad = getItem(position)
         if (ad != null) {
-            holder.bind(ad, auth, viewModel)
+            holder.bind(ad, auth)
         }
     }
 }

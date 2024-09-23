@@ -25,6 +25,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import timber.log.Timber
 import javax.inject.Inject
 
 @HiltViewModel
@@ -43,10 +44,6 @@ class FirebaseViewModel
         private val _filter = MutableStateFlow<MutableMap<String, String>>(mutableMapOf())
         val filter: StateFlow<MutableMap<String, String>> = _filter.asStateFlow()
 
-        private val currentFilter = mutableMapOf<String, String>()
-
-        private val favoriteAdsPagingSource = MutableStateFlow<FavoriteAdsPagingSource?>(null)
-
         fun getHomeAdsData(): Flow<PagingData<Ad>> =
             Pager(config = getPagingConfig()) {
                 AdsPagingSource(adRepository, this)
@@ -56,9 +53,7 @@ class FirebaseViewModel
 
         fun getFavoriteAdsData(): Flow<PagingData<Ad>> =
             Pager(getPagingConfig()) {
-                val source = FavoriteAdsPagingSource(remoteAdDataSource)
-                favoriteAdsPagingSource.value = source
-                source
+                FavoriteAdsPagingSource(remoteAdDataSource, this)
             }.flow.cachedIn(viewModelScope)
 
         fun getMyAdsData(): Flow<PagingData<Ad>> =
@@ -66,35 +61,44 @@ class FirebaseViewModel
                 MyAdsPagingSource(remoteAdDataSource)
             }.flow.cachedIn(viewModelScope)
 
-        suspend fun onFavClick(
-            favData: FavData,
-            position: Int,
-        ) {
-            val result = remoteAdDataSource.onFavClick(favData)
-            if (result is Result.Success) {
-                result.data.let { updatedAd ->
-                    _adUpdated.emit(AdUpdateEvent.FavUpdated(updatedAd, position))
-                    favoriteAdsPagingSource.value?.invalidate()
+        suspend fun onFavClick(favData: FavData) {
+            when (val result = remoteAdDataSource.onFavClick(favData)) {
+                is Result.Success -> {
+                    result.data.let { updatedAd ->
+                        _adUpdated.emit(AdUpdateEvent.FavUpdated(updatedAd))
+                    }
+                }
+
+                is Result.Error -> {
+                    Timber.e(result.exception, "Error updating favorites: ${favData.key}")
                 }
             }
         }
 
-        suspend fun adViewed(
-            viewData: ViewData,
-            position: Int,
-        ) {
-            val result = remoteAdDataSource.adViewed(viewData)
-            if (result is Result.Success) {
-                result.data.let { updatedAd ->
-                    _adUpdated.emit(AdUpdateEvent.ViewCountUpdated(updatedAd, position))
+        suspend fun adViewed(viewData: ViewData) {
+            when (val result = remoteAdDataSource.adViewed(viewData)) {
+                is Result.Success -> {
+                    result.data.let { updatedAd ->
+                        _adUpdated.emit(AdUpdateEvent.ViewCountUpdated(updatedAd))
+                    }
+                }
+
+                is Result.Error -> {
+                    Timber.e(result.exception, "Error updating views counter for ad: ${viewData.key}")
                 }
             }
         }
 
-        suspend fun deleteItem(ad: Ad) {
-            remoteAdDataSource.deleteAd(
-                ad,
-            )
+        suspend fun deleteAd(adKey: String) {
+            when (val result = remoteAdDataSource.deleteAd(adKey)) {
+                is Result.Success -> {
+                    _adUpdated.emit(AdUpdateEvent.AdDeleted)
+                }
+
+                is Result.Error -> {
+                    Timber.e(result.exception, "Error deleting ad: $adKey")
+                }
+            }
         }
 
         fun saveTokenDB(token: String) {
@@ -105,13 +109,23 @@ class FirebaseViewModel
             key: String,
             value: String,
         ) {
-            currentFilter[key] = value
+            _filter.value = _filter.value.toMutableMap().also { it[key] = value }
         }
 
-        fun getFilterValue(key: String): String? = currentFilter[key]
+        fun getFilterValue(key: String): String? = filter.value[key]
 
-        fun updateFilter() {
+        fun updateFilters(newFilters: Map<String, String>) {
             _filter.value =
-                currentFilter.toMutableMap() // Создаем копию, чтобы избежать изменений currentFilter извне
+                _filter.value.toMutableMap().also { currentFilters ->
+                    currentFilters.putAll(newFilters)
+                }
+        }
+
+        fun removeFromFilter(key: String) {
+            _filter.value = _filter.value.toMutableMap().also { it.remove(key) }
+        }
+
+        fun clearFilters() {
+            _filter.value = mutableMapOf()
         }
     }

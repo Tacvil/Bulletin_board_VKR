@@ -31,6 +31,7 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.view.GravityCompat
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.viewModelScope
 import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -41,7 +42,6 @@ import com.example.bulletin_board.R
 import com.example.bulletin_board.accounthelper.AccountHelper
 import com.example.bulletin_board.adapterFirestore.AdsAdapter
 import com.example.bulletin_board.adapterFirestore.FavoriteAdsAdapter
-import com.example.bulletin_board.adapters.AdsRcAdapter
 import com.example.bulletin_board.databinding.ActivityMainBinding
 import com.example.bulletin_board.dialoghelper.DialogConst
 import com.example.bulletin_board.dialoghelper.DialogHelper
@@ -49,9 +49,12 @@ import com.example.bulletin_board.dialogs.DialogSpinnerHelper
 import com.example.bulletin_board.dialogs.RcViewDialogSpinnerAdapter
 import com.example.bulletin_board.dialogs.RcViewSearchSpinnerAdapter
 import com.example.bulletin_board.model.Ad
+import com.example.bulletin_board.model.AdItemClickListener
 import com.example.bulletin_board.model.DbManager
 import com.example.bulletin_board.model.DbManager.Companion.MAIN_NODE
+import com.example.bulletin_board.model.FavData
 import com.example.bulletin_board.model.SortOption
+import com.example.bulletin_board.model.ViewData
 import com.example.bulletin_board.settings.SettingsActivity
 import com.example.bulletin_board.utils.BillingManager
 import com.example.bulletin_board.utils.BillingManager.Companion.REMOVE_ADS_PREF
@@ -73,7 +76,7 @@ import timber.log.Timber
 class MainActivity :
     AppCompatActivity(),
     OnNavigationItemSelectedListener,
-    AdsRcAdapter.Listener {
+    AdItemClickListener {
     private lateinit var textViewAccount: TextView
     private lateinit var imageViewAccount: ImageView
     private lateinit var binding: ActivityMainBinding
@@ -675,7 +678,10 @@ class MainActivity :
 
     private fun getAdsFromCat(cat: String) {
         firebaseViewModel.addToFilter("category", cat)
-        firebaseViewModel.addToFilter("orderBy", getSortOption(firebaseViewModel.getFilterValue("orderBy") ?: ""))
+        firebaseViewModel.addToFilter(
+            "orderBy",
+            getSortOption(firebaseViewModel.getFilterValue("orderBy") ?: ""),
+        )
         firebaseViewModel.updateFilter()
         firebaseViewModel.getHomeAdsData()
     }
@@ -701,18 +707,6 @@ class MainActivity :
                 .apply(RequestOptions().transform(RoundedCorners(20)))
                 .into(imageViewAccount)
         }
-    }
-
-    override suspend fun onDeleteItem(ad: Ad) {
-        firebaseViewModel.deleteItem(ad)
-        clearUpdate = true
-    }
-
-    override suspend fun onAdViewed(ad: Ad) {
-        firebaseViewModel.adViewed(ad)
-        val i = Intent(this, DescriptionActivity::class.java)
-        i.putExtra("AD", ad)
-        startActivity(i)
     }
 
     private fun navViewSetting() =
@@ -835,5 +829,31 @@ class MainActivity :
         const val SCROLL_DOWN = 1
         const val REQUEST_CODE_SPEECH_INPUT = 100
         private const val PERMISSION_REQUEST_CODE = 1
+    }
+
+    override fun onAdClick(ad: Ad) {
+        val i = Intent(this, DescriptionActivity::class.java)
+        i.putExtra("AD", ad)
+        startActivity(i)
+        firebaseViewModel.viewModelScope.launch {
+            firebaseViewModel.adViewed(ViewData(ad.key, ad.viewsCounter))
+        }
+    }
+
+    override fun onFavClick(favData: FavData) {
+        firebaseViewModel.viewModelScope.launch {
+            firebaseViewModel.onFavClick(favData)
+        }
+    }
+
+    override fun onDeleteClick(adKey: String) {
+        firebaseViewModel.viewModelScope.launch {
+            firebaseViewModel.deleteAd(adKey)
+        }
+        clearUpdate = true
+    }
+
+    override fun onEditClick(ad: Ad) {
+        TODO("Not yet implemented")
     }
 }
