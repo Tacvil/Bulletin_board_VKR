@@ -9,9 +9,11 @@ import android.os.Bundle
 import android.util.Log
 import android.view.View
 import android.widget.Toast
+import androidx.activity.viewModels
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
+import androidx.lifecycle.viewModelScope
 import androidx.preference.PreferenceManager
 import androidx.viewpager2.widget.ViewPager2
 import com.example.bulletin_board.R
@@ -28,8 +30,10 @@ import com.example.bulletin_board.settings.SettingsActivity
 import com.example.bulletin_board.utils.CityHelper
 import com.example.bulletin_board.utils.ImageManager.fillImageArray
 import com.example.bulletin_board.utils.ImagePicker
+import com.example.bulletin_board.viewmodel.FirebaseViewModel
 import com.google.android.gms.tasks.OnCompleteListener
 import io.ak1.pix.helpers.showStatusBar
+import kotlinx.coroutines.launch
 import java.io.ByteArrayOutputStream
 import java.io.Serializable
 import kotlin.collections.ArrayList
@@ -46,6 +50,7 @@ class EditAdsActivity :
     private var imageIndex = 0
     private var isEditState = false
     private var ad: Ad? = null
+    private val viewModel: FirebaseViewModel by viewModels()
     private lateinit var defPreferences: SharedPreferences
 
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
@@ -233,14 +238,6 @@ class EditAdsActivity :
                 textViewSelectTelNumb.text?.isEmpty() ?: true
         }
 
-    private fun onPublishFinish(): DbManager.FinishWorkListener =
-        object : DbManager.FinishWorkListener {
-            override fun onFinish(isDone: Boolean) {
-                binding.progressLayout.visibility = View.GONE
-                if (isDone) finish()
-            }
-        }
-
     private fun fillAnnouncement(): Ad {
         val adTemp: Ad
         binding.apply {
@@ -345,10 +342,19 @@ class EditAdsActivity :
     }
 
     private fun uploadImages() {
-        // Log.d("index", "$imageIndex")
         if (imageIndex == 3) {
-            // dbManager.publishAnnouncement(ad!!, onPublishFinish())
-            dbManager.publishAnnouncement1(ad!!, onPublishFinish())
+            viewModel.viewModelScope.launch {
+                val result = viewModel.insertAd(ad!!)
+                binding.progressLayout.visibility = View.GONE
+                if (result) {
+                    Toast
+                        .makeText(this@EditAdsActivity, "Объявление отправлено на модерацию!", Toast.LENGTH_SHORT)
+                        .show()
+                } else {
+                    Toast.makeText(this@EditAdsActivity, "Ошибка отправки!", Toast.LENGTH_SHORT).show()
+                }
+                finish()
+            }
             return
         }
         val oldUrl = getUrlFromAd()

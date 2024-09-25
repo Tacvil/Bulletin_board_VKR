@@ -11,14 +11,11 @@ import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.FirebaseFirestoreException
 import com.google.firebase.firestore.Query
-import com.google.firebase.firestore.QueryDocumentSnapshot
 import com.google.firebase.firestore.SetOptions
 import com.google.firebase.ktx.Firebase
 import jakarta.inject.Inject
 import kotlinx.coroutines.tasks.await
 import timber.log.Timber
-import kotlin.coroutines.resume
-import kotlin.coroutines.suspendCoroutine
 
 class RemoteAdDataSource
     @Inject
@@ -52,17 +49,18 @@ class RemoteAdDataSource
          *
          * @param ad Объявление для вставки.
          */
-        suspend fun insertAd(ad: Ad) {
+        suspend fun insertAd(ad: Ad): Result<Boolean> =
             try {
                 firestore
                     .collection(MAIN_COLLECTION)
                     .document(ad.key)
                     .set(ad)
                     .await()
+                Result.Success(true)
             } catch (e: Exception) {
-                Timber.e(e, "Error inserting ad")
+                Timber.e(e, "Error insert announcement")
+                Result.Error(e)
             }
-        }
 
         /**
          * Удаляет объявление из Firestore.
@@ -90,20 +88,18 @@ class RemoteAdDataSource
          * @param ad Объявление, счетчик просмотров которого нужно увеличить.
          */
         suspend fun adViewed(viewData: ViewData): Result<ViewData> =
-            suspendCoroutine { continuation ->
+            try {
                 val viewsCounter = viewData.viewsCounter + 1
                 firestore
                     .collection(MAIN_COLLECTION)
                     .document(viewData.key)
                     .update(VIEWS_COUNTER_FIELD, viewsCounter)
-                    .addOnSuccessListener {
-                        Timber.d("Views counter updated for ad: ${viewData.key}")
-                        val updatedViewData = viewData.copy(viewsCounter = viewsCounter)
-                        continuation.resume(Result.Success(updatedViewData))
-                    }.addOnFailureListener { e ->
-                        Timber.e(e, "Error updating views counter for ad: ${viewData.key}")
-                        continuation.resume(Result.Error(e))
-                    }
+                    .await()
+                val updatedViewData = viewData.copy(viewsCounter = viewsCounter)
+                Result.Success(updatedViewData)
+            } catch (e: Exception) {
+                Timber.e(e, "Error updating views counter for ad: ${viewData.key}")
+                Result.Error(e)
             }
 
         /**
@@ -114,33 +110,28 @@ class RemoteAdDataSource
          *         Result.Error(exception) в случае ошибки.
          */
         suspend fun onFavClick(favData: FavData): Result<FavData> =
-            suspendCoroutine { continuation ->
+            try {
                 auth.uid?.let { uid ->
                     firestore
                         .collection(MAIN_COLLECTION)
                         .document(favData.key)
-                        .update(FAV_UIDS_FIELD, if (!favData.isFav) FieldValue.arrayUnion(uid) else FieldValue.arrayRemove(uid))
-                        .addOnSuccessListener {
-                            val favCounter =
-                                if (!favData.isFav) {
-                                    favData.favCounter.toInt() + 1
-                                } else {
-                                    favData.favCounter.toInt() - 1
-                                }
+                        .update(
+                            FAV_UIDS_FIELD,
+                            if (!favData.isFav) FieldValue.arrayUnion(uid) else FieldValue.arrayRemove(uid),
+                        ).await()
 
-                            val updatedAd =
-                                FavData(
-                                    key = favData.key,
-                                    favCounter = favCounter.toString(),
-                                    isFav = !favData.isFav,
-                                )
-
-                            continuation.resume(Result.Success(updatedAd))
-                        }.addOnFailureListener { e ->
-                            Timber.e(e, "Error updating favorites")
-                            continuation.resume(Result.Error(e))
-                        }
-                } ?: continuation.resume(Result.Error(Exception("User not authenticated")))
+                    val favCounter = if (!favData.isFav) favData.favCounter.toInt() + 1 else favData.favCounter.toInt() - 1
+                    val updatedAd =
+                        FavData(
+                            key = favData.key,
+                            favCounter = favCounter.toString(),
+                            isFav = !favData.isFav,
+                        )
+                    Result.Success(updatedAd)
+                } ?: Result.Error(Exception("User not authenticated"))
+            } catch (e: Exception) {
+                Timber.e(e, "Error updating favorites")
+                Result.Error(e)
             }
 
         /**
@@ -155,25 +146,21 @@ class RemoteAdDataSource
             limit: Long = ADS_LIMIT.toLong(),
         ): Pair<List<Ad>, DocumentSnapshot?> =
             try {
-                val query =
+                Timber.d("getMyAds: uid = ${auth.uid}")
+                var query =
                     firestore
                         .collection(MAIN_COLLECTION)
                         .whereEqualTo(UID_FIELD, auth.uid)
                         .orderBy(TIME_FIELD, Query.Direction.DESCENDING)
+                        .limit(limit)
 
                 if (key != null) {
-                    query.startAfter(key)
+                    query = query.startAfter(key.get(TIME_FIELD))
                 }
 
-                val snapshot = query.limit(limit).get().await()
-                val ads =
-                    snapshot.documents.map { ad ->
-                        val adObj = ad.toObject(Ad::class.java)!!
-                        val favUids = adObj.favUids
-                        adObj.isFav = auth.uid?.let { favUids.contains(it) } ?: false
-                        adObj.favCounter = favUids.size.toString()
-                        adObj
-                    }
+                val snapshot = query.get().await()
+
+                val ads = processAds(snapshot.documents.map { it.toObject(Ad::class.java)!! })
 
                 val nextKey = snapshot.documents.lastOrNull()
                 Pair(ads, nextKey)
@@ -492,44 +479,6 @@ class RemoteAdDataSource
             return query
         }
 
-        /**
-         * Получает объявления из Firestore по заданному запросу.
-         *
-         * @param query Запрос Firestore.
-         * @param firestoreAdsCallback Callback для обработки результатов запроса.
-         */
-        private fun getAdsFromFirestore(
-            query: Query,
-            firestoreAdsCallback: FirestoreAdsCallback?,
-        ) {
-            query.get().addOnCompleteListener { task ->
-                if (task.isSuccessful) {
-                    val ads = ArrayList<Ad>()
-                    val lastDocument = task.result!!.lastOrNull()
-
-                    for (document in task.result!!) {
-                        try {
-                            val ad = document.toObject(Ad::class.java)
-                            val favUids = document.get(FAV_UIDS_FIELD) as? List<String>
-
-                            ad.isFav = auth.uid?.let { favUids?.contains(it) } ?: false
-                            ad.favCounter = favUids?.size.toString()
-
-                            ads.add(ad)
-                        } catch (e: Exception) {
-                            Timber.e(e, "Error converting ad data")
-                        }
-                    }
-
-                    firestoreAdsCallback?.readData(ads, lastDocument)
-                } else {
-                    Timber.e(task.exception, "Error getting data")
-                    firestoreAdsCallback?.onError(task.exception ?: Exception("Unknown error"))
-                }
-                firestoreAdsCallback?.onComplete()
-            }
-        }
-
         fun saveToken(token: String) {
             if (auth.uid != null) {
                 val userRef = firestore.collection(USER_NODE).document(auth.uid ?: "empty")
@@ -550,33 +499,5 @@ class RemoteAdDataSource
                         println("Ошибка при сохранении токена для пользователя с ID: ${auth.uid}, ошибка: $e")
                     }
             }
-        }
-
-        /**
-         * Callback для обработки результатов запроса объявлений из Firestore.
-         */
-        interface FirestoreAdsCallback {
-            /**
-             * Вызывается при успешном получении данных.
-             *
-             * @param list Список полученных объявлений.
-             * @param lastDocument Последний документ из результата запроса (для пагинации).
-             */
-            fun readData(
-                list: ArrayList<Ad>,
-                lastDocument: QueryDocumentSnapshot?,
-            )
-
-            /**
-             * Вызывается после завершения запроса (как при успехе, так и при ошибке).
-             */
-            fun onComplete()
-
-            /**
-             * Вызывается при возникновении ошибки во время запроса.
-             *
-             * @param e Исключение, возникшее во время запроса.
-             */
-            fun onError(e: Exception)
         }
     }

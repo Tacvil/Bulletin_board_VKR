@@ -6,25 +6,28 @@ import android.content.Context
 import android.media.RingtoneManager
 import android.os.Build
 import android.util.Log
-import androidx.activity.viewModels
 import androidx.core.app.NotificationCompat
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewModelScope
 import com.example.bulletin_board.R
 import com.example.bulletin_board.viewmodel.FirebaseViewModel
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
+import kotlinx.coroutines.launch
 
-class PushNotificationServices:FirebaseMessagingService() {
+class PushNotificationServices : FirebaseMessagingService() {
     private lateinit var firebaseViewModel: FirebaseViewModel
 
     override fun onCreate() {
         super.onCreate()
         firebaseViewModel = ViewModelProvider.AndroidViewModelFactory.getInstance(application).create(FirebaseViewModel::class.java)
-
     }
+
     override fun onNewToken(token: String) {
         super.onNewToken(token)
-        firebaseViewModel.saveTokenDB(token)
+        firebaseViewModel.viewModelScope.launch {
+            firebaseViewModel.saveTokenDB(token)
+        }
         Log.d("NEW TOKEN", token)
     }
 
@@ -59,25 +62,33 @@ class PushNotificationServices:FirebaseMessagingService() {
         // message, here is where that should be initiated. See sendNotification method below.
     }
 
-    private fun sendNotification(title: String, body: String) {
+    private fun sendNotification(
+        title: String,
+        body: String,
+    ) {
         val channelId = "Default"
 
         val defaultSoundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
 
-        val notificationBuilder = NotificationCompat.Builder(this, channelId)
-            .setSmallIcon(R.drawable.ic_favorite_pressed)
-            .setContentTitle(title)
-            .setContentText(body)
-            .setAutoCancel(true)
-            .setSound(defaultSoundUri)
+        val notificationBuilder =
+            NotificationCompat
+                .Builder(this, channelId)
+                .setSmallIcon(R.drawable.ic_favorite_pressed)
+                .setContentTitle(title)
+                .setContentText(body)
+                .setAutoCancel(true)
+                .setSound(defaultSoundUri)
 
         val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
         // Since android Oreo notification channel is needed.
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(channelId,
-                "Channel human readable title",
-                NotificationManager.IMPORTANCE_DEFAULT)
+            val channel =
+                NotificationChannel(
+                    channelId,
+                    "Channel human readable title",
+                    NotificationManager.IMPORTANCE_DEFAULT,
+                )
             notificationManager.createNotificationChannel(channel)
         }
 

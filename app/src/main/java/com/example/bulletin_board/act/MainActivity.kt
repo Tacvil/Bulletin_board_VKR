@@ -42,6 +42,7 @@ import com.example.bulletin_board.R
 import com.example.bulletin_board.accounthelper.AccountHelper
 import com.example.bulletin_board.adapterFirestore.AdsAdapter
 import com.example.bulletin_board.adapterFirestore.FavoriteAdsAdapter
+import com.example.bulletin_board.adapterFirestore.MyAdsAdapter
 import com.example.bulletin_board.databinding.ActivityMainBinding
 import com.example.bulletin_board.dialoghelper.DialogConst
 import com.example.bulletin_board.dialoghelper.DialogHelper
@@ -97,11 +98,15 @@ class MainActivity :
     private var viewModelIsLoading = false
 
     private val favAdsAdapter by lazy {
-        FavoriteAdsAdapter(firebaseViewModel, mAuth)
+        FavoriteAdsAdapter(firebaseViewModel)
     }
 
     private val adsAdapter by lazy {
-        AdsAdapter(firebaseViewModel, mAuth)
+        AdsAdapter(firebaseViewModel)
+    }
+
+    private val myAdsAdapter by lazy {
+        MyAdsAdapter(firebaseViewModel)
     }
     private val scrollStateMap = mutableMapOf<Int, Parcelable?>()
     private var currentTabPosition: Int = 0
@@ -145,13 +150,12 @@ class MainActivity :
             Timber.tag("POST_NOTIFICATIONS_PER_TRUE").d("POST_NOTIFICATIONS_PER_TRUE")
         }
 
+        initRecyclerView()
+        initViewModel()
         init()
         onClickSelectOrderByFilter()
         searchAdd()
-        initRecyclerView()
-        initViewModel()
         bottomMenuOnClick()
-        // scrollListener()
         onActivityResultFilter()
     }
 
@@ -285,9 +289,7 @@ class MainActivity :
                 val titleValidate = queryValidate(querySearch)
 
                 firebaseViewModel.addToFilter("keyWords", titleValidate)
-                firebaseViewModel.updateFilter()
                 clearUpdate = true
-                firebaseViewModel.getHomeAdsData()
             }
             binding.mainContent.searchViewMainContent.hide()
 
@@ -345,9 +347,7 @@ class MainActivity :
                             mainContent.autoComplete.setText(item)
 
                             firebaseViewModel.addToFilter("orderBy", getSortOption(item))
-                            firebaseViewModel.updateFilter()
                             clearUpdate = true
-                            firebaseViewModel.getHomeAdsData()
                         }
                     }
 
@@ -393,9 +393,7 @@ class MainActivity :
                     // Текущая иконка НЕ является ic_search
                     binding.mainContent.searchBar.clearText()
                     firebaseViewModel.addToFilter("keyWords", "")
-                    firebaseViewModel.updateFilter()
                     clearUpdate = true
-                    firebaseViewModel.getHomeAdsData()
                     item.setIcon(R.drawable.ic_search)
                 } else {
                     binding.mainContent.searchBar.performClick()
@@ -447,9 +445,7 @@ class MainActivity :
                     val validateText = queryValidate(spokenText)
 
                     firebaseViewModel.addToFilter("keyWords", validateText)
-                    firebaseViewModel.updateFilter()
                     clearUpdate = true
-                    firebaseViewModel.getHomeAdsData()
                 } else {
                     Timber.tag("VoiceSearch").d("Распознавание речи не дало результатов.")
                 }
@@ -518,6 +514,16 @@ class MainActivity :
         }
 
         lifecycleScope.launch {
+            firebaseViewModel
+                .getMyAdsData()
+                .catch { e ->
+                    Timber.tag("MainActivity").e(e, "Error loading my ads data")
+                }.collectLatest { pagingData ->
+                    myAdsAdapter.submitData(lifecycle, pagingData)
+                }
+        }
+
+        lifecycleScope.launch {
 /*            adsAdapter.loadStateFlow.collectLatest { loadStates ->
                 // Обработка loadStates.refresh, loadStates.append, loadStates.prepend
                 // Например, отобразить индикатор загрузки, если loadStates.refresh is LoadState.Loading
@@ -557,9 +563,13 @@ class MainActivity :
     }
 
     private fun init() {
-        firebaseViewModel.addToFilter("category", "")
-        firebaseViewModel.addToFilter("orderBy", getString(R.string.sort_by_newest))
-        firebaseViewModel.updateFilter()
+        Timber.d("init() called")
+        val newFilters =
+            mapOf(
+                "category" to "",
+                "orderBy" to getString(R.string.sort_by_newest),
+            )
+        firebaseViewModel.updateFilters(newFilters)
         setSupportActionBar(binding.mainContent.searchBar)
         onActivityResult()
         navViewSetting()
@@ -583,7 +593,7 @@ class MainActivity :
                     }
 
                     R.id.id_my_ads -> {
-                        switchAdapter(favAdsAdapter, 2)
+                        switchAdapter(myAdsAdapter, 2)
                         firebaseViewModel.getMyAdsData()
                         // switchAdapter(myAdsAdapter, 1)
                         // mainContent.toolbar.title = getString(R.string.ad_my_ads)
@@ -677,13 +687,12 @@ class MainActivity :
     }
 
     private fun getAdsFromCat(cat: String) {
-        firebaseViewModel.addToFilter("category", cat)
-        firebaseViewModel.addToFilter(
-            "orderBy",
-            getSortOption(firebaseViewModel.getFilterValue("orderBy") ?: ""),
-        )
-        firebaseViewModel.updateFilter()
-        firebaseViewModel.getHomeAdsData()
+        val newFilters =
+            mapOf(
+                "category" to cat,
+                "orderBy" to getSortOption(firebaseViewModel.getFilterValue("orderBy") ?: ""),
+            )
+        firebaseViewModel.updateFilters(newFilters)
     }
 
     fun uiUpdate(user: FirebaseUser?) {
@@ -750,36 +759,6 @@ class MainActivity :
             accCat.title = spanAccCat
         }
 
-    /*private fun scrollListener() =
-        with(binding.mainContent) {
-            recyclerViewMainContent.addOnScrollListener(
-                object : RecyclerView.OnScrollListener() {
-                    override fun onScrollStateChanged(
-                        recyclerView: RecyclerView,
-                        newState: Int,
-                    ) {
-                        super.onScrollStateChanged(recyclerView, newState)
-                        if (!recyclerView.canScrollVertically(SCROLL_DOWN) && newState == RecyclerView.SCROLL_STATE_IDLE) {
-                            if (!viewModelIsLoading) {
-                                clearUpdate = false
-                                val adsList = firebaseViewModel.homeAdsData.value
-                                Log.d("MainAct_scrollListener", "adsList: $adsList")
-                                if (adsList != null && adsList.isNotEmpty()) {
-                                    getAdsFromCat(adsList)
-                                }
-                            }
-                        }
-                    }
-                },
-            )
-        }
-
-    private fun getAdsFromCat(adsList: List<Ad>) {
-        adsList.lastOrNull()?.let {
-            firebaseViewModel.getHomeAdsData(filterDb, this)
-        }
-    }*/
-
     private fun switchAdapter(
         adapter: RecyclerView.Adapter<*>,
         tabPosition: Int,
@@ -832,9 +811,10 @@ class MainActivity :
     }
 
     override fun onAdClick(ad: Ad) {
-        val i = Intent(this, DescriptionActivity::class.java)
-        i.putExtra("AD", ad)
-        startActivity(i)
+        Intent(this, DescriptionActivity::class.java).also {
+            it.putExtra("AD", ad)
+            startActivity(it)
+        }
         firebaseViewModel.viewModelScope.launch {
             firebaseViewModel.adViewed(ViewData(ad.key, ad.viewsCounter))
         }
@@ -854,6 +834,12 @@ class MainActivity :
     }
 
     override fun onEditClick(ad: Ad) {
-        TODO("Not yet implemented")
+        Intent(this, EditAdsActivity::class.java).also {
+            it.putExtra(EDIT_STATE, true)
+            it.putExtra(ADS_DATA, ad)
+            startActivity(it)
+        }
     }
+
+    override fun isOwner(adUid: String): Boolean = adUid == mAuth.currentUser?.uid
 }
