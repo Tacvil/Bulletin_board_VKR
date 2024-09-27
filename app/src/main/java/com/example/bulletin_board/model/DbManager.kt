@@ -13,18 +13,6 @@ import com.google.firebase.ktx.Firebase
 import com.google.firebase.storage.ktx.storage
 import timber.log.Timber
 
-enum class SortOption(
-    val id: String,
-) {
-    BY_NEWEST("byNewest"),
-    BY_POPULARITY("byPopularity"),
-    BY_PRICE_ASC("byPriceAsc"),
-    BY_PRICE_DESC("byPriceDesc"),
-    WITH_SEND("with_send"),
-    WITHOUT_SEND("without_send"),
-    ALL("all"),
-}
-
 class DbManager {
     val database = Firebase.database.getReference(MAIN_NODE)
     val firestore = FirebaseFirestore.getInstance()
@@ -201,7 +189,7 @@ class DbManager {
         if (!filter["category"].isNullOrEmpty() && filter["category"] != context.getString(R.string.def)) {
             queryDB = queryDB.whereEqualTo("category", filter["category"])
         }
-        when (filter["withSend"]) {
+        /*when (filter["withSend"]) {
             SortOption.WITH_SEND.id -> queryDB = queryDB.whereEqualTo("withSend", SortOption.WITH_SEND.id)
             SortOption.WITHOUT_SEND.id -> queryDB = queryDB.whereEqualTo("withSend", SortOption.WITHOUT_SEND.id)
             else -> {}
@@ -278,7 +266,7 @@ class DbManager {
                     }
                 }
             }
-        }
+        }*/
 
         return queryDB.limit(ADS_LIMIT.toLong())
     }

@@ -46,6 +46,10 @@
     <string name="publish">Опубликовать</string>
     <string name="title">*Название объявления</string>
 
+    <!-- Filter Activity -->
+    <string name="hint_from">от</string>
+    <string name="hint_to">до</string>
+
     <!-- Ad list item -->
     <string name="price_desc">Цена:</string>
     <string name="ads_name">Название объявления</string>
@@ -70,6 +74,11 @@
     <string name="sort_by_newest">По новинкам</string>
     <string name="sort_by_popularity">По популярности</string>
     <string name="filters">Фильтры</string>
+
+    <!-- Filters WithSend Field -->
+    <string name="no_matter">Не важно</string>
+    <string name="with_sending">С отправкой</string>
+    <string name="without_sending">Без отправки</string>
 
     <!-- Pix -->
     <string name="pix_selection_limiter">Can\'t select more than %d items.</string>

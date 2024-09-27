@@ -39,27 +39,19 @@ class AdRepositoryImpl
             return ads to nextKey
         }
 
-        override suspend fun onFavClick(favData: FavData): Result<FavData> {
-            val result = remoteAdDataSource.onFavClick(favData)
-            return result
-        }
+        override suspend fun onFavClick(favData: FavData): Result<FavData> = remoteAdDataSource.onFavClick(favData)
 
-        override suspend fun adViewed(viewData: ViewData): Result<ViewData> {
-            val result = remoteAdDataSource.adViewed(viewData)
-            return result
-        }
+        override suspend fun adViewed(viewData: ViewData): Result<ViewData> = remoteAdDataSource.adViewed(viewData)
 
-        override suspend fun deleteAd(adKey: String): Result<Boolean> {
-            val result = remoteAdDataSource.deleteAd(adKey)
-            return result
-        }
+        override suspend fun deleteAd(adKey: String): Result<Boolean> = remoteAdDataSource.deleteAd(adKey)
 
-        override suspend fun insertAd(ad: Ad): Result<Boolean> {
-            val result = remoteAdDataSource.insertAd(ad)
-            return result
-        }
+        override suspend fun insertAd(ad: Ad): Result<Boolean> = remoteAdDataSource.insertAd(ad)
 
         override suspend fun saveToken(token: String) {
             remoteAdDataSource.saveToken(token)
         }
+
+        override suspend fun getMinPrice(category: String?): Result<Int> = remoteAdDataSource.getMinPrice(category)
+
+        override suspend fun getMaxPrice(category: String?): Result<Int> = remoteAdDataSource.getMaxPrice(category)
     }

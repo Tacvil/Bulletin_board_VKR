@@ -23,6 +23,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.flow
 import timber.log.Timber
 import javax.inject.Inject
 
@@ -32,6 +33,10 @@ class FirebaseViewModel
     constructor(
         private val adRepository: AdRepository,
     ) : ViewModel() {
+        init {
+            Timber.d("ViewModel created: $this")
+        }
+
         private val _isLoading = MutableLiveData<Boolean>()
         val isLoading: LiveData<Boolean> = _isLoading
 
@@ -117,6 +122,36 @@ class FirebaseViewModel
             }
         }
 
+        suspend fun getMinPrice() {
+            when (val result = adRepository.getMinPrice(appState.value.filter["category"])) {
+                is Result.Success -> {
+                    _appState.value =
+                        _appState.value.copy(
+                            minPrice = result.data,
+                        )
+                }
+
+                is Result.Error -> {
+                    Timber.e(result.exception, "Error getting min price")
+                }
+            }
+        }
+
+        suspend fun getMaxPrice() {
+            when (val result = adRepository.getMaxPrice(appState.value.filter["category"])) {
+                is Result.Success -> {
+                    _appState.value =
+                        _appState.value.copy(
+                            maxPrice = result.data,
+                        )
+                }
+
+                is Result.Error -> {
+                    Timber.e(result.exception, "Error getting max price")
+                }
+            }
+        }
+
         suspend fun saveTokenDB(token: String) {
             adRepository.saveToken(token)
         }
@@ -137,13 +172,16 @@ class FirebaseViewModel
         fun getFilterValue(key: String): String? = appState.value.filter[key]
 
         fun updateFilters(newFilters: Map<String, String>) {
-            _appState.value =
-                _appState.value.copy(
-                    filter =
-                        _appState.value.filter
-                            .toMutableMap()
-                            .apply { putAll(newFilters) },
-                )
+            Timber.d("Filter updated VIEWMODEL  DO: ${_appState.value.filter}")
+            val updatedFilters = _appState.value.filter.toMutableMap()
+
+            newFilters.forEach { (key, value) ->
+                updatedFilters[key] = value
+            }
+
+            _appState.value = _appState.value.copy(filter = updatedFilters)
+
+            Timber.d("Filter updated VIEWMODEL  AFTER: ${_appState.value.filter}")
         }
 
         fun removeFromFilter(key: String) {

@@ -8,4 +8,5 @@
 
     <dimen name="popup_offset_x">8dp</dimen>
     <dimen name="popup_offset_y">8dp</dimen>
+    <dimen name="bottom_sheet_drag_handle_height">48dp</dimen>
 </resources>

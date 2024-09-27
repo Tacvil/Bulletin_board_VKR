@@ -18,12 +18,12 @@ import android.text.TextWatcher
 import android.text.style.ForegroundColorSpan
 import android.view.Menu
 import android.view.MenuItem
+import android.view.View
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.activity.result.launch
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
@@ -35,6 +35,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.airbnb.lottie.LottieDrawable
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.resource.bitmap.RoundedCorners
 import com.bumptech.glide.request.RequestOptions
@@ -52,10 +53,9 @@ import com.example.bulletin_board.dialogs.RcViewSearchSpinnerAdapter
 import com.example.bulletin_board.model.Ad
 import com.example.bulletin_board.model.AdItemClickListener
 import com.example.bulletin_board.model.DbManager
-import com.example.bulletin_board.model.DbManager.Companion.MAIN_NODE
 import com.example.bulletin_board.model.FavData
-import com.example.bulletin_board.model.SortOption
 import com.example.bulletin_board.model.ViewData
+import com.example.bulletin_board.packroom.SortOption
 import com.example.bulletin_board.settings.SettingsActivity
 import com.example.bulletin_board.utils.BillingManager
 import com.example.bulletin_board.utils.BillingManager.Companion.REMOVE_ADS_PREF
@@ -86,7 +86,7 @@ class MainActivity :
     val mAuth = Firebase.auth
     lateinit var googleSignInLauncher: ActivityResultLauncher<Intent>
     private lateinit var filterLauncher: ActivityResultLauncher<Intent>
-    private val firebaseViewModel: FirebaseViewModel by viewModels()
+    val viewModel: FirebaseViewModel by viewModels()
     private var clearUpdate: Boolean = false
 
     private var pref: SharedPreferences? = null
@@ -98,18 +98,20 @@ class MainActivity :
     private var viewModelIsLoading = false
 
     private val favAdsAdapter by lazy {
-        FavoriteAdsAdapter(firebaseViewModel)
+        FavoriteAdsAdapter(viewModel)
     }
 
     private val adsAdapter by lazy {
-        AdsAdapter(firebaseViewModel)
+        AdsAdapter(viewModel)
     }
 
     private val myAdsAdapter by lazy {
-        MyAdsAdapter(firebaseViewModel)
+        MyAdsAdapter(viewModel)
     }
     private val scrollStateMap = mutableMapOf<Int, Parcelable?>()
     private var currentTabPosition: Int = 0
+
+    private val filterFragment by lazy { FilterFragment() }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         defPreferences = PreferenceManager.getDefaultSharedPreferences(this)
@@ -288,7 +290,7 @@ class MainActivity :
 
                 val titleValidate = queryValidate(querySearch)
 
-                firebaseViewModel.addToFilter("keyWords", titleValidate)
+                viewModel.addToFilter("keyWords", titleValidate)
                 clearUpdate = true
             }
             binding.mainContent.searchViewMainContent.hide()
@@ -316,13 +318,13 @@ class MainActivity :
 
     private fun onClickSelectOrderByFilter() =
         with(binding) {
-            mainContent.autoComplete.setText(firebaseViewModel.getFilterValue("orderBy"))
+            mainContent.autoComplete.setText(viewModel.getFilterValue("orderBy"))
             mainContent.autoComplete.setOnClickListener {
                 val listVariant: ArrayList<Pair<String, String>> =
-                    if (firebaseViewModel
+                    if (viewModel
                             .getFilterValue("price_from")
                             ?.isNotEmpty() == true ||
-                        firebaseViewModel
+                        viewModel
                             .getFilterValue("price_to")
                             ?.isNotEmpty() == true
                     ) {
@@ -346,7 +348,7 @@ class MainActivity :
                                 .show()
                             mainContent.autoComplete.setText(item)
 
-                            firebaseViewModel.addToFilter("orderBy", getSortOption(item))
+                            viewModel.addToFilter("orderBy", getSortOption(item))
                             clearUpdate = true
                         }
                     }
@@ -362,8 +364,9 @@ class MainActivity :
             }
 
             mainContent.filterButtonMain.setOnClickListener {
-                val i = Intent(this@MainActivity, FilterActivity::class.java)
-                filterLauncher.launch(i)
+                if (!filterFragment.isAdded) {
+                    filterFragment.show(supportFragmentManager, FilterFragment.TAG)
+                }
             }
         }
 
@@ -389,10 +392,10 @@ class MainActivity :
             }
 
             R.id.id_search -> {
-                if (!firebaseViewModel.getFilterValue("keyWords").isNullOrEmpty()) {
+                if (!viewModel.getFilterValue("keyWords").isNullOrEmpty()) {
                     // Текущая иконка НЕ является ic_search
                     binding.mainContent.searchBar.clearText()
-                    firebaseViewModel.addToFilter("keyWords", "")
+                    viewModel.addToFilter("keyWords", "")
                     clearUpdate = true
                     item.setIcon(R.drawable.ic_search)
                 } else {
@@ -444,7 +447,7 @@ class MainActivity :
 
                     val validateText = queryValidate(spokenText)
 
-                    firebaseViewModel.addToFilter("keyWords", validateText)
+                    viewModel.addToFilter("keyWords", validateText)
                     clearUpdate = true
                 } else {
                     Timber.tag("VoiceSearch").d("Распознавание речи не дало результатов.")
@@ -499,67 +502,147 @@ class MainActivity :
     }
 
     private fun initViewModel() {
-        firebaseViewModel.isLoading.observe(this) { isLoading ->
+        viewModel.isLoading.observe(this) { isLoading ->
             viewModelIsLoading = isLoading
         }
 
         lifecycleScope.launch {
-            firebaseViewModel
+            viewModel
                 .getFavoriteAdsData()
                 .catch { e ->
                     Timber.tag("MainActivity").e(e, "Error loading favorite ads data")
                 }.collectLatest { pagingData ->
+                    Timber.d("Received PagingData: $pagingData") // Логирование
                     favAdsAdapter.submitData(lifecycle, pagingData)
+
+                    // Регистрация слушателя для отслеживания изменений
+                    favAdsAdapter.registerAdapterDataObserver(
+                        object : RecyclerView.AdapterDataObserver() {
+                            override fun onItemRangeInserted(
+                                positionStart: Int,
+                                itemCount: Int,
+                            ) {
+                                super.onItemRangeInserted(positionStart, itemCount)
+                                updateAnimationVisibility(favAdsAdapter.itemCount)
+                            }
+
+                            override fun onItemRangeRemoved(
+                                positionStart: Int,
+                                itemCount: Int,
+                            ) {
+                                super.onItemRangeRemoved(positionStart, itemCount)
+                                updateAnimationVisibility(favAdsAdapter.itemCount)
+                            }
+
+                            override fun onChanged() {
+                                super.onChanged()
+                                updateAnimationVisibility(favAdsAdapter.itemCount)
+                            }
+                        },
+                    )
+
+                    // Проверяем состояние сразу после обновления данных
+                    updateAnimationVisibility(favAdsAdapter.itemCount)
                 }
         }
 
+// Аналогично для homeAdsAdapter
         lifecycleScope.launch {
-            firebaseViewModel
+            viewModel
+                .getHomeAdsData()
+                .catch { e ->
+                    Timber.tag("MainActivity").e(e, "Error loading home ads data")
+                }.collectLatest { pagingData ->
+                    Timber.d("Received PagingData: $pagingData") // Логирование
+                    adsAdapter.submitData(lifecycle, pagingData)
+
+                    // Регистрация слушателя для отслеживания изменений
+                    adsAdapter.registerAdapterDataObserver(
+                        object : RecyclerView.AdapterDataObserver() {
+                            override fun onItemRangeInserted(
+                                positionStart: Int,
+                                itemCount: Int,
+                            ) {
+                                super.onItemRangeInserted(positionStart, itemCount)
+                                updateAnimationVisibility(adsAdapter.itemCount)
+                            }
+
+                            override fun onItemRangeRemoved(
+                                positionStart: Int,
+                                itemCount: Int,
+                            ) {
+                                super.onItemRangeRemoved(positionStart, itemCount)
+                                updateAnimationVisibility(adsAdapter.itemCount)
+                            }
+
+                            override fun onChanged() {
+                                super.onChanged()
+                                updateAnimationVisibility(adsAdapter.itemCount)
+                            }
+                        },
+                    )
+
+                    // Проверяем состояние сразу после обновления данных
+                    updateAnimationVisibility(adsAdapter.itemCount)
+                }
+        }
+
+// И для myAdsAdapter
+        lifecycleScope.launch {
+            viewModel
                 .getMyAdsData()
                 .catch { e ->
                     Timber.tag("MainActivity").e(e, "Error loading my ads data")
                 }.collectLatest { pagingData ->
+                    Timber.d("Received PagingData: $pagingData") // Логирование
                     myAdsAdapter.submitData(lifecycle, pagingData)
+
+                    // Регистрация слушателя для отслеживания изменений
+                    myAdsAdapter.registerAdapterDataObserver(
+                        object : RecyclerView.AdapterDataObserver() {
+                            override fun onItemRangeInserted(
+                                positionStart: Int,
+                                itemCount: Int,
+                            ) {
+                                super.onItemRangeInserted(positionStart, itemCount)
+                                updateAnimationVisibility(myAdsAdapter.itemCount)
+                            }
+
+                            override fun onItemRangeRemoved(
+                                positionStart: Int,
+                                itemCount: Int,
+                            ) {
+                                super.onItemRangeRemoved(positionStart, itemCount)
+                                updateAnimationVisibility(myAdsAdapter.itemCount)
+                            }
+
+                            override fun onChanged() {
+                                super.onChanged()
+                                updateAnimationVisibility(myAdsAdapter.itemCount)
+                            }
+                        },
+                    )
+
+                    // Проверяем состояние сразу после обновления данных
+                    updateAnimationVisibility(myAdsAdapter.itemCount)
                 }
         }
+    }
 
-        lifecycleScope.launch {
-/*            adsAdapter.loadStateFlow.collectLatest { loadStates ->
-                // Обработка loadStates.refresh, loadStates.append, loadStates.prepend
-                // Например, отобразить индикатор загрузки, если loadStates.refresh is LoadState.Loading
-            }*/
-            firebaseViewModel
-                .getHomeAdsData()
-                .catch { e ->
-                    Timber.tag("MainActivity").e(e, "Error loading data")
-                }.collectLatest { pagingData ->
-                    adsAdapter.submitData(lifecycle, pagingData)
-                }
+    // Метод для обновления видимости анимации
+    private fun updateAnimationVisibility(itemCount: Int) {
+        Timber.d("updateAnimationVisibility Item count: $itemCount") // Логирование значения itemCount
+
+        if (itemCount == 0) {
+            // Показать анимацию
+            binding.mainContent.nothinkWhiteAnim.visibility = View.VISIBLE
+            binding.mainContent.nothinkWhiteAnim.repeatCount = LottieDrawable.INFINITE
+            binding.mainContent.nothinkWhiteAnim.playAnimation()
+        } else {
+            // Скрыть анимацию
+            binding.mainContent.nothinkWhiteAnim.cancelAnimation()
+            binding.mainContent.nothinkWhiteAnim.visibility = View.GONE
         }
-
-        /*        firebaseViewModel.homeAdsData.observe(this) {
-                    it?.let { content ->
-                        // val list = getAdsByCategory(content)
-                        Log.d("MainActInitViewModel", "clearUpdate: $clearUpdate")
-
-                        if (!clearUpdate) {
-                            homeAdsAdapter.updateAdapter(content)
-                        } else {
-                            homeAdsAdapter.updateAdapterWithClear(content)
-                        }
-
-                        if (homeAdsAdapter.itemCount == 0) {
-                            binding.mainContent.recyclerViewMainContent.visibility = View.INVISIBLE
-                            binding.mainContent.nothinkWhiteAnim.visibility = View.VISIBLE
-                            binding.mainContent.nothinkWhiteAnim.repeatCount = LottieDrawable.INFINITE
-                            binding.mainContent.nothinkWhiteAnim.playAnimation()
-                        } else {
-                            binding.mainContent.recyclerViewMainContent.visibility = View.VISIBLE
-                            binding.mainContent.nothinkWhiteAnim.cancelAnimation()
-                            binding.mainContent.nothinkWhiteAnim.visibility = View.GONE
-                        }
-                    }
-                }*/
     }
 
     private fun init() {
@@ -569,7 +652,7 @@ class MainActivity :
                 "category" to "",
                 "orderBy" to getString(R.string.sort_by_newest),
             )
-        firebaseViewModel.updateFilters(newFilters)
+        viewModel.updateFilters(newFilters)
         setSupportActionBar(binding.mainContent.searchBar)
         onActivityResult()
         navViewSetting()
@@ -594,14 +677,14 @@ class MainActivity :
 
                     R.id.id_my_ads -> {
                         switchAdapter(myAdsAdapter, 2)
-                        firebaseViewModel.getMyAdsData()
+                        viewModel.getMyAdsData()
                         // switchAdapter(myAdsAdapter, 1)
                         // mainContent.toolbar.title = getString(R.string.ad_my_ads)
                     }
 
                     R.id.id_favs -> {
                         switchAdapter(favAdsAdapter, 1)
-                        firebaseViewModel.getFavoriteAdsData()
+                        viewModel.getFavoriteAdsData()
                         // mainContent.toolbar.title = getString(R.string.favs)
                     }
 
@@ -690,9 +773,10 @@ class MainActivity :
         val newFilters =
             mapOf(
                 "category" to cat,
-                "orderBy" to getSortOption(firebaseViewModel.getFilterValue("orderBy") ?: ""),
+                "orderBy" to getSortOption(viewModel.getFilterValue("orderBy") ?: ""),
             )
-        firebaseViewModel.updateFilters(newFilters)
+        Timber.d("newFilters called getAdsFromCat")
+        viewModel.updateFilters(newFilters)
     }
 
     fun uiUpdate(user: FirebaseUser?) {
@@ -777,6 +861,9 @@ class MainActivity :
 
         // Обновляем текущую позицию вкладки
         currentTabPosition = tabPosition
+
+        val itemCount = (adapter).itemCount
+        updateAnimationVisibility(itemCount)
     }
 
     override fun onDestroy() {
@@ -815,20 +902,20 @@ class MainActivity :
             it.putExtra("AD", ad)
             startActivity(it)
         }
-        firebaseViewModel.viewModelScope.launch {
-            firebaseViewModel.adViewed(ViewData(ad.key, ad.viewsCounter))
+        viewModel.viewModelScope.launch {
+            viewModel.adViewed(ViewData(ad.key, ad.viewsCounter))
         }
     }
 
     override fun onFavClick(favData: FavData) {
-        firebaseViewModel.viewModelScope.launch {
-            firebaseViewModel.onFavClick(favData)
+        viewModel.viewModelScope.launch {
+            viewModel.onFavClick(favData)
         }
     }
 
     override fun onDeleteClick(adKey: String) {
-        firebaseViewModel.viewModelScope.launch {
-            firebaseViewModel.deleteAd(adKey)
+        viewModel.viewModelScope.launch {
+            viewModel.deleteAd(adKey)
         }
         clearUpdate = true
     }

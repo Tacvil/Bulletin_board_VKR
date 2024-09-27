@@ -46,6 +46,10 @@
     <string name="publish">Publish</string>
     <string name="title">*Ad Title</string>
 
+    <!-- Filter Activity -->
+    <string name="hint_from">from</string>
+    <string name="hint_to">to</string>
+
     <!-- Ad list item -->
     <string name="price_desc">Price:</string>
     <string name="ads_name">Title Ad</string>
@@ -70,6 +74,11 @@
     <string name="sort_by_newest">By newest</string>
     <string name="sort_by_popularity">By popularity</string>
     <string name="filters">Filters</string>
+
+    <!-- Filters WithSend Field -->
+    <string name="no_matter">No matter</string>
+    <string name="with_sending">With sending</string>
+    <string name="without_sending">Without sending</string>
 
     <!-- Pix -->
     <string name="pix_selection_limiter">Can\'t select more than %d items.</string>

@@ -1,5 +1,6 @@
 package com.example.bulletin_board.packroom
 
+import androidx.compose.ui.geometry.isEmpty
 import com.example.bulletin_board.model.Ad
 import com.example.bulletin_board.model.DbManager.Companion.USER_NODE
 import com.example.bulletin_board.model.FavData
@@ -12,6 +13,7 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.FirebaseFirestoreException
 import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.SetOptions
+import com.google.firebase.firestore.getField
 import com.google.firebase.ktx.Firebase
 import jakarta.inject.Inject
 import kotlinx.coroutines.tasks.await
@@ -24,23 +26,23 @@ class RemoteAdDataSource
         private val auth: FirebaseAuth = Firebase.auth,
     ) {
         companion object {
-            private const val MAIN_COLLECTION = "main"
-            private const val FAV_UIDS_FIELD = "favUids"
-            private const val VIEWS_COUNTER_FIELD = "viewsCounter"
-            private const val TIME_FIELD = "time"
-            private const val UID_FIELD = "uid"
-            private const val IS_PUBLISHED_FIELD = "published"
-            private const val KEYWORDS_FIELD = "keyWords"
-            private const val COUNTRY_FIELD = "country"
-            private const val CITY_FIELD = "city"
-            private const val INDEX_FIELD = "index"
-            private const val CATEGORY_FIELD = "category"
-            private const val WITH_SEND_FIELD = "withSend"
-            private const val PRICE_FIELD = "price"
-            private const val PRICE_FROM_FIELD = "price_from"
-            private const val PRICE_TO_FIELD = "price_to"
-            private const val ORDER_BY_FIELD = "orderBy"
-            private const val KEY_FIELD = "key"
+            const val MAIN_COLLECTION = "main"
+            const val FAV_UIDS_FIELD = "favUids"
+            const val VIEWS_COUNTER_FIELD = "viewsCounter"
+            const val TIME_FIELD = "time"
+            const val UID_FIELD = "uid"
+            const val IS_PUBLISHED_FIELD = "published"
+            const val KEYWORDS_FIELD = "keyWords"
+            const val COUNTRY_FIELD = "country"
+            const val CITY_FIELD = "city"
+            const val INDEX_FIELD = "index"
+            const val CATEGORY_FIELD = "category"
+            const val WITH_SEND_FIELD = "withSend"
+            const val PRICE_FIELD = "price"
+            const val PRICE_FROM_FIELD = "price_from"
+            const val PRICE_TO_FIELD = "price_to"
+            const val ORDER_BY_FIELD = "orderBy"
+            const val KEY_FIELD = "key"
             const val ADS_LIMIT = 2
         }
 
@@ -117,10 +119,17 @@ class RemoteAdDataSource
                         .document(favData.key)
                         .update(
                             FAV_UIDS_FIELD,
-                            if (!favData.isFav) FieldValue.arrayUnion(uid) else FieldValue.arrayRemove(uid),
+                            if (!favData.isFav) {
+                                FieldValue.arrayUnion(uid)
+                            } else {
+                                FieldValue.arrayRemove(
+                                    uid,
+                                )
+                            },
                         ).await()
 
-                    val favCounter = if (!favData.isFav) favData.favCounter.toInt() + 1 else favData.favCounter.toInt() - 1
+                    val favCounter =
+                        if (!favData.isFav) favData.favCounter.toInt() + 1 else favData.favCounter.toInt() - 1
                     val updatedAd =
                         FavData(
                             key = favData.key,
@@ -208,6 +217,62 @@ class RemoteAdDataSource
             } catch (e: Exception) {
                 Timber.e(e, "Error getting my favorite ads")
                 Pair(emptyList(), null)
+            }
+
+        suspend fun getMinPrice(category: String?): Result<Int> =
+            try {
+                val collectionReference = firestore.collection(MAIN_COLLECTION)
+                val query =
+                    if (!category.isNullOrEmpty()) {
+                        collectionReference
+                            .whereEqualTo(CATEGORY_FIELD, category)
+                            .orderBy(PRICE_FIELD, Query.Direction.ASCENDING)
+                            .limit(1)
+                    } else {
+                        collectionReference
+                            .orderBy(PRICE_FIELD, Query.Direction.ASCENDING)
+                            .limit(1)
+                    }
+
+                val snapshot = query.get().await()
+                if (snapshot.isEmpty) {
+                    Result.Error(Exception("Collection is empty"))
+                } else {
+                    val minPrice =
+                        snapshot.documents[0].getField<Int?>(PRICE_FIELD)?.toInt()
+                            ?: throw Exception("Price is null")
+                    Result.Success(minPrice)
+                }
+            } catch (e: Exception) {
+                Result.Error(e)
+            }
+
+        suspend fun getMaxPrice(category: String?): Result<Int> =
+            try {
+                val collectionReference = firestore.collection(MAIN_COLLECTION)
+                val query =
+                    if (!category.isNullOrEmpty()) {
+                        collectionReference
+                            .whereEqualTo(CATEGORY_FIELD, category)
+                            .orderBy(PRICE_FIELD, Query.Direction.DESCENDING)
+                            .limit(1)
+                    } else {
+                        collectionReference
+                            .orderBy(PRICE_FIELD, Query.Direction.DESCENDING)
+                            .limit(1)
+                    }
+
+                val snapshot = query.get().await()
+                if (snapshot.isEmpty) {
+                    Result.Error(Exception("Collection is empty"))
+                } else {
+                    val maxPrice =
+                        snapshot.documents[0].getField<Int?>(PRICE_FIELD)?.toInt()
+                            ?: throw Exception("Price is null")
+                    Result.Success(maxPrice)
+                }
+            } catch (e: Exception) {
+                Result.Error(e)
             }
 
         /**
