@@ -32,6 +32,9 @@ import androidx.core.content.ContextCompat
 import androidx.core.view.GravityCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.viewModelScope
+import androidx.paging.LoadState
+import androidx.paging.PagingData
+import androidx.paging.PagingDataAdapter
 import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -55,10 +58,14 @@ import com.example.bulletin_board.model.AdItemClickListener
 import com.example.bulletin_board.model.DbManager
 import com.example.bulletin_board.model.FavData
 import com.example.bulletin_board.model.ViewData
+import com.example.bulletin_board.packroom.RemoteAdDataSource.Companion.CATEGORY_FIELD
+import com.example.bulletin_board.packroom.RemoteAdDataSource.Companion.ORDER_BY_FIELD
 import com.example.bulletin_board.packroom.SortOption
 import com.example.bulletin_board.settings.SettingsActivity
 import com.example.bulletin_board.utils.BillingManager
 import com.example.bulletin_board.utils.BillingManager.Companion.REMOVE_ADS_PREF
+import com.example.bulletin_board.utils.SortUtils.getSortOption
+import com.example.bulletin_board.utils.SortUtils.getSortOptionText
 import com.example.bulletin_board.viewmodel.FirebaseViewModel
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.common.api.ApiException
@@ -68,6 +75,7 @@ import com.google.firebase.auth.ktx.auth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.ktx.Firebase
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -96,6 +104,8 @@ class MainActivity :
     private var adapterSearch = RcViewSearchSpinnerAdapter(onItemSelectedListener)
     private lateinit var defPreferences: SharedPreferences
     private var viewModelIsLoading = false
+    private var lastClickTime: Long = 0
+    private val doubleClickThreshold = 300 // Порог для определения двойного клика
 
     private val favAdsAdapter by lazy {
         FavoriteAdsAdapter(viewModel)
@@ -157,8 +167,7 @@ class MainActivity :
         init()
         onClickSelectOrderByFilter()
         searchAdd()
-        bottomMenuOnClick()
-        onActivityResultFilter()
+        setupBottomMenu()
     }
 
     override fun onRequestPermissionsResult(
@@ -318,7 +327,6 @@ class MainActivity :
 
     private fun onClickSelectOrderByFilter() =
         with(binding) {
-            mainContent.autoComplete.setText(viewModel.getFilterValue("orderBy"))
             mainContent.autoComplete.setOnClickListener {
                 val listVariant: ArrayList<Pair<String, String>> =
                     if (viewModel
@@ -346,9 +354,8 @@ class MainActivity :
                             Toast
                                 .makeText(this@MainActivity, "Item: $item", Toast.LENGTH_SHORT)
                                 .show()
-                            mainContent.autoComplete.setText(item)
 
-                            viewModel.addToFilter("orderBy", getSortOption(item))
+                            viewModel.addToFilter("orderBy", getSortOption(this@MainActivity, item))
                             clearUpdate = true
                         }
                     }
@@ -368,15 +375,6 @@ class MainActivity :
                     filterFragment.show(supportFragmentManager, FilterFragment.TAG)
                 }
             }
-        }
-
-    private fun getSortOption(item: String): String =
-        when (item) {
-            getString(R.string.sort_by_newest) -> SortOption.BY_NEWEST.id
-            getString(R.string.sort_by_popularity) -> SortOption.BY_POPULARITY.id
-            getString(R.string.sort_by_ascending_price) -> SortOption.BY_PRICE_ASC.id
-            getString(R.string.sort_by_descending_price) -> SortOption.BY_PRICE_DESC.id
-            else -> item
         }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
@@ -479,92 +477,59 @@ class MainActivity :
             }
     }
 
-    private fun onActivityResultFilter() {
-        filterLauncher =
-            registerForActivityResult(
-                ActivityResultContracts.StartActivityForResult(),
-            ) {
-                if (it.resultCode == RESULT_OK) {
-                    /*if (filterDb["price_from"]?.isNotEmpty() == true || filterDb["price_to"]?.isNotEmpty() == true) {
-                        filterDb["orderBy"] = "По возрастанию цены"
-                        binding.mainContent.autoComplete.setText(filterDb["orderBy"])
-                    }*/
-                    // filterDb = FilterManager.getFilter(filter)
-                } else if (it.resultCode == RESULT_CANCELED) {
-                    // filterDb = mutableMapOf()
-                }
-            }
-    }
-
     override fun onStart() {
         super.onStart()
         uiUpdate(mAuth.currentUser)
     }
 
     private fun initViewModel() {
-        viewModel.isLoading.observe(this) { isLoading ->
-            viewModelIsLoading = isLoading
-        }
-
         lifecycleScope.launch {
-            viewModel
-                .getFavoriteAdsData()
-                .catch { e ->
-                    Timber.tag("MainActivity").e(e, "Error loading favorite ads data")
-                }.collectLatest { pagingData ->
-                    Timber.d("Received PagingData: $pagingData") // Логирование
-                    favAdsAdapter.submitData(lifecycle, pagingData)
-
-                    // Регистрация слушателя для отслеживания изменений
-                    favAdsAdapter.registerAdapterDataObserver(
-                        object : RecyclerView.AdapterDataObserver() {
-                            override fun onItemRangeInserted(
-                                positionStart: Int,
-                                itemCount: Int,
-                            ) {
-                                super.onItemRangeInserted(positionStart, itemCount)
-                                updateAnimationVisibility(favAdsAdapter.itemCount)
-                            }
-
-                            override fun onItemRangeRemoved(
-                                positionStart: Int,
-                                itemCount: Int,
-                            ) {
-                                super.onItemRangeRemoved(positionStart, itemCount)
-                                updateAnimationVisibility(favAdsAdapter.itemCount)
-                            }
-
-                            override fun onChanged() {
-                                super.onChanged()
-                                updateAnimationVisibility(favAdsAdapter.itemCount)
-                            }
-                        },
-                    )
-
-                    // Проверяем состояние сразу после обновления данных
-                    updateAnimationVisibility(favAdsAdapter.itemCount)
+            viewModel.appState.collectLatest { event ->
+                if (event.filter.isNotEmpty()) {
+                    val sortOptionId = event.filter[ORDER_BY_FIELD] ?: return@collectLatest
+                    val sortOptionText = getSortOptionText(this@MainActivity, sortOptionId)
+                    binding.mainContent.autoComplete.setText(sortOptionText)
+                    Timber.d("MainActivity filter changed orderBy : $sortOptionText")
                 }
+            }
         }
 
-// Аналогично для homeAdsAdapter
         lifecycleScope.launch {
-            viewModel
-                .getHomeAdsData()
-                .catch { e ->
-                    Timber.tag("MainActivity").e(e, "Error loading home ads data")
-                }.collectLatest { pagingData ->
-                    Timber.d("Received PagingData: $pagingData") // Логирование
-                    adsAdapter.submitData(lifecycle, pagingData)
+            handleAdapterData(viewModel.getFavoriteAdsData(), favAdsAdapter)
+            handleAdapterData(viewModel.getHomeAdsData(), adsAdapter)
+            handleAdapterData(viewModel.getMyAdsData(), myAdsAdapter)
+        }
+    }
 
-                    // Регистрация слушателя для отслеживания изменений
-                    adsAdapter.registerAdapterDataObserver(
-                        object : RecyclerView.AdapterDataObserver() {
+    private fun handleAdapterData(
+        dataFlow: Flow<PagingData<Ad>>,
+        adapter: PagingDataAdapter<Ad, *>,
+    ) {
+        lifecycleScope.launch {
+            dataFlow
+                .catch { e ->
+                    Timber.tag("MainActivity").e(e, "Error loading ads data")
+                }.collectLatest { pagingData ->
+                    Timber.d("Received PagingData: $pagingData")
+                    adapter.submitData(lifecycle, pagingData)
+
+                    adapter.addLoadStateListener { loadStates ->
+                        if (loadStates.refresh is LoadState.NotLoading) {
+                            val layoutManager = binding.mainContent.recyclerViewMainContent.layoutManager
+                            layoutManager?.scrollToPosition(0)
+                        }
+                    }
+
+                    adapter.registerAdapterDataObserver(
+                        object :
+                            RecyclerView.AdapterDataObserver() {
                             override fun onItemRangeInserted(
                                 positionStart: Int,
                                 itemCount: Int,
                             ) {
                                 super.onItemRangeInserted(positionStart, itemCount)
-                                updateAnimationVisibility(adsAdapter.itemCount)
+                                Timber.d("onItemRangeInserted $adapter")
+                                updateAnimationVisibility(adapter.itemCount)
                             }
 
                             override fun onItemRangeRemoved(
@@ -572,66 +537,25 @@ class MainActivity :
                                 itemCount: Int,
                             ) {
                                 super.onItemRangeRemoved(positionStart, itemCount)
-                                updateAnimationVisibility(adsAdapter.itemCount)
+                                Timber.d("onItemRangeRemoved $adapter")
+                                updateAnimationVisibility(adapter.itemCount)
                             }
 
                             override fun onChanged() {
                                 super.onChanged()
-                                updateAnimationVisibility(adsAdapter.itemCount)
+                                Timber.d("onChanged $adapter")
+                                updateAnimationVisibility(adapter.itemCount)
                             }
                         },
                     )
-
-                    // Проверяем состояние сразу после обновления данных
-                    updateAnimationVisibility(adsAdapter.itemCount)
-                }
-        }
-
-// И для myAdsAdapter
-        lifecycleScope.launch {
-            viewModel
-                .getMyAdsData()
-                .catch { e ->
-                    Timber.tag("MainActivity").e(e, "Error loading my ads data")
-                }.collectLatest { pagingData ->
-                    Timber.d("Received PagingData: $pagingData") // Логирование
-                    myAdsAdapter.submitData(lifecycle, pagingData)
-
-                    // Регистрация слушателя для отслеживания изменений
-                    myAdsAdapter.registerAdapterDataObserver(
-                        object : RecyclerView.AdapterDataObserver() {
-                            override fun onItemRangeInserted(
-                                positionStart: Int,
-                                itemCount: Int,
-                            ) {
-                                super.onItemRangeInserted(positionStart, itemCount)
-                                updateAnimationVisibility(myAdsAdapter.itemCount)
-                            }
-
-                            override fun onItemRangeRemoved(
-                                positionStart: Int,
-                                itemCount: Int,
-                            ) {
-                                super.onItemRangeRemoved(positionStart, itemCount)
-                                updateAnimationVisibility(myAdsAdapter.itemCount)
-                            }
-
-                            override fun onChanged() {
-                                super.onChanged()
-                                updateAnimationVisibility(myAdsAdapter.itemCount)
-                            }
-                        },
-                    )
-
-                    // Проверяем состояние сразу после обновления данных
-                    updateAnimationVisibility(myAdsAdapter.itemCount)
+                    Timber.d("After $adapter")
+                    updateAnimationVisibility(adapter.itemCount)
                 }
         }
     }
 
-    // Метод для обновления видимости анимации
     private fun updateAnimationVisibility(itemCount: Int) {
-        Timber.d("updateAnimationVisibility Item count: $itemCount") // Логирование значения itemCount
+        Timber.d("updateAnimationVisibility Item count: $itemCount")
 
         if (itemCount == 0) {
             // Показать анимацию
@@ -649,8 +573,8 @@ class MainActivity :
         Timber.d("init() called")
         val newFilters =
             mapOf(
-                "category" to "",
-                "orderBy" to getString(R.string.sort_by_newest),
+                CATEGORY_FIELD to "",
+                ORDER_BY_FIELD to SortOption.BY_NEWEST.id,
             )
         viewModel.updateFilters(newFilters)
         setSupportActionBar(binding.mainContent.searchBar)
@@ -663,40 +587,61 @@ class MainActivity :
             binding.navigationView.getHeaderView(0).findViewById(R.id.text_view_account_email)
         imageViewAccount =
             binding.navigationView.getHeaderView(0).findViewById(R.id.image_view_account_image)
+
+        binding.mainContent.swipeRefreshLayout.setOnRefreshListener {
+            val currentAdapterType =
+                when (binding.mainContent.bottomNavView.selectedItemId) {
+                    R.id.id_home -> ADS_ADAPTER
+                    R.id.id_favs -> FAV_ADAPTER
+                    R.id.id_my_ads -> MY_ADAPTER
+                    else -> ADS_ADAPTER
+                }
+            refreshAdapter(currentAdapterType)
+            binding.mainContent.swipeRefreshLayout.isRefreshing = false
+        }
     }
 
-    private fun bottomMenuOnClick() =
+    private fun refreshAdapter(adapterType: Int) {
+        Timber.d("refreshAdapter() called with: adapterType = $adapterType")
+        when (adapterType) {
+            ADS_ADAPTER -> adsAdapter.refresh()
+            FAV_ADAPTER -> favAdsAdapter.refresh()
+            MY_ADAPTER -> myAdsAdapter.refresh()
+        }
+    }
+
+    private fun setupBottomMenu() {
         with(binding) {
             mainContent.bottomNavView.setOnItemSelectedListener { item ->
-                clearUpdate = false
+                val currentTime = System.currentTimeMillis()
+
+                if (currentTime - lastClickTime <= doubleClickThreshold) {
+                    // Двойной клик
+                    refreshAdapter(item.itemId)
+                }
+                lastClickTime = currentTime
+
                 when (item.itemId) {
                     R.id.id_settings -> {
-                        val i = Intent(this@MainActivity, SettingsActivity::class.java)
-                        startActivity(i)
+                        startActivity(Intent(this@MainActivity, SettingsActivity::class.java))
                     }
-
                     R.id.id_my_ads -> {
                         switchAdapter(myAdsAdapter, 2)
                         viewModel.getMyAdsData()
-                        // switchAdapter(myAdsAdapter, 1)
-                        // mainContent.toolbar.title = getString(R.string.ad_my_ads)
                     }
-
                     R.id.id_favs -> {
                         switchAdapter(favAdsAdapter, 1)
                         viewModel.getFavoriteAdsData()
-                        // mainContent.toolbar.title = getString(R.string.favs)
                     }
-
                     R.id.id_home -> {
                         switchAdapter(adsAdapter, 0)
                         getAdsFromCat("")
-                        // binding.mainContent.recyclerViewMainContent.adapter = homeAdsAdapter
                     }
                 }
                 true
             }
         }
+    }
 
     private fun initRecyclerView() {
         binding.apply {
@@ -732,19 +677,19 @@ class MainActivity :
             }
 
             R.id.id_car -> {
-                getAdsFromCat(getString(R.string.ad_car))
+                getAdsFromCat(SortOption.AD_CAR.id)
             }
 
             R.id.id_pc -> {
-                getAdsFromCat(getString(R.string.ad_pc))
+                getAdsFromCat(SortOption.AD_PC.id)
             }
 
             R.id.id_smartphone -> {
-                getAdsFromCat(getString(R.string.ad_smartphone))
+                getAdsFromCat(SortOption.AD_SMARTPHONE.id)
             }
 
             R.id.id_dm -> {
-                getAdsFromCat(getString(R.string.ad_dm))
+                getAdsFromCat(SortOption.AD_DM.id)
             }
 
             R.id.id_sign_up -> {
@@ -772,8 +717,8 @@ class MainActivity :
     private fun getAdsFromCat(cat: String) {
         val newFilters =
             mapOf(
-                "category" to cat,
-                "orderBy" to getSortOption(viewModel.getFilterValue("orderBy") ?: ""),
+                CATEGORY_FIELD to cat,
+                ORDER_BY_FIELD to (viewModel.getFilterValue(ORDER_BY_FIELD) ?: SortOption.BY_NEWEST.id),
             )
         Timber.d("newFilters called getAdsFromCat")
         viewModel.updateFilters(newFilters)
@@ -784,13 +729,13 @@ class MainActivity :
             dialogHelper.accHelper.signInAnonymously(
                 object : AccountHelper.Listener {
                     override fun onComplete() {
-                        textViewAccount.text = "Гость"
+                        textViewAccount.text = getString(R.string.guest)
                         imageViewAccount.setImageResource(R.drawable.ic_my_ads)
                     }
                 },
             )
         } else if (user.isAnonymous) {
-            textViewAccount.text = "Гость"
+            textViewAccount.text = getString(R.string.guest)
             imageViewAccount.setImageResource(R.drawable.ic_my_ads)
         } else if (!user.isAnonymous) {
             textViewAccount.text = user.email
@@ -847,6 +792,7 @@ class MainActivity :
         adapter: RecyclerView.Adapter<*>,
         tabPosition: Int,
     ) {
+        updateAnimationVisibility(adapter.itemCount)
         // Сохранение текущего состояния
         scrollStateMap[currentTabPosition] =
             binding.mainContent.recyclerViewMainContent.layoutManager
@@ -861,9 +807,6 @@ class MainActivity :
 
         // Обновляем текущую позицию вкладки
         currentTabPosition = tabPosition
-
-        val itemCount = (adapter).itemCount
-        updateAnimationVisibility(itemCount)
     }
 
     override fun onDestroy() {
@@ -895,6 +838,9 @@ class MainActivity :
         const val SCROLL_DOWN = 1
         const val REQUEST_CODE_SPEECH_INPUT = 100
         private const val PERMISSION_REQUEST_CODE = 1
+        private const val ADS_ADAPTER = 0
+        private const val FAV_ADAPTER = 1
+        private const val MY_ADAPTER = 2
     }
 
     override fun onAdClick(ad: Ad) {

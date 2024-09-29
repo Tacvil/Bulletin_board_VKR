@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    xmlns:tools="http://schemas.android.com/tools">
+    android:layout_height="match_parent">
 
     <com.google.android.material.appbar.AppBarLayout
         android:id="@+id/appBarLayout"
@@ -90,35 +90,41 @@
 
             <com.google.android.material.search.SearchBar
                 android:id="@+id/search_bar"
-                android:layout_width="match_parent"
                 style="@style/Widget.Material3.SearchBar"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:hint="@string/search_ads"
                 android:visibility="visible"
-                app:tintNavigationIcon="@android:color/transparent"
                 app:layout_collapseMode="pin"
-                app:navigationIcon="@drawable/ic_dehaze" />
+                app:navigationIcon="@drawable/ic_dehaze"
+                app:tintNavigationIcon="@android:color/transparent" />
 
         </com.google.android.material.appbar.CollapsingToolbarLayout>
 
     </com.google.android.material.appbar.AppBarLayout>
 
-    <LinearLayout
+    <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+        android:id="@+id/swipeRefreshLayout"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:orientation="vertical"
-        android:paddingBottom="?attr/actionBarSize"
         app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/recycler_view_main_content"
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            app:layout_behavior="@string/appbar_scrolling_view_behavior">
+            android:orientation="vertical"
+            android:paddingBottom="?attr/actionBarSize">
 
-        </androidx.recyclerview.widget.RecyclerView>
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/recycler_view_main_content"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
+            </androidx.recyclerview.widget.RecyclerView>
 
-    </LinearLayout>
+        </LinearLayout>
+    </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
+
+
     <com.airbnb.lottie.LottieAnimationView
         android:id="@+id/nothink_white_anim"
         android:layout_width="match_parent"
@@ -126,8 +132,7 @@
         android:visibility="gone"
         app:lottie_fileName="nothink_white.json">
 
-    </com.airbnb.lottie.LottieAnimationView>
-    <!--
+    </com.airbnb.lottie.LottieAnimationView><!--
         app:layout_behavior="@string/hide_bottom_view_on_scroll_behavior"
     -->
 
@@ -158,8 +163,8 @@
         android:id="@+id/floating_act_button"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        app:layout_anchor="@id/bottomAppBar"
         android:elevation="0dp"
+        app:layout_anchor="@id/bottomAppBar"
         app:maxImageSize="30dp"
         app:srcCompat="@drawable/ic_add" />
 
@@ -170,6 +175,7 @@
         android:elevation="10dp"
         android:hint="Search ads"
         app:layout_anchor="@id/search_bar">
+
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/recycler_view_search"
             style="@style/Widget.Material3.SearchView"

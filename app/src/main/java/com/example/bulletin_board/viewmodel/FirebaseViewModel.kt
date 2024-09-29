@@ -24,8 +24,11 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.update
 import timber.log.Timber
 import javax.inject.Inject
+import kotlin.collections.putAll
+import kotlin.collections.toMutableMap
 
 @HiltViewModel
 class FirebaseViewModel
@@ -50,12 +53,12 @@ class FirebaseViewModel
 
         fun getFavoriteAdsData(): Flow<PagingData<Ad>> =
             Pager(config = getPagingConfig()) {
-                FavoriteAdsPagingSource(adRepository, this)
+                FavoriteAdsPagingSource(adRepository)
             }.flow.cachedIn(viewModelScope)
 
         fun getMyAdsData(): Flow<PagingData<Ad>> =
             Pager(config = getPagingConfig()) {
-                MyAdsPagingSource(adRepository, this)
+                MyAdsPagingSource(adRepository)
             }.flow.cachedIn(viewModelScope)
 
         private fun getPagingConfig(): PagingConfig = PagingConfig(pageSize = 2)
@@ -173,14 +176,9 @@ class FirebaseViewModel
 
         fun updateFilters(newFilters: Map<String, String>) {
             Timber.d("Filter updated VIEWMODEL  DO: ${_appState.value.filter}")
-            val updatedFilters = _appState.value.filter.toMutableMap()
-
-            newFilters.forEach { (key, value) ->
-                updatedFilters[key] = value
+            _appState.update { currentState ->
+                currentState.copy(filter = currentState.filter.toMutableMap().apply { putAll(newFilters) })
             }
-
-            _appState.value = _appState.value.copy(filter = updatedFilters)
-
             Timber.d("Filter updated VIEWMODEL  AFTER: ${_appState.value.filter}")
         }
 

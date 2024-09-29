@@ -17,6 +17,7 @@ import com.example.bulletin_board.dialogs.RcViewDialogSpinnerAdapter
 import com.example.bulletin_board.packroom.RemoteAdDataSource.Companion.CITY_FIELD
 import com.example.bulletin_board.packroom.RemoteAdDataSource.Companion.COUNTRY_FIELD
 import com.example.bulletin_board.packroom.RemoteAdDataSource.Companion.INDEX_FIELD
+import com.example.bulletin_board.packroom.RemoteAdDataSource.Companion.ORDER_BY_FIELD
 import com.example.bulletin_board.packroom.RemoteAdDataSource.Companion.PRICE_FROM_FIELD
 import com.example.bulletin_board.packroom.RemoteAdDataSource.Companion.PRICE_TO_FIELD
 import com.example.bulletin_board.packroom.RemoteAdDataSource.Companion.WITH_SEND_FIELD
@@ -219,6 +220,11 @@ class FilterFragment : BottomSheetDialogFragment() {
             }
             filters[PRICE_FROM_FIELD] = textViewPriceFrom.text.toString()
             filters[PRICE_TO_FIELD] = textViewPriceTo.text.toString()
+
+            if (filters[PRICE_FROM_FIELD]?.isNotEmpty() == true || filters[PRICE_TO_FIELD]?.isNotEmpty() == true) {
+                filters[ORDER_BY_FIELD] = SortOption.BY_PRICE_ASC.id
+            }
+
             viewModel.updateFilters(filters)
         }
     }

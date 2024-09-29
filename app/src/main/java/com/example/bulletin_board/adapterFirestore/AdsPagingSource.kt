@@ -4,7 +4,6 @@ import androidx.lifecycle.viewModelScope
 import androidx.paging.PagingSource
 import androidx.paging.PagingState
 import com.example.bulletin_board.model.Ad
-import com.example.bulletin_board.model.AdUpdateEvent
 import com.example.bulletin_board.packroom.AdRepository
 import com.example.bulletin_board.viewmodel.FirebaseViewModel
 import com.google.firebase.firestore.DocumentSnapshot
@@ -21,12 +20,6 @@ class AdsPagingSource(
         Timber.d("Paging: AdsPagingSource init")
         viewModel.viewModelScope.launch {
             viewModel.appState.drop(1).collectLatest { event ->
-                when (event.adEvent) {
-                    is AdUpdateEvent.FavUpdated -> {}
-                    is AdUpdateEvent.ViewCountUpdated -> {}
-                    is AdUpdateEvent.AdDeleted -> invalidate()
-                    is AdUpdateEvent.Initial -> {}
-                }
                 if (event.filter.isNotEmpty()) {
                     Timber.d("Paging: filter changed : ${event.filter}")
                     invalidate()

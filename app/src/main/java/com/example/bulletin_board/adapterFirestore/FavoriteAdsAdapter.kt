@@ -35,14 +35,12 @@ class FavoriteAdsAdapter(
     init {
         viewModel.viewModelScope.launch {
             viewModel.appState.drop(1).collectLatest { event ->
-                when (event.adEvent) {
-                    is AdUpdateEvent.FavUpdated -> {}
-                    is AdUpdateEvent.ViewCountUpdated ->
-                        updateViewCount(
-                            event.adEvent.viewData,
-                        )
-                    is AdUpdateEvent.AdDeleted -> {}
-                    is AdUpdateEvent.Initial -> {}
+                event.adEvent?.let { adEvent ->
+                    when (adEvent) {
+                        is AdUpdateEvent.FavUpdated -> refresh()
+                        is AdUpdateEvent.ViewCountUpdated -> updateViewCount(adEvent.viewData)
+                        is AdUpdateEvent.AdDeleted -> refresh()
+                    }
                 }
             }
         }

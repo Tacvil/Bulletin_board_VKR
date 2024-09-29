@@ -97,4 +97,7 @@
     <string name="camera_flash_button">camera flash button</string>
     <string name="lens_facing_button">lens facing button</string>
     <string name="ad_my_ads">My Ads</string>
+
+    <!-- Account -->
+    <string name="guest">Guest</string>
 </resources>
