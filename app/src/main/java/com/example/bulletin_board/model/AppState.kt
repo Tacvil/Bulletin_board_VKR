@@ -5,4 +5,5 @@ data class AppState(
     val filter: MutableMap<String, String> = mutableMapOf(),
     val minPrice: Int? = null,
     val maxPrice: Int? = null,
+    val searchResults: List<String> = emptyList(),
 )

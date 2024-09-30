@@ -26,7 +26,7 @@ class PushNotificationServices : FirebaseMessagingService() {
     override fun onNewToken(token: String) {
         super.onNewToken(token)
         firebaseViewModel.viewModelScope.launch {
-            firebaseViewModel.saveTokenDB(token)
+            firebaseViewModel.saveTokenFCM(token)
         }
         Log.d("NEW TOKEN", token)
     }

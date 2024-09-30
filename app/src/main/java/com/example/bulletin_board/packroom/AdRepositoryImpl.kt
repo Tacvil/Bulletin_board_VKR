@@ -35,7 +35,7 @@ class AdRepositoryImpl
             key: DocumentSnapshot?,
             limit: Long,
         ): Pair<List<Ad>, DocumentSnapshot?> {
-            val(ads, nextKey) = remoteAdDataSource.getMyAds(key, limit)
+            val (ads, nextKey) = remoteAdDataSource.getMyAds(key, limit)
             return ads to nextKey
         }
 
@@ -54,4 +54,7 @@ class AdRepositoryImpl
         override suspend fun getMinPrice(category: String?): Result<Int> = remoteAdDataSource.getMinPrice(category)
 
         override suspend fun getMaxPrice(category: String?): Result<Int> = remoteAdDataSource.getMaxPrice(category)
+
+        override suspend fun fetchSearchResults(inputSearchQuery: String): Result<List<String>> =
+            remoteAdDataSource.fetchSearchResults(inputSearchQuery)
     }

@@ -61,7 +61,7 @@ class AccountHelper(
                                     getFcmToken()
                                         .addOnSuccessListener { token ->
                                             accountHelperViewModel.viewModelScope.launch {
-                                                accountHelperViewModel.saveTokenDB(token)
+                                                accountHelperViewModel.saveTokenFCM(token)
                                             }
                                         }.addOnFailureListener { exception ->
                                             Log.d("Token", "Fetching FCM token failed", exception)
@@ -158,7 +158,7 @@ class AccountHelper(
                                     getFcmToken()
                                         .addOnSuccessListener { token ->
                                             accountHelperViewModel.viewModelScope.launch {
-                                                accountHelperViewModel.saveTokenDB(token)
+                                                accountHelperViewModel.saveTokenFCM(token)
                                             }
                                         }.addOnFailureListener { exception ->
                                             Log.d("Token", "Fetching FCM token failed", exception)
@@ -267,7 +267,7 @@ class AccountHelper(
                             getFcmToken()
                                 .addOnSuccessListener { token ->
                                     accountHelperViewModel.viewModelScope.launch {
-                                        accountHelperViewModel.saveTokenDB(token)
+                                        accountHelperViewModel.saveTokenFCM(token)
                                     }
                                 }.addOnFailureListener { exception ->
                                     Log.d("Token", "Fetching FCM token failed", exception)

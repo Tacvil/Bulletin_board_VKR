@@ -64,6 +64,8 @@ import com.example.bulletin_board.packroom.SortOption
 import com.example.bulletin_board.settings.SettingsActivity
 import com.example.bulletin_board.utils.BillingManager
 import com.example.bulletin_board.utils.BillingManager.Companion.REMOVE_ADS_PREF
+import com.example.bulletin_board.utils.SearchHelper
+import com.example.bulletin_board.utils.SearchUi
 import com.example.bulletin_board.utils.SortUtils.getSortOption
 import com.example.bulletin_board.utils.SortUtils.getSortOptionText
 import com.example.bulletin_board.viewmodel.FirebaseViewModel
@@ -85,7 +87,8 @@ import timber.log.Timber
 class MainActivity :
     AppCompatActivity(),
     OnNavigationItemSelectedListener,
-    AdItemClickListener {
+    AdItemClickListener,
+    SearchUi {
     private lateinit var textViewAccount: TextView
     private lateinit var imageViewAccount: ImageView
     private lateinit var binding: ActivityMainBinding
@@ -100,10 +103,11 @@ class MainActivity :
     private var pref: SharedPreferences? = null
     private var isPremiumUser: Boolean = false
     private var bManager: BillingManager? = null
+
     private val onItemSelectedListener: RcViewSearchSpinnerAdapter.OnItemSelectedListener? = null
     private var adapterSearch = RcViewSearchSpinnerAdapter(onItemSelectedListener)
+
     private lateinit var defPreferences: SharedPreferences
-    private var viewModelIsLoading = false
     private var lastClickTime: Long = 0
     private val doubleClickThreshold = 300 // Порог для определения двойного клика
 
@@ -122,6 +126,10 @@ class MainActivity :
     private var currentTabPosition: Int = 0
 
     private val filterFragment by lazy { FilterFragment() }
+
+    private val searchHelper by lazy {
+        SearchHelper(viewModel, this)
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         defPreferences = PreferenceManager.getDefaultSharedPreferences(this)
@@ -166,7 +174,7 @@ class MainActivity :
         initViewModel()
         init()
         onClickSelectOrderByFilter()
-        searchAdd()
+        searchHelper.initSearchAdd()
         setupBottomMenu()
     }
 
@@ -238,8 +246,7 @@ class MainActivity :
 
                         val db = FirebaseFirestore.getInstance()
                         val collectionReference = db.collection(DbManager.MAIN_NODE)
-                        val query =
-                            collectionReference.whereGreaterThanOrEqualTo("title", searchQuery)
+                        val query = collectionReference.whereGreaterThanOrEqualTo("title", searchQuery)
                         val spaceCount = searchQuery.count { it == ' ' }
                         Timber.tag("MActTextChanged").d("spaceCount = " + spaceCount)
                         val phraseBuilder = StringBuilder()
@@ -495,9 +502,9 @@ class MainActivity :
         }
 
         lifecycleScope.launch {
-            handleAdapterData(viewModel.getFavoriteAdsData(), favAdsAdapter)
-            handleAdapterData(viewModel.getHomeAdsData(), adsAdapter)
-            handleAdapterData(viewModel.getMyAdsData(), myAdsAdapter)
+            handleAdapterData(viewModel.favoriteAds, favAdsAdapter)
+            handleAdapterData(viewModel.homeAdsData, adsAdapter)
+            handleAdapterData(viewModel.myAds, myAdsAdapter)
         }
     }
 
@@ -627,11 +634,11 @@ class MainActivity :
                     }
                     R.id.id_my_ads -> {
                         switchAdapter(myAdsAdapter, 2)
-                        viewModel.getMyAdsData()
+                        viewModel.myAds
                     }
                     R.id.id_favs -> {
                         switchAdapter(favAdsAdapter, 1)
-                        viewModel.getFavoriteAdsData()
+                        viewModel.favoriteAds
                     }
                     R.id.id_home -> {
                         switchAdapter(adsAdapter, 0)
@@ -875,4 +882,56 @@ class MainActivity :
     }
 
     override fun isOwner(adUid: String): Boolean = adUid == mAuth.currentUser?.uid
+
+    override fun updateSearchResults(results: List<Pair<String, String>>) {
+        adapterSearch.updateAdapter(results)
+    }
+
+    override fun clearSearchResults() {
+        adapterSearch.clearAdapter()
+    }
+
+    override fun updateSearchBar(query: String) {
+        binding.mainContent.searchBar.setText(query)
+        binding.mainContent.searchBar.menu
+            .findItem(R.id.id_search)
+            .setIcon(R.drawable.ic_cancel)
+    }
+
+    override fun hideSearchView() {
+        binding.mainContent.searchViewMainContent.hide()
+    }
+
+    override fun addTextWatcher(textWatcher: TextWatcher) {
+        binding.mainContent.searchViewMainContent.editText
+            .addTextChangedListener(textWatcher)
+    }
+
+    override fun setSearchActionListener(listener: () -> Boolean) {
+        binding.mainContent.searchViewMainContent.editText.setOnEditorActionListener { _, _, _ ->
+            listener()
+        }
+    }
+
+    override fun setSearchBarClickListener(listener: View.OnClickListener) {
+        binding.mainContent.searchBar.setOnClickListener(listener)
+    }
+
+    override fun setToolbarClickListener(listener: View.OnClickListener) {
+        binding.mainContent.searchViewMainContent.toolbar
+            .setOnClickListener(listener)
+    }
+
+    override fun getQueryText(): String =
+        binding.mainContent.searchViewMainContent.editText.text
+            .toString()
+
+    override fun setQueryText(text: String) {
+        binding.mainContent.searchViewMainContent.editText
+            .setText(text)
+    }
+
+    override fun getSearchBarText(): String =
+        binding.mainContent.searchBar.text
+            .toString()
 }

@@ -42,6 +42,7 @@ class RemoteAdDataSource
             const val PRICE_FROM_FIELD = "price_from"
             const val PRICE_TO_FIELD = "price_to"
             const val ORDER_BY_FIELD = "orderBy"
+            const val TITLE_FIELD = "title"
             const val KEY_FIELD = "key"
             const val ADS_LIMIT = 2
         }
@@ -543,6 +544,24 @@ class RemoteAdDataSource
             }
             return query
         }
+
+        suspend fun fetchSearchResults(inputSearchQuery: String): Result<List<String>> =
+            try {
+                val query =
+                    firestore
+                        .collection(MAIN_COLLECTION)
+                        .whereGreaterThanOrEqualTo(TITLE_FIELD, inputSearchQuery)
+                val documents = query.get().await()
+
+                val results =
+                    documents.documents.map { document ->
+                        document.getString(TITLE_FIELD) ?: ""
+                    }
+
+                Result.Success(results)
+            } catch (e: Exception) {
+                Result.Error(e)
+            }
 
         fun saveToken(token: String) {
             if (auth.uid != null) {

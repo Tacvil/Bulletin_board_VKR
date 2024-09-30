@@ -4,26 +4,26 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
-import android.widget.PopupWindow
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.example.bulletin_board.R
 
-class RcViewSearchSpinnerAdapter(var onItemSelectedListener: OnItemSelectedListener? = null)
-    : RecyclerView.Adapter<RcViewSearchSpinnerAdapter.SpViewHolder>() {
-
+class RcViewSearchSpinnerAdapter(
+    var onItemSelectedListener: OnItemSelectedListener? = null,
+) : RecyclerView.Adapter<RcViewSearchSpinnerAdapter.SpViewHolder>() {
     private val mainList = ArrayList<Pair<String, String>>()
     private var onDataChangedListener: (() -> Unit)? = null
     private var hasData: Boolean = false
 
-    interface OnItemSelectedListener {
+    fun interface OnItemSelectedListener {
         fun onItemSelected(item: String)
     }
 
     class SpViewHolder(
         itemView: View,
-        var adapter: RcViewSearchSpinnerAdapter
-    ) : RecyclerView.ViewHolder(itemView), View.OnClickListener {
+        var adapter: RcViewSearchSpinnerAdapter,
+    ) : RecyclerView.ViewHolder(itemView),
+        View.OnClickListener {
         private var itemText = ""
 
         fun setData(item: Pair<String, String>) {
@@ -49,25 +49,29 @@ class RcViewSearchSpinnerAdapter(var onItemSelectedListener: OnItemSelectedListe
         }
     }
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): SpViewHolder {
+    override fun onCreateViewHolder(
+        parent: ViewGroup,
+        viewType: Int,
+    ): SpViewHolder {
         val view = LayoutInflater.from(parent.context).inflate(R.layout.spinner_list_item_search, parent, false)
         return SpViewHolder(view, this)
     }
 
-    override fun getItemCount(): Int {
-        return mainList.size
-    }
+    override fun getItemCount(): Int = mainList.size
 
-    override fun onBindViewHolder(holder: SpViewHolder, position: Int) {
+    override fun onBindViewHolder(
+        holder: SpViewHolder,
+        position: Int,
+    ) {
         holder.setData(mainList[position])
     }
 
-    fun updateAdapter(list: ArrayList<Pair<String, String>>) {
+    fun updateAdapter(newList: List<Pair<String, String>>) {
         mainList.clear()
-        mainList.addAll(list)
-        notifyDataChanged()
+        mainList.addAll(newList)
         notifyDataSetChanged()
     }
+
     fun clearAdapter() {
         mainList.clear()
         notifyDataSetChanged()
@@ -82,5 +86,4 @@ class RcViewSearchSpinnerAdapter(var onItemSelectedListener: OnItemSelectedListe
     private fun notifyDataChanged() {
         onDataChangedListener?.invoke()
     }
-
 }
