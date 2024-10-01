@@ -34,9 +34,7 @@ interface AdRepository {
 
     suspend fun saveToken(token: String)
 
-    suspend fun getMinPrice(category: String?): Result<Int>
-
-    suspend fun getMaxPrice(category: String?): Result<Int>
+    suspend fun getMinMaxPrice(category: String?): Result<Pair<Int?, Int?>>
 
     suspend fun fetchSearchResults(inputSearchQuery: String): Result<List<String>>
 }

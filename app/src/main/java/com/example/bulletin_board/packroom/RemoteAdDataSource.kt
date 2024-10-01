@@ -43,6 +43,7 @@ class RemoteAdDataSource
             const val PRICE_TO_FIELD = "price_to"
             const val ORDER_BY_FIELD = "orderBy"
             const val TITLE_FIELD = "title"
+            const val TITLE_LOWERCASE_FIELD = "titleLowercase"
             const val KEY_FIELD = "key"
             const val ADS_LIMIT = 2
         }
@@ -220,58 +221,50 @@ class RemoteAdDataSource
                 Pair(emptyList(), null)
             }
 
-        suspend fun getMinPrice(category: String?): Result<Int> =
+        suspend fun getMinMaxPrice(category: String?): Result<Pair<Int?, Int?>> =
             try {
                 val collectionReference = firestore.collection(MAIN_COLLECTION)
                 val query =
                     if (!category.isNullOrEmpty()) {
-                        collectionReference
-                            .whereEqualTo(CATEGORY_FIELD, category)
-                            .orderBy(PRICE_FIELD, Query.Direction.ASCENDING)
-                            .limit(1)
+                        collectionReference.whereEqualTo(CATEGORY_FIELD, category)
                     } else {
                         collectionReference
-                            .orderBy(PRICE_FIELD, Query.Direction.ASCENDING)
-                            .limit(1)
                     }
 
-                val snapshot = query.get().await()
-                if (snapshot.isEmpty) {
-                    Result.Error(Exception("Collection is empty"))
-                } else {
-                    val minPrice =
-                        snapshot.documents[0].getField<Int?>(PRICE_FIELD)?.toInt()
-                            ?: throw Exception("Price is null")
-                    Result.Success(minPrice)
-                }
-            } catch (e: Exception) {
-                Result.Error(e)
-            }
+                // Получаем минимальную и максимальную цены
+                val minSnapshot =
+                    query
+                        .orderBy(PRICE_FIELD, Query.Direction.ASCENDING)
+                        .limit(1)
+                        .get()
+                        .await()
+                val maxSnapshot =
+                    query
+                        .orderBy(PRICE_FIELD, Query.Direction.DESCENDING)
+                        .limit(1)
+                        .get()
+                        .await()
 
-        suspend fun getMaxPrice(category: String?): Result<Int> =
-            try {
-                val collectionReference = firestore.collection(MAIN_COLLECTION)
-                val query =
-                    if (!category.isNullOrEmpty()) {
-                        collectionReference
-                            .whereEqualTo(CATEGORY_FIELD, category)
-                            .orderBy(PRICE_FIELD, Query.Direction.DESCENDING)
-                            .limit(1)
+                val minPrice =
+                    if (minSnapshot.isEmpty) {
+                        null
                     } else {
-                        collectionReference
-                            .orderBy(PRICE_FIELD, Query.Direction.DESCENDING)
-                            .limit(1)
+                        minSnapshot.documents[0]
+                            .getField<Int?>(
+                                PRICE_FIELD,
+                            )?.toInt()
+                    }
+                val maxPrice =
+                    if (maxSnapshot.isEmpty) {
+                        null
+                    } else {
+                        maxSnapshot.documents[0]
+                            .getField<Int?>(
+                                PRICE_FIELD,
+                            )?.toInt()
                     }
 
-                val snapshot = query.get().await()
-                if (snapshot.isEmpty) {
-                    Result.Error(Exception("Collection is empty"))
-                } else {
-                    val maxPrice =
-                        snapshot.documents[0].getField<Int?>(PRICE_FIELD)?.toInt()
-                            ?: throw Exception("Price is null")
-                    Result.Success(maxPrice)
-                }
+                Result.Success(minPrice to maxPrice)
             } catch (e: Exception) {
                 Result.Error(e)
             }
@@ -550,7 +543,7 @@ class RemoteAdDataSource
                 val query =
                     firestore
                         .collection(MAIN_COLLECTION)
-                        .whereGreaterThanOrEqualTo(TITLE_FIELD, inputSearchQuery)
+                        .whereGreaterThanOrEqualTo(TITLE_LOWERCASE_FIELD, inputSearchQuery)
                 val documents = query.get().await()
 
                 val results =

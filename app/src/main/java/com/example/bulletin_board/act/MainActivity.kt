@@ -1,18 +1,14 @@
 package com.example.bulletin_board.act
 
 import android.Manifest
-import android.app.Activity
 import android.app.NotificationChannel
 import android.app.NotificationManager
-import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import android.os.Parcelable
-import android.speech.RecognizerIntent
-import android.text.Editable
 import android.text.SpannableString
 import android.text.TextWatcher
 import android.text.style.ForegroundColorSpan
@@ -53,17 +49,19 @@ import com.example.bulletin_board.dialoghelper.DialogHelper
 import com.example.bulletin_board.dialogs.DialogSpinnerHelper
 import com.example.bulletin_board.dialogs.RcViewDialogSpinnerAdapter
 import com.example.bulletin_board.dialogs.RcViewSearchSpinnerAdapter
+import com.example.bulletin_board.domain.VoiceRecognitionHandler
+import com.example.bulletin_board.domain.VoiceRecognitionListener
 import com.example.bulletin_board.model.Ad
 import com.example.bulletin_board.model.AdItemClickListener
-import com.example.bulletin_board.model.DbManager
 import com.example.bulletin_board.model.FavData
 import com.example.bulletin_board.model.ViewData
 import com.example.bulletin_board.packroom.RemoteAdDataSource.Companion.CATEGORY_FIELD
+import com.example.bulletin_board.packroom.RemoteAdDataSource.Companion.KEYWORDS_FIELD
 import com.example.bulletin_board.packroom.RemoteAdDataSource.Companion.ORDER_BY_FIELD
 import com.example.bulletin_board.packroom.SortOption
 import com.example.bulletin_board.settings.SettingsActivity
 import com.example.bulletin_board.utils.BillingManager
-import com.example.bulletin_board.utils.BillingManager.Companion.REMOVE_ADS_PREF
+import com.example.bulletin_board.utils.SearchActions
 import com.example.bulletin_board.utils.SearchHelper
 import com.example.bulletin_board.utils.SearchUi
 import com.example.bulletin_board.utils.SortUtils.getSortOption
@@ -74,7 +72,6 @@ import com.google.android.gms.common.api.ApiException
 import com.google.android.material.navigation.NavigationView.OnNavigationItemSelectedListener
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.ktx.auth
-import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.ktx.Firebase
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.Flow
@@ -88,7 +85,9 @@ class MainActivity :
     AppCompatActivity(),
     OnNavigationItemSelectedListener,
     AdItemClickListener,
-    SearchUi {
+    SearchUi,
+    SearchActions,
+    VoiceRecognitionListener {
     private lateinit var textViewAccount: TextView
     private lateinit var imageViewAccount: ImageView
     private lateinit var binding: ActivityMainBinding
@@ -96,12 +95,8 @@ class MainActivity :
     private val dialog = DialogSpinnerHelper()
     val mAuth = Firebase.auth
     lateinit var googleSignInLauncher: ActivityResultLauncher<Intent>
-    private lateinit var filterLauncher: ActivityResultLauncher<Intent>
     val viewModel: FirebaseViewModel by viewModels()
-    private var clearUpdate: Boolean = false
 
-    private var pref: SharedPreferences? = null
-    private var isPremiumUser: Boolean = false
     private var bManager: BillingManager? = null
 
     private val onItemSelectedListener: RcViewSearchSpinnerAdapter.OnItemSelectedListener? = null
@@ -109,7 +104,10 @@ class MainActivity :
 
     private lateinit var defPreferences: SharedPreferences
     private var lastClickTime: Long = 0
-    private val doubleClickThreshold = 300 // Порог для определения двойного клика
+    private val doubleClickThreshold = 300
+
+    private lateinit var voiceRecognitionHandler: VoiceRecognitionHandler
+    private lateinit var voiceRecognitionLauncher: ActivityResultLauncher<Intent>
 
     private val favAdsAdapter by lazy {
         FavoriteAdsAdapter(viewModel)
@@ -128,7 +126,7 @@ class MainActivity :
     private val filterFragment by lazy { FilterFragment() }
 
     private val searchHelper by lazy {
-        SearchHelper(viewModel, this)
+        SearchHelper(this, this)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -137,8 +135,6 @@ class MainActivity :
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        pref = getSharedPreferences(BillingManager.MAIN_PREF, MODE_PRIVATE)
-        isPremiumUser = pref?.getBoolean(REMOVE_ADS_PREF, false)!!
 //        val toolbar: Toolbar = findViewById(R.id.toolbar)
 //        setSupportActionBar(toolbar)
 
@@ -153,6 +149,12 @@ class MainActivity :
             val notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
             notificationManager.createNotificationChannel(mChannel)
         }
+
+        voiceRecognitionLauncher =
+            registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+                voiceRecognitionHandler.handleRecognitionResult(result)
+            }
+        voiceRecognitionHandler = VoiceRecognitionHandler(this, voiceRecognitionLauncher)
 
         if (ContextCompat.checkSelfPermission(
                 this,
@@ -203,135 +205,6 @@ class MainActivity :
         }
     }
 
-    private fun searchAdd() {
-        binding.mainContent.searchViewMainContent.editText.addTextChangedListener(
-            object :
-                TextWatcher {
-                override fun beforeTextChanged(
-                    s: CharSequence?,
-                    start: Int,
-                    count: Int,
-                    after: Int,
-                ) {
-                }
-
-                override fun onTextChanged(
-                    s: CharSequence?,
-                    start: Int,
-                    before: Int,
-                    count: Int,
-                ) {
-                    var searchQuery = s.toString()
-                    if (searchQuery.isEmpty()) {
-                        adapterSearch.clearAdapter()
-                        adapterSearch.setOnDataChangedListener {
-                            adapterSearch.clearAdapter()
-                        }
-                    } else {
-                        adapterSearch.setOnDataChangedListener {
-                        }
-                    }
-                    Timber
-                        .tag("MActTextChanged")
-                        .d("searchQuery = " + searchQuery + ", isEmpty = " + searchQuery.isEmpty())
-                    if (searchQuery.trim().isNotEmpty()) {
-                        // Убираем пробелы в начале строки
-                        searchQuery = searchQuery.trimStart()
-
-                        // Убираем двойные, тройные и т.д. пробелы во всей строке
-                        searchQuery = searchQuery.replace(Regex("\\s{2,}"), " ")
-                        Timber
-                            .tag("MActTextChanged")
-                            .d("searchQueryAfterValid = " + searchQuery + "}")
-
-                        val db = FirebaseFirestore.getInstance()
-                        val collectionReference = db.collection(DbManager.MAIN_NODE)
-                        val query = collectionReference.whereGreaterThanOrEqualTo("title", searchQuery)
-                        val spaceCount = searchQuery.count { it == ' ' }
-                        Timber.tag("MActTextChanged").d("spaceCount = " + spaceCount)
-                        val phraseBuilder = StringBuilder()
-                        val results = mutableListOf<String>()
-                        var pairsResultSearch: ArrayList<Pair<String, String>>
-                        query.get().addOnSuccessListener { documents ->
-                            for (document in documents) {
-                                val title = document.getString("title") ?: ""
-                                Timber.tag("MActTextChanged").d("title = " + title)
-                                val words = title.split("\\s+".toRegex())
-                                Timber.tag("MActTextChanged").d("words = " + words)
-                                when {
-                                    spaceCount == 0 -> {
-                                        val phrase = words[spaceCount]
-                                        Timber.tag("MActTextChanged").d("phrase = " + phrase)
-                                        results.add(phrase)
-                                        Timber.tag("MActTextChanged").d("results = " + results)
-                                    }
-
-                                    spaceCount > 0 -> {
-                                        phraseBuilder
-                                            .append(searchQuery.substringBeforeLast(' '))
-                                            .append(" ")
-                                        words.getOrNull(spaceCount)?.let {
-                                            phraseBuilder.append(it)
-                                        }
-                                        val phrase = phraseBuilder.toString()
-                                        phraseBuilder.clear()
-                                        Timber.tag("MActTextChanged").d("phrase = " + phrase)
-                                        results.add(phrase)
-                                    }
-                                }
-                            }
-                            pairsResultSearch = ArrayList(results.map { Pair(it, "search") })
-                            Timber
-                                .tag("MActTextChanged")
-                                .d("pairsResultSearch = " + pairsResultSearch)
-                            adapterSearch.updateAdapter(pairsResultSearch)
-                        }
-                    }
-                }
-
-                override fun afterTextChanged(s: Editable?) {
-                }
-            },
-        )
-        // Нажатие на ЛУПУ
-        binding.mainContent.searchViewMainContent.editText.setOnEditorActionListener { v, actionId, event ->
-            val querySearch: String =
-                binding.mainContent.searchViewMainContent.text
-                    .toString()
-            if (querySearch.trim().isNotEmpty()) {
-                binding.mainContent.searchBar.setText(querySearch)
-                binding.mainContent.searchBar.menu
-                    .findItem(R.id.id_search)
-                    .setIcon(R.drawable.ic_cancel)
-
-                val titleValidate = queryValidate(querySearch)
-
-                viewModel.addToFilter("keyWords", titleValidate)
-                clearUpdate = true
-            }
-            binding.mainContent.searchViewMainContent.hide()
-
-            false
-        }
-
-        binding.mainContent.searchBar.setOnClickListener {
-            val textSearchBar =
-                binding.mainContent.searchBar.text
-                    .toString()
-            binding.mainContent.searchViewMainContent.editText
-                .setText(textSearchBar)
-        }
-        binding.mainContent.searchViewMainContent.toolbar.setOnClickListener {
-            Timber.tag("MenuClick").d("CLICK - " + it)
-        }
-    }
-
-    private fun queryValidate(query: String): String {
-        val validateData = query.split(" ").joinToString("-")
-        Timber.tag("MainActQueryValidate").d("validateData = " + validateData)
-        return validateData
-    }
-
     private fun onClickSelectOrderByFilter() =
         with(binding) {
             mainContent.autoComplete.setOnClickListener {
@@ -363,7 +236,6 @@ class MainActivity :
                                 .show()
 
                             viewModel.addToFilter("orderBy", getSortOption(this@MainActivity, item))
-                            clearUpdate = true
                         }
                     }
 
@@ -401,7 +273,6 @@ class MainActivity :
                     // Текущая иконка НЕ является ic_search
                     binding.mainContent.searchBar.clearText()
                     viewModel.addToFilter("keyWords", "")
-                    clearUpdate = true
                     item.setIcon(R.drawable.ic_search)
                 } else {
                     binding.mainContent.searchBar.performClick()
@@ -410,55 +281,13 @@ class MainActivity :
             }
 
             R.id.id_voice -> {
-                val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
-                intent.putExtra(
-                    RecognizerIntent.EXTRA_LANGUAGE_MODEL,
-                    RecognizerIntent.LANGUAGE_MODEL_FREE_FORM,
-                )
-                intent.putExtra(RecognizerIntent.EXTRA_PROMPT, "Speak something")
-
-                try {
-                    voiceRecognitionLauncher.launch(intent)
-                } catch (e: ActivityNotFoundException) {
-                    // Обработка ситуации, когда нет подходящей активности
-                    Toast
-                        .makeText(
-                            this,
-                            "Голосовое распознавание не поддерживается на вашем устройстве",
-                            Toast.LENGTH_SHORT,
-                        ).show()
-                }
+                voiceRecognitionHandler.startVoiceRecognition()
                 return true
             }
         }
 
         return super.onOptionsItemSelected(item)
     }
-
-    private val voiceRecognitionLauncher: ActivityResultLauncher<Intent> =
-        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-            if (result.resultCode == Activity.RESULT_OK) {
-                val data: Intent? = result.data
-                val results = data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)
-
-                if (!results.isNullOrEmpty()) {
-                    val spokenText = results[0]
-                    Timber.tag("VoiceSearch").d("Распознанный текст: " + spokenText)
-
-                    binding.mainContent.searchBar.setText(spokenText)
-                    binding.mainContent.searchBar.menu
-                        .findItem(R.id.id_search)
-                        .setIcon(R.drawable.ic_cancel)
-
-                    val validateText = queryValidate(spokenText)
-
-                    viewModel.addToFilter("keyWords", validateText)
-                    clearUpdate = true
-                } else {
-                    Timber.tag("VoiceSearch").d("Распознавание речи не дало результатов.")
-                }
-            }
-        }
 
     override fun onResume() {
         super.onResume()
@@ -677,7 +506,6 @@ class MainActivity :
     }
 
     override fun onNavigationItemSelected(item: MenuItem): Boolean {
-        clearUpdate = true
         when (item.itemId) {
             R.id.id_my_ads -> {
                 Toast.makeText(this, "pressed my ads", Toast.LENGTH_SHORT).show()
@@ -870,7 +698,6 @@ class MainActivity :
         viewModel.viewModelScope.launch {
             viewModel.deleteAd(adKey)
         }
-        clearUpdate = true
     }
 
     override fun onEditClick(ad: Ad) {
@@ -882,10 +709,6 @@ class MainActivity :
     }
 
     override fun isOwner(adUid: String): Boolean = adUid == mAuth.currentUser?.uid
-
-    override fun updateSearchResults(results: List<Pair<String, String>>) {
-        adapterSearch.updateAdapter(results)
-    }
 
     override fun clearSearchResults() {
         adapterSearch.clearAdapter()
@@ -908,18 +731,12 @@ class MainActivity :
     }
 
     override fun setSearchActionListener(listener: () -> Boolean) {
-        binding.mainContent.searchViewMainContent.editText.setOnEditorActionListener { _, _, _ ->
-            listener()
-        }
+        binding.mainContent.searchViewMainContent.editText
+            .setOnEditorActionListener { _, _, _ -> listener() }
     }
 
     override fun setSearchBarClickListener(listener: View.OnClickListener) {
         binding.mainContent.searchBar.setOnClickListener(listener)
-    }
-
-    override fun setToolbarClickListener(listener: View.OnClickListener) {
-        binding.mainContent.searchViewMainContent.toolbar
-            .setOnClickListener(listener)
     }
 
     override fun getQueryText(): String =
@@ -934,4 +751,42 @@ class MainActivity :
     override fun getSearchBarText(): String =
         binding.mainContent.searchBar.text
             .toString()
+
+    override fun addToFilter(
+        key: String,
+        value: String,
+    ) {
+        viewModel.addToFilter(key, value)
+    }
+
+    override fun handleSearchQuery(query: String) {
+        lifecycleScope.launch {
+            viewModel.fetchSearchResults(query)
+            viewModel.appState.collectLatest { appState ->
+                if (appState.searchResults.isNotEmpty()) {
+                    val formattedResults = viewModel.formatSearchResults(appState.searchResults, query)
+                    adapterSearch.updateAdapter(formattedResults)
+                }
+            }
+        }
+    }
+
+    override fun onVoiceRecognitionResult(spokenText: String) {
+        binding.mainContent.searchBar.setText(spokenText)
+        binding.mainContent.searchBar.menu
+            .findItem(R.id.id_search)
+            .setIcon(R.drawable.ic_cancel)
+
+        val validateText = spokenText.split(" ").joinToString("-")
+        Timber.d("validate text = $validateText")
+        viewModel.addToFilter(KEYWORDS_FIELD, validateText)
+    }
+
+    override fun onVoiceRecognitionError(message: String) {
+        Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
+    }
+
+    private fun onVoiceButtonClick() {
+        voiceRecognitionHandler.startVoiceRecognition()
+    }
 }

@@ -51,9 +51,7 @@ class AdRepositoryImpl
             remoteAdDataSource.saveToken(token)
         }
 
-        override suspend fun getMinPrice(category: String?): Result<Int> = remoteAdDataSource.getMinPrice(category)
-
-        override suspend fun getMaxPrice(category: String?): Result<Int> = remoteAdDataSource.getMaxPrice(category)
+        override suspend fun getMinMaxPrice(category: String?): Result<Pair<Int?, Int?>> = remoteAdDataSource.getMinMaxPrice(category)
 
         override suspend fun fetchSearchResults(inputSearchQuery: String): Result<List<String>> =
             remoteAdDataSource.fetchSearchResults(inputSearchQuery)

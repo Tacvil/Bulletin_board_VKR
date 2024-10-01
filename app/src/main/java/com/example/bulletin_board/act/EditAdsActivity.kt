@@ -248,6 +248,7 @@ class EditAdsActivity :
                         .document()
                         .id,
                     textViewTitle.text.toString(),
+                    textViewTitle.text.toString().lowercase(),
                     createKeyWords(textViewTitle.text.toString()),
                     textViewSelectCountry.text.toString(),
                     textViewSelectCity.text.toString(),

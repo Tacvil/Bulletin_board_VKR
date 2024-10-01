@@ -3,19 +3,12 @@ package com.example.bulletin_board.utils
 import android.text.Editable
 import android.text.TextWatcher
 import android.view.View
-import androidx.activity.result.launch
-import androidx.lifecycle.viewModelScope
-import com.example.bulletin_board.viewmodel.FirebaseViewModel
-import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.launch
+import com.example.bulletin_board.packroom.RemoteAdDataSource.Companion.KEYWORDS_FIELD
 import timber.log.Timber
 import kotlin.text.isNotEmpty
-import kotlin.text.split
 import kotlin.text.trim
 
 interface SearchUi {
-    fun updateSearchResults(results: List<Pair<String, String>>)
-
     fun clearSearchResults()
 
     fun updateSearchBar(query: String)
@@ -28,8 +21,6 @@ interface SearchUi {
 
     fun setSearchBarClickListener(listener: View.OnClickListener)
 
-    fun setToolbarClickListener(listener: View.OnClickListener)
-
     fun getQueryText(): String
 
     fun setQueryText(text: String)
@@ -37,8 +28,17 @@ interface SearchUi {
     fun getSearchBarText(): String
 }
 
+interface SearchActions {
+    fun addToFilter(
+        key: String,
+        value: String,
+    )
+
+    fun handleSearchQuery(query: String) // Добавляем функцию
+}
+
 class SearchHelper(
-    private val viewModel: FirebaseViewModel,
+    private val searchActions: SearchActions,
     private val searchUi: SearchUi,
 ) {
     fun initSearchAdd() {
@@ -62,13 +62,12 @@ class SearchHelper(
                 before: Int,
                 count: Int,
             ) {
-                var inputSearchQuery = s.toString()
+                val inputSearchQuery = s.toString().trimStart().replace(Regex("\\s{2,}"), " ")
                 Timber.tag("MActTextChanged").d("searchQuery = $inputSearchQuery, isEmpty = ${inputSearchQuery.isEmpty()}")
 
                 if (inputSearchQuery.isNotEmpty()) {
-                    inputSearchQuery = inputSearchQuery.trimStart().replace(Regex("\\s{2,}"), " ")
                     Timber.tag("MActTextChanged").d("searchQueryAfterValid = $inputSearchQuery")
-                    handleSearchQuery(inputSearchQuery)
+                    searchActions.handleSearchQuery(inputSearchQuery)
                 } else {
                     searchUi.clearSearchResults()
                 }
@@ -77,40 +76,17 @@ class SearchHelper(
             override fun afterTextChanged(s: Editable?) {}
         }
 
-    private fun handleSearchQuery(query: String) {
-        if (query.isEmpty()) {
-            searchUi.clearSearchResults()
-            return
-        }
-
-        Timber.d("searchQuery = $query")
-        viewModel.viewModelScope.launch {
-            viewModel.fetchSearchResults(query)
-            viewModel.appState.collectLatest { appState ->
-                if (appState.searchResults.isNotEmpty()) {
-                    val formattedResults = viewModel.formatSearchResults(appState.searchResults, query)
-                    searchUi.updateSearchResults(formattedResults)
-                }
-            }
-        }
-    }
-
     private fun setupSearchActionListener() {
         searchUi.setSearchActionListener {
             val querySearch = searchUi.getQueryText().trim()
             if (querySearch.isNotEmpty()) {
                 searchUi.updateSearchBar(querySearch)
-                viewModel.addToFilter("keyWords", validateQuery(querySearch))
+                searchActions.addToFilter(KEYWORDS_FIELD, querySearch.split(" ").joinToString("-"))
             }
             searchUi.hideSearchView()
             false
         }
     }
-
-    private fun validateQuery(query: String): String =
-        query.split(" ").joinToString("-").also {
-            Timber.d("validateData = $it")
-        }
 
     private fun setupSearchBarClickListener() {
         searchUi.setSearchBarClickListener {

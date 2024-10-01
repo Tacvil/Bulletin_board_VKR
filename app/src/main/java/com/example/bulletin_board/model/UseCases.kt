@@ -12,8 +12,7 @@ import com.example.bulletin_board.useCase.filters.ClearFiltersUseCase
 import com.example.bulletin_board.useCase.filters.GetFilterValueUseCase
 import com.example.bulletin_board.useCase.filters.RemoveFromFilterUseCase
 import com.example.bulletin_board.useCase.filters.UpdateFiltersUseCase
-import com.example.bulletin_board.useCase.priceFilters.GetMaxPriceUseCase
-import com.example.bulletin_board.useCase.priceFilters.GetMinPriceUseCase
+import com.example.bulletin_board.useCase.priceFilters.GetMinMaxPriceUseCase
 import com.example.bulletin_board.useCase.search.FormatSearchResultsUseCase
 import com.example.bulletin_board.useCase.search.GetSearchResultsUseCase
 import com.example.bulletin_board.useCase.tokenManagement.SaveTokenUseCase
@@ -38,8 +37,7 @@ sealed class UseCases {
     ) : UseCases()
 
     data class PriceFilters(
-        val getMinPriceUseCase: GetMinPriceUseCase,
-        val getMaxPriceUseCase: GetMaxPriceUseCase,
+        val getMinMaxPriceUseCase: GetMinMaxPriceUseCase
     ) : UseCases()
 
     data class TokenManagement(

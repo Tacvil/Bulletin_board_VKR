@@ -29,7 +29,12 @@ import javax.inject.Inject
 class FirebaseViewModel
     @Inject
     constructor(
-        private val useCases: UseCases, // переделать
+        private val useCasesDataRetrieval: UseCases.DataRetrieval,
+        private val useCasesDataUpdate: UseCases.DataUpdate,
+        private val useCasesTokenManagement: UseCases.TokenManagement,
+        private val useCasesFilters: UseCases.Filters,
+        private val useCasesSearch: UseCases.Search,
+        private val useCasesPriceFilters: UseCases.PriceFilters,
     ) : ViewModel() {
         init {
             Timber.d("ViewModel created: $this")
@@ -48,213 +53,113 @@ class FirebaseViewModel
                 .map { it.filter }
                 .filter { it.isNotEmpty() }
                 .flatMapLatest { currentFilters ->
-                    when (useCases) {
-                        is UseCases.DataRetrieval -> useCases.getHomeAdsUseCase(currentFilters)
-                        else -> throw IllegalStateException("UseCases should be of type DataRetrieval")
-                    }
+                    useCasesDataRetrieval.getHomeAdsUseCase(currentFilters)
                 }.cachedIn(viewModelScope)
 
         val favoriteAds: Flow<PagingData<Ad>> =
-            when (useCases) {
-                is UseCases.DataRetrieval -> useCases.getFavoriteAdsUseCase().cachedIn(viewModelScope)
-                else -> throw IllegalStateException("UseCases should be of type DataRetrieval")
-            }
+            useCasesDataRetrieval.getFavoriteAdsUseCase().cachedIn(viewModelScope)
 
         val myAds: Flow<PagingData<Ad>> =
-            when (useCases) {
-                is UseCases.DataRetrieval -> useCases.getMyAdsUseCase().cachedIn(viewModelScope)
-                else -> throw IllegalStateException("UseCases should be of type DataRetrieval")
-            }
+            useCasesDataRetrieval.getMyAdsUseCase().cachedIn(viewModelScope)
 
         suspend fun onFavClick(favData: FavData) {
-            when (useCases) {
-                is UseCases.DataUpdate -> {
-                    when (val result = useCases.updateFavoriteAdUseCase(favData)) {
-                        is Result.Success -> {
-                            _appState.value =
-                                _appState.value.copy(adEvent = AdUpdateEvent.FavUpdated(result.data))
-                        }
-
-                        is Result.Error -> {
-                            Timber.e(result.exception, "Error updating favorites: ${favData.key}")
-                        }
-                    }
+            when (val result = useCasesDataUpdate.updateFavoriteAdUseCase(favData)) {
+                is Result.Success -> {
+                    _appState.value =
+                        _appState.value.copy(adEvent = AdUpdateEvent.FavUpdated(result.data))
                 }
 
-                else -> throw IllegalStateException("UseCases should be of type DataUpdate")
+                is Result.Error -> {
+                    Timber.e(result.exception, "Error updating favorites: ${favData.key}")
+                }
             }
         }
 
         suspend fun adViewed(viewData: ViewData) {
-            when (useCases) {
-                is UseCases.DataUpdate -> {
-                    when (val result = useCases.adViewedUseCase(viewData)) {
-                        is Result.Success -> {
-                            _appState.value =
-                                _appState.value.copy(adEvent = AdUpdateEvent.ViewCountUpdated(result.data))
-                        }
-
-                        is Result.Error -> {
-                            Timber.e(
-                                result.exception,
-                                "Error updating views counter for ad: ${viewData.key}",
-                            )
-                        }
-                    }
+            when (val result = useCasesDataUpdate.adViewedUseCase(viewData)) {
+                is Result.Success -> {
+                    _appState.value =
+                        _appState.value.copy(adEvent = AdUpdateEvent.ViewCountUpdated(result.data))
                 }
 
-                else -> throw IllegalStateException("UseCases should be of type DataUpdate")
+                is Result.Error -> {
+                    Timber.e(result.exception, "Error updating views counter for ad: ${viewData.key}")
+                }
             }
         }
 
-        suspend fun insertAd(ad: Ad): Boolean =
-            when (useCases) {
-                is UseCases.DataUpdate -> useCases.insertAdUseCase(ad)
-                else -> throw IllegalStateException("UseCases should be of type DataUpdate")
-            }
+        suspend fun insertAd(ad: Ad): Boolean = useCasesDataUpdate.insertAdUseCase(ad)
 
         suspend fun deleteAd(adKey: String) {
-            when (useCases) {
-                is UseCases.DataUpdate -> {
-                    useCases.deleteAdUseCase(adKey)
-                    _appState.value = _appState.value.copy(adEvent = AdUpdateEvent.AdDeleted)
-                }
-
-                else -> throw IllegalStateException("UseCases should be of type DataUpdate")
-            }
+            useCasesDataUpdate.deleteAdUseCase(adKey)
+            _appState.value = _appState.value.copy(adEvent = AdUpdateEvent.AdDeleted)
         }
 
-        suspend fun getMinPrice() {
+        suspend fun getMinMaxPrice() {
             val category = appState.value.filter[CATEGORY_FIELD]
-            when (useCases) {
-                is UseCases.PriceFilters -> {
-                    when (val result = useCases.getMinPriceUseCase(category)) {
-                        is Result.Success -> {
-                            _appState.value = _appState.value.copy(minPrice = result.data)
-                        }
-
-                        is Result.Error -> {
-                            Timber.e(result.exception, "Error getting min price")
-                        }
-                    }
+            when (val result = useCasesPriceFilters.getMinMaxPriceUseCase(category)) {
+                is Result.Success -> {
+                    _appState.value = _appState.value.copy(minMaxPrice = result.data)
                 }
 
-                else -> throw IllegalStateException("UseCases should be of type PriceFilters")
-            }
-        }
-
-        suspend fun getMaxPrice() {
-            val category = appState.value.filter[CATEGORY_FIELD]
-            when (useCases) {
-                is UseCases.PriceFilters -> {
-                    when (val result = useCases.getMaxPriceUseCase(category)) {
-                        is Result.Success -> {
-                            _appState.value = _appState.value.copy(maxPrice = result.data)
-                        }
-
-                        is Result.Error -> {
-                            Timber.e(result.exception, "Error getting max price")
-                        }
-                    }
+                is Result.Error -> {
+                    Timber.e(result.exception, "Error getting minMax price")
                 }
-
-                else -> throw IllegalStateException("UseCases should be of type PriceFilters")
             }
         }
 
         suspend fun fetchSearchResults(inputSearchQuery: String) {
-            when (useCases) {
-                is UseCases.Search -> {
-                    when (val result = useCases.getSearchResultsUseCase(inputSearchQuery)) {
-                        is Result.Success -> {
-                            _appState.value = _appState.value.copy(searchResults = result.data)
-                        }
-
-                        is Result.Error -> {
-                            Timber.e(result.exception, "Error fetching search results")
-                            _appState.value = _appState.value.copy(searchResults = emptyList())
-                        }
-                    }
+            when (val result = useCasesSearch.getSearchResultsUseCase(inputSearchQuery)) {
+                is Result.Success -> {
+                    _appState.value = _appState.value.copy(searchResults = result.data)
                 }
 
-                else -> throw IllegalStateException("UseCases should be of type Search")
+                is Result.Error -> {
+                    Timber.e(result.exception, "Error fetching search results")
+                    _appState.value = _appState.value.copy(searchResults = emptyList())
+                }
             }
         }
 
         suspend fun saveTokenFCM(token: String) {
-            when (useCases) {
-                is UseCases.TokenManagement -> useCases.saveTokenUseCase(token)
-                else -> throw IllegalStateException("UseCases should be of type TokenManagement")
-            }
+            useCasesTokenManagement.saveTokenUseCase(token)
         }
 
         fun formatSearchResults(
             results: List<String>,
             inputSearchQuery: String,
-        ): List<Pair<String, String>> =
-            when (useCases) {
-                is UseCases.Search -> useCases.formatSearchResultsUseCase(results, inputSearchQuery)
-                else -> throw IllegalStateException("UseCases should be of type Search")
-            }
+        ): List<Pair<String, String>> = useCasesSearch.formatSearchResultsUseCase(results, inputSearchQuery)
 
         fun addToFilter(
             key: String,
             value: String,
         ) {
-            when (useCases) {
-                is UseCases.Filters -> {
-                    _appState.value =
-                        _appState.value.copy(
-                            filter = useCases.addToFilterUseCase(appState.value.filter, key, value),
-                        )
-                }
-
-                else -> throw IllegalStateException("UseCases should be of type Filters")
-            }
+            _appState.value =
+                _appState.value.copy(
+                    filter = useCasesFilters.addToFilterUseCase(appState.value.filter, key, value),
+                )
         }
 
-        fun getFilterValue(key: String): String? =
-            when (useCases) {
-                is UseCases.Filters -> useCases.getFilterValueUseCase(appState.value.filter, key)
-                else -> throw IllegalStateException("UseCases should be of type Filters")
-            }
+        fun getFilterValue(key: String): String? = useCasesFilters.getFilterValueUseCase(appState.value.filter, key)
 
         fun updateFilters(newFilters: Map<String, String>) {
             Timber.d("Filter updated VIEWMODEL  DO: ${_appState.value.filter}")
-            when (useCases) {
-                is UseCases.Filters -> {
-                    _appState.update { currentState ->
-                        currentState.copy(
-                            filter = useCases.updateFiltersUseCase(currentState.filter, newFilters),
-                        )
-                    }
-                }
-
-                else -> throw IllegalStateException("UseCases should be of type Filters")
+            _appState.update { currentState ->
+                currentState.copy(
+                    filter = useCasesFilters.updateFiltersUseCase(currentState.filter, newFilters),
+                )
             }
             Timber.d("Filter updated VIEWMODEL  AFTER: ${_appState.value.filter}")
         }
 
         fun removeFromFilter(key: String) {
-            when (useCases) {
-                is UseCases.Filters -> {
-                    _appState.value =
-                        _appState.value.copy(
-                            filter = useCases.removeFromFilterUseCase(appState.value.filter, key),
-                        )
-                }
-
-                else -> throw IllegalStateException("UseCases should be of type Filters")
-            }
+            _appState.value =
+                _appState.value.copy(
+                    filter = useCasesFilters.removeFromFilterUseCase(appState.value.filter, key),
+                )
         }
 
         fun clearFilters() {
-            when (useCases) {
-                is UseCases.Filters -> {
-                    _appState.value = _appState.value.copy(filter = useCases.clearFiltersUseCase())
-                }
-
-                else -> throw IllegalStateException("UseCases should be of type Filters")
-            }
+            _appState.value = _appState.value.copy(filter = useCasesFilters.clearFiltersUseCase())
         }
     }

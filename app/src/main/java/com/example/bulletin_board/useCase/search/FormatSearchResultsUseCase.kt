@@ -12,14 +12,12 @@ class FormatSearchResultsUseCase
             val formattedResults = mutableListOf<Pair<String, String>>()
             val spaceCount = inputSearchQuery.count { it == ' ' }
 
-            for (title in results) {
+            results.forEach { title ->
                 val words = title.split("\\s+".toRegex())
-
                 when {
                     spaceCount == 0 -> formattedResults.add(Pair(words[spaceCount], "search"))
                     spaceCount > 0 -> {
-                        val phraseBuilder = StringBuilder()
-                        phraseBuilder.append(inputSearchQuery.substringBeforeLast(' ')).append(" ")
+                        val phraseBuilder = StringBuilder().append(inputSearchQuery.substringBeforeLast(' ')).append(" ")
                         words.getOrNull(spaceCount)?.let { phraseBuilder.append(it) }
                         formattedResults.add(Pair(phraseBuilder.toString(), "search"))
                     }

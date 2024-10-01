@@ -4,10 +4,10 @@ import com.example.bulletin_board.packroom.AdRepository
 import com.example.bulletin_board.packroom.Result
 import jakarta.inject.Inject
 
-class GetMinPriceUseCase
+class GetMinMaxPriceUseCase
     @Inject
     constructor(
         private val adRepository: AdRepository,
     ) {
-        suspend operator fun invoke(category: String?): Result<Int> = adRepository.getMinPrice(category)
+        suspend operator fun invoke(category: String?): Result<Pair<Int?, Int?>> = adRepository.getMinMaxPrice(category)
     }

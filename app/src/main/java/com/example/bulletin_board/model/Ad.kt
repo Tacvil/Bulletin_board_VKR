@@ -8,8 +8,9 @@ import kotlinx.serialization.Serializable
 data class Ad
     @JvmOverloads
     constructor(
-        val key: String = "", // Значение по умолчанию для key
+        val key: String = "",
         val title: String? = null,
+        val titleLowercase: String? = null,
         val keyWords: List<String>? = null,
         val country: String? = null,
         val city: String? = null,
@@ -41,6 +42,7 @@ data class Ad
         ) {
             parcel.writeString(key)
             parcel.writeString(title)
+            parcel.writeString(titleLowercase)
             parcel.writeStringList(keyWords)
             parcel.writeString(country)
             parcel.writeString(city)
@@ -70,6 +72,7 @@ data class Ad
                 Ad(
                     key = parcel.readString()!!,
                     title = parcel.readString(),
+                    titleLowercase = parcel.readString(),
                     keyWords = parcel.createStringArrayList(),
                     country = parcel.readString(),
                     city = parcel.readString(),

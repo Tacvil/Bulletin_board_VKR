@@ -67,17 +67,15 @@ class FilterFragment : BottomSheetDialogFragment() {
         defPreferences = PreferenceManager.getDefaultSharedPreferences(requireContext())
 
         lifecycleScope.launch {
-            viewModel.getMinPrice()
-            viewModel.getMaxPrice()
+            viewModel.getMinMaxPrice()
             viewModel.appState.collectLatest { appState ->
-                val minPrice = appState.minPrice
-                val maxPrice = appState.maxPrice
+                val minMaxPrice = appState.minMaxPrice
 
-                if (minPrice != null && maxPrice != null) {
-                    Timber.d("minPrice: $minPrice, maxPrice: $maxPrice")
-                    binding.textViewPriceFromLayout.hint = "от $minPrice"
-                    binding.textViewPriceToLayout.hint = "до $maxPrice"
-                    focusChangeListener(minPrice, maxPrice)
+                if (minMaxPrice != null) {
+                    Timber.d("minMaxPrice: $minMaxPrice")
+                    binding.textViewPriceFromLayout.hint = "от ${minMaxPrice.first}"
+                    binding.textViewPriceToLayout.hint = "до ${minMaxPrice.second}"
+                    focusChangeListener(minMaxPrice.first, minMaxPrice.second)
                 }
             }
         }
