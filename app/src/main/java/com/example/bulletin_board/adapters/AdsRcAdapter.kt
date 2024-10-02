@@ -48,7 +48,7 @@ class AdsRcAdapter(
                 textViewFav.text = ad.favCounter
                 Log.d("ADSRCADAPTER", "favCounter = ${ad.favCounter} | uids = ${ad.favUids}")
                 imageButtonFav1.isClickable = true
-                val publishTimeLabel = act.getString(R.string.publication_time)
+                val publishTimeLabel = act.getStringAccountHelper(R.string.publication_time)
                 val publishTime = "$publishTimeLabel: ${getTimeFromMillis(ad.time)}"
                 textViewData.text = publishTime
                 // val roundedCorners = RoundedCorners(20)

@@ -1,21 +1,21 @@
 package com.example.bulletin_board.accounthelper
 
+import android.content.Intent
 import android.util.Log
 import android.widget.Toast
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.viewModelScope
+import androidx.activity.result.ActivityResult
+import androidx.activity.result.ActivityResultLauncher
 import com.example.bulletin_board.R
-import com.example.bulletin_board.act.MainActivity
 import com.example.bulletin_board.constance.FirebaseAuthConstants
-import com.example.bulletin_board.viewmodel.FirebaseViewModel
+import com.example.bulletin_board.dialoghelper.SignUpInHandler
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInClient
-import com.google.android.gms.auth.api.signin.GoogleSignInOptions
+import com.google.android.gms.common.api.ApiException
 import com.google.android.gms.tasks.Task
 import com.google.android.gms.tasks.TaskCompletionSource
 import com.google.firebase.Firebase
 import com.google.firebase.auth.EmailAuthProvider
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
 import com.google.firebase.auth.FirebaseAuthInvalidUserException
 import com.google.firebase.auth.FirebaseAuthUserCollisionException
@@ -24,34 +24,40 @@ import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.auth.auth
 import com.google.firebase.messaging.FirebaseMessaging
-import kotlinx.coroutines.launch
+import timber.log.Timber
+
+interface AccountHelperProvider {
+    fun saveToken(token: String)
+
+    fun showToast(
+        message: String,
+        duration: Int,
+    )
+
+    fun getStringAccountHelper(resId: Int): String
+
+    val mAuth: FirebaseAuth
+}
+
+interface UserUiUpdate {
+    fun updateUiImpl(user: FirebaseUser?)
+}
 
 class AccountHelper(
-    private val activity: MainActivity,
-) : ViewModelProvider.Factory {
-    val signInRequestCode = 111
+    private val accountHelperProvider: AccountHelperProvider,
+    private val googleSignInClient: GoogleSignInClient,
+    private val userUiUpdate: UserUiUpdate,
+) : SignUpInHandler {
     private lateinit var signInClient: GoogleSignInClient
-
-    // Получение экземпляра AccountHelperViewModel из ViewModelProvider
-    private val accountHelperViewModel: FirebaseViewModel by lazy {
-        ViewModelProvider(activity)[FirebaseViewModel::class.java]
-    }
-
-    override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        if (modelClass.isAssignableFrom(AccountHelper::class.java)) {
-            return AccountHelper(activity) as T
-        }
-        throw IllegalArgumentException("Unknown ViewModel class")
-    }
 
     fun signUpWithEmail(
         email: String,
         password: String,
     ) {
         if (email.isNotEmpty() && password.isNotEmpty()) {
-            activity.mAuth.currentUser?.delete()?.addOnCompleteListener { task ->
+            accountHelperProvider.mAuth.currentUser?.delete()?.addOnCompleteListener { task ->
                 if (task.isSuccessful) {
-                    activity.mAuth
+                    accountHelperProvider.mAuth
                         .createUserWithEmailAndPassword(email, password)
                         .addOnCompleteListener { task1 ->
 
@@ -60,9 +66,7 @@ class AccountHelper(
                                 if (Firebase.auth.uid != null) {
                                     getFcmToken()
                                         .addOnSuccessListener { token ->
-                                            accountHelperViewModel.viewModelScope.launch {
-                                                accountHelperViewModel.saveTokenFCM(token)
-                                            }
+                                            accountHelperProvider.saveToken(token)
                                         }.addOnFailureListener { exception ->
                                             Log.d("Token", "Fetching FCM token failed", exception)
                                         }
@@ -80,7 +84,7 @@ class AccountHelper(
 
     private fun signUpWithEmailSuccessful(user: FirebaseUser) {
         sendEmailVerification(user)
-        activity.uiUpdate(user)
+        userUiUpdate.updateUiImpl(user)
     }
 
     private fun signUpWithEmailException(
@@ -102,22 +106,12 @@ class AccountHelper(
             }
         } else if (e is FirebaseAuthInvalidCredentialsException) {
             if (e.errorCode == FirebaseAuthConstants.ERROR_INVALID_EMAIL) {
-                Toast
-                    .makeText(
-                        activity,
-                        FirebaseAuthConstants.ERROR_INVALID_EMAIL,
-                        Toast.LENGTH_LONG,
-                    ).show()
+                accountHelperProvider.showToast(FirebaseAuthConstants.ERROR_INVALID_EMAIL, Toast.LENGTH_LONG)
             }
         }
         if (e is FirebaseAuthWeakPasswordException) {
             if (e.errorCode == FirebaseAuthConstants.ERROR_WEAK_PASSWORD) {
-                Toast
-                    .makeText(
-                        activity,
-                        FirebaseAuthConstants.ERROR_WEAK_PASSWORD,
-                        Toast.LENGTH_LONG,
-                    ).show()
+                accountHelperProvider.showToast(FirebaseAuthConstants.ERROR_WEAK_PASSWORD, Toast.LENGTH_LONG)
             }
         }
     }
@@ -125,19 +119,15 @@ class AccountHelper(
     private fun sendEmailVerification(user: FirebaseUser) {
         user.sendEmailVerification().addOnCompleteListener { task ->
             if (task.isSuccessful) {
-                Toast
-                    .makeText(
-                        activity,
-                        activity.resources.getString(R.string.send_verification_email_done),
-                        Toast.LENGTH_LONG,
-                    ).show()
+                accountHelperProvider.showToast(
+                    accountHelperProvider.getStringAccountHelper(R.string.send_verification_email_done),
+                    Toast.LENGTH_LONG,
+                )
             } else {
-                Toast
-                    .makeText(
-                        activity,
-                        activity.resources.getString(R.string.send_verification_email_error),
-                        Toast.LENGTH_LONG,
-                    ).show()
+                accountHelperProvider.showToast(
+                    accountHelperProvider.getStringAccountHelper(R.string.send_verification_email_error),
+                    Toast.LENGTH_LONG,
+                )
             }
         }
     }
@@ -147,19 +137,17 @@ class AccountHelper(
         password: String,
     ) {
         if (email.isNotEmpty() && password.isNotEmpty()) {
-            activity.mAuth.currentUser?.delete()?.addOnCompleteListener { task ->
+            accountHelperProvider.mAuth.currentUser?.delete()?.addOnCompleteListener { task ->
                 if (task.isSuccessful) {
-                    activity.mAuth
+                    accountHelperProvider.mAuth
                         .signInWithEmailAndPassword(email, password)
                         .addOnCompleteListener { task1 ->
                             if (task1.isSuccessful) {
-                                activity.uiUpdate(task1.result.user)
+                                userUiUpdate.updateUiImpl(task1.result.user)
                                 if (Firebase.auth.uid != null) {
                                     getFcmToken()
                                         .addOnSuccessListener { token ->
-                                            accountHelperViewModel.viewModelScope.launch {
-                                                accountHelperViewModel.saveTokenFCM(token)
-                                            }
+                                            accountHelperProvider.saveToken(token)
                                         }.addOnFailureListener { exception ->
                                             Log.d("Token", "Fetching FCM token failed", exception)
                                         }
@@ -168,6 +156,8 @@ class AccountHelper(
                                 signInWithEmailException(task1.exception!!, email, password)
                             }
                         }
+                } else {
+                    Timber.d("task = ${task.exception}")
                 }
             }
         }
@@ -180,28 +170,13 @@ class AccountHelper(
     ) {
         if (e is FirebaseAuthInvalidCredentialsException) {
             if (e.errorCode == FirebaseAuthConstants.ERROR_INVALID_EMAIL) {
-                Toast
-                    .makeText(
-                        activity,
-                        FirebaseAuthConstants.ERROR_INVALID_EMAIL,
-                        Toast.LENGTH_LONG,
-                    ).show()
+                accountHelperProvider.showToast(FirebaseAuthConstants.ERROR_INVALID_EMAIL, Toast.LENGTH_LONG)
             } else if (e.errorCode == FirebaseAuthConstants.ERROR_WRONG_PASSWORD) {
-                Toast
-                    .makeText(
-                        activity,
-                        FirebaseAuthConstants.ERROR_WRONG_PASSWORD,
-                        Toast.LENGTH_LONG,
-                    ).show()
+                accountHelperProvider.showToast(FirebaseAuthConstants.ERROR_WRONG_PASSWORD, Toast.LENGTH_LONG)
             }
         } else if (e is FirebaseAuthInvalidUserException) {
             if (e.errorCode == FirebaseAuthConstants.ERROR_USER_NOT_FOUND) {
-                Toast
-                    .makeText(
-                        activity,
-                        FirebaseAuthConstants.ERROR_USER_NOT_FOUND,
-                        Toast.LENGTH_LONG,
-                    ).show()
+                accountHelperProvider.showToast(FirebaseAuthConstants.ERROR_USER_NOT_FOUND, Toast.LENGTH_LONG)
             }
         }
     }
@@ -211,64 +186,55 @@ class AccountHelper(
         password: String,
     ) {
         val credential = EmailAuthProvider.getCredential(email, password)
-        if (activity.mAuth.currentUser != null) {
-            activity.mAuth.currentUser
+        if (accountHelperProvider.mAuth.currentUser != null) {
+            accountHelperProvider.mAuth.currentUser
                 ?.linkWithCredential(credential)
                 ?.addOnCompleteListener { task ->
                     if (task.isSuccessful) {
-                        Toast
-                            .makeText(
-                                activity,
-                                activity.resources.getString(R.string.link_done),
-                                Toast.LENGTH_LONG,
-                            ).show()
+                        accountHelperProvider.showToast(accountHelperProvider.getStringAccountHelper(R.string.link_done), Toast.LENGTH_LONG)
                     }
                 }
         } else {
-            Toast
-                .makeText(
-                    activity,
-                    activity.resources.getString(R.string.enter_to_google),
-                    Toast.LENGTH_LONG,
-                ).show()
+            accountHelperProvider.showToast(accountHelperProvider.getStringAccountHelper(R.string.enter_to_google), Toast.LENGTH_LONG)
         }
     }
 
-    private fun getSignInClient(): GoogleSignInClient {
-        val gso =
-            GoogleSignInOptions
-                .Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-                .requestIdToken(activity.getString(R.string.default_web_client_id))
-                .requestEmail()
-                .build()
-        return GoogleSignIn.getClient(activity, gso)
+    fun signInWithGoogle(launcher: ActivityResultLauncher<Intent>) {
+        signInClient = googleSignInClient
+        val intent = signInClient.signInIntent
+        launcher.launch(intent)
     }
 
-    fun signInWithGoogle() {
-        signInClient = getSignInClient()
-        val intent = signInClient.signInIntent
-        activity.googleSignInLauncher.launch(intent)
+    fun handleGoogleSignInResult(result: ActivityResult) {
+        val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
+        try {
+            val account = task.getResult(ApiException::class.java)
+            if (account != null) {
+                signInFirebaseWithGoogle(account.idToken!!)
+            }
+        } catch (e: ApiException) {
+            accountHelperProvider.showToast("Api exception: ${e.message}", Toast.LENGTH_LONG)
+            Log.d("MyLog", "Api exception: ${e.message}")
+        }
     }
 
     fun signOutGoogle() {
-        getSignInClient().signOut()
+        signInClient.signOut()
     }
 
-    fun signInFirebaseWithGoogle(token: String) {
+    private fun signInFirebaseWithGoogle(token: String) {
         val credential = GoogleAuthProvider.getCredential(token, null)
-        activity.mAuth.currentUser?.delete()?.addOnCompleteListener { task ->
+        accountHelperProvider.mAuth.currentUser?.delete()?.addOnCompleteListener { task ->
             if (task.isSuccessful) {
-                activity.mAuth.signInWithCredential(credential).addOnCompleteListener { task2 ->
+                accountHelperProvider.mAuth.signInWithCredential(credential).addOnCompleteListener { task2 ->
                     if (task2.isSuccessful) {
-                        Toast.makeText(activity, "Sign is done", Toast.LENGTH_SHORT).show()
+                        accountHelperProvider.showToast("Sign in done", Toast.LENGTH_LONG)
                         Log.d("UID", "signInFirebaseWithGoogle - ${Firebase.auth.uid}")
-                        activity.uiUpdate(task2.result.user)
+                        userUiUpdate.updateUiImpl(task2.result.user)
                         if (Firebase.auth.uid != null) {
                             getFcmToken()
                                 .addOnSuccessListener { token ->
-                                    accountHelperViewModel.viewModelScope.launch {
-                                        accountHelperViewModel.saveTokenFCM(token)
-                                    }
+                                    accountHelperProvider.saveToken(token)
                                 }.addOnFailureListener { exception ->
                                     Log.d("Token", "Fetching FCM token failed", exception)
                                 }
@@ -276,33 +242,12 @@ class AccountHelper(
                             Log.d("Token", "uid = null")
                         }
                     } else {
-                        Toast.makeText(activity, "Google Sign In Exception: ${task2.exception}", Toast.LENGTH_SHORT).show()
+                        accountHelperProvider.showToast("Google Sign In Exception: ${task2.exception}", Toast.LENGTH_LONG)
                         Log.d("MyLog", "Google Sign In Exception: ${task2.exception}")
                     }
                 }
             }
         }
-    }
-
-    fun signInAnonymously(listener: Listener) {
-        activity.mAuth.signInAnonymously().addOnCompleteListener { task ->
-            if (task.isSuccessful) {
-                listener.onComplete()
-                Toast.makeText(activity, "Вы вошли как Гость", Toast.LENGTH_SHORT).show()
-            } else {
-                Toast.makeText(activity, "Не удалось войти как Гость", Toast.LENGTH_SHORT).show()
-            }
-        }
-    }
-
-    interface Listener {
-        fun onComplete()
-    }
-
-    companion object {
-        const val RESULT_CODE_SUCCESS = 1111
-        const val RESULT_CODE_FAILURE = 2222
-        // другие константы
     }
 
     private fun getFcmToken(): Task<String> {
@@ -320,5 +265,34 @@ class AccountHelper(
             }
 
         return taskCompletionSource.task
+    }
+
+    override fun signInWithGoogleImpl(googleSignInLauncher: ActivityResultLauncher<Intent>) {
+        signInWithGoogle(googleSignInLauncher)
+    }
+
+    override fun signUpWithEmailImpl(
+        email: String,
+        password: String,
+    ) {
+        signUpWithEmail(email, password)
+    }
+
+    override fun signInWithEmailImpl(
+        email: String,
+        password: String,
+    ) {
+        signInWithEmail(email, password)
+    }
+
+    fun signInAnonymously(onCompleteListener: () -> Unit) {
+        accountHelperProvider.mAuth.signInAnonymously().addOnCompleteListener { task ->
+            if (task.isSuccessful) {
+                onCompleteListener()
+                accountHelperProvider.showToast("Вы вошли как Гость", Toast.LENGTH_SHORT)
+            } else {
+                accountHelperProvider.showToast("Не удалось войти как Гость", Toast.LENGTH_SHORT)
+            }
+        }
     }
 }

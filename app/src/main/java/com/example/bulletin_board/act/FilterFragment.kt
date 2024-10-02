@@ -198,7 +198,9 @@ class FilterFragment : BottomSheetDialogFragment() {
                 textViewSelectCountryLayout.hint = getString(R.string.select_country)
                 textViewSelectCityLayout.hint = getString(R.string.select_city)
                 textViewIndex.setText("")
-                textViewSelectWithSend.setText("Не важно")
+                textViewSelectWithSend.setText(getString(R.string.no_matter))
+                textViewPriceFrom.setText("")
+                textViewPriceTo.setText("")
             }
         }
 

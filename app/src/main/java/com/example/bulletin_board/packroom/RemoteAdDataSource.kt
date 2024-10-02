@@ -157,7 +157,6 @@ class RemoteAdDataSource
             limit: Long = ADS_LIMIT.toLong(),
         ): Pair<List<Ad>, DocumentSnapshot?> =
             try {
-                Timber.d("getMyAds: uid = ${auth.uid}")
                 var query =
                     firestore
                         .collection(MAIN_COLLECTION)
@@ -231,7 +230,6 @@ class RemoteAdDataSource
                         collectionReference
                     }
 
-                // Получаем минимальную и максимальную цены
                 val minSnapshot =
                     query
                         .orderBy(PRICE_FIELD, Query.Direction.ASCENDING)
@@ -281,26 +279,16 @@ class RemoteAdDataSource
         ): Pair<List<Ad>, DocumentSnapshot?> =
             try {
                 val query = buildAdsQuery(filter, key)
-                Timber.d("Query: $query")
-                Timber.d("Query filter: $filter")
-                Timber.d("Query key: $key")
-
                 val snapshot = query.limit(limit).get().await()
-                Timber.d("Query snapshot: $snapshot")
                 val ads =
-                    snapshot.documents.map { it.toObject(Ad::class.java)!! } // Преобразование в List<Ad>
-                val processedAds = processAds(ads) // Обрабатываем список объявлений
-
-                Timber.d("Query ads: $ads")
-                ads.forEach { ad ->
-                    Timber.d("Ad loaded getAllAds: $ad")
-                }
+                    snapshot.documents.map { it.toObject(Ad::class.java)!! }
+                val processedAds = processAds(ads)
 
                 val nextKey = snapshot.documents.lastOrNull()
                 Pair(processedAds, nextKey)
             } catch (e: FirebaseFirestoreException) {
                 Timber.e(e, "Error getting ads")
-                Pair(emptyList(), null) // Возвращаем пустой список и null в случае ошибки
+                Pair(emptyList(), null)
             }
 
         private fun processAds(ads: List<Ad>): List<Ad> =

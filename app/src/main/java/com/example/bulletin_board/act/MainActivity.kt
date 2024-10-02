@@ -1,17 +1,10 @@
 package com.example.bulletin_board.act
 
-import android.Manifest
-import android.app.NotificationChannel
-import android.app.NotificationManager
 import android.content.Intent
-import android.content.SharedPreferences
-import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import android.os.Parcelable
-import android.text.SpannableString
 import android.text.TextWatcher
-import android.text.style.ForegroundColorSpan
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
@@ -21,10 +14,8 @@ import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
+import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
-import androidx.appcompat.app.AppCompatDelegate
-import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
 import androidx.core.view.GravityCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.viewModelScope
@@ -40,15 +31,20 @@ import com.bumptech.glide.load.resource.bitmap.RoundedCorners
 import com.bumptech.glide.request.RequestOptions
 import com.example.bulletin_board.R
 import com.example.bulletin_board.accounthelper.AccountHelper
+import com.example.bulletin_board.accounthelper.AccountHelperProvider
+import com.example.bulletin_board.accounthelper.UserUiUpdate
 import com.example.bulletin_board.adapterFirestore.AdsAdapter
 import com.example.bulletin_board.adapterFirestore.FavoriteAdsAdapter
 import com.example.bulletin_board.adapterFirestore.MyAdsAdapter
 import com.example.bulletin_board.databinding.ActivityMainBinding
 import com.example.bulletin_board.dialoghelper.DialogConst
-import com.example.bulletin_board.dialoghelper.DialogHelper
-import com.example.bulletin_board.dialogs.DialogSpinnerHelper
-import com.example.bulletin_board.dialogs.RcViewDialogSpinnerAdapter
+import com.example.bulletin_board.dialoghelper.DialogHelperProvider
+import com.example.bulletin_board.dialoghelper.SignInDialogFragment
 import com.example.bulletin_board.dialogs.RcViewSearchSpinnerAdapter
+import com.example.bulletin_board.domain.NavigationViewHelper
+import com.example.bulletin_board.domain.OrderByFilterDialogManager
+import com.example.bulletin_board.domain.PermissionManager
+import com.example.bulletin_board.domain.ThemeManager
 import com.example.bulletin_board.domain.VoiceRecognitionHandler
 import com.example.bulletin_board.domain.VoiceRecognitionListener
 import com.example.bulletin_board.model.Ad
@@ -60,19 +56,16 @@ import com.example.bulletin_board.packroom.RemoteAdDataSource.Companion.KEYWORDS
 import com.example.bulletin_board.packroom.RemoteAdDataSource.Companion.ORDER_BY_FIELD
 import com.example.bulletin_board.packroom.SortOption
 import com.example.bulletin_board.settings.SettingsActivity
-import com.example.bulletin_board.utils.BillingManager
 import com.example.bulletin_board.utils.SearchActions
 import com.example.bulletin_board.utils.SearchHelper
 import com.example.bulletin_board.utils.SearchUi
-import com.example.bulletin_board.utils.SortUtils.getSortOption
 import com.example.bulletin_board.utils.SortUtils.getSortOptionText
 import com.example.bulletin_board.viewmodel.FirebaseViewModel
 import com.google.android.gms.auth.api.signin.GoogleSignIn
-import com.google.android.gms.common.api.ApiException
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.android.material.navigation.NavigationView.OnNavigationItemSelectedListener
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
-import com.google.firebase.auth.ktx.auth
-import com.google.firebase.ktx.Firebase
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
@@ -87,22 +80,21 @@ class MainActivity :
     AdItemClickListener,
     SearchUi,
     SearchActions,
-    VoiceRecognitionListener {
+    VoiceRecognitionListener,
+    AccountHelperProvider,
+    DialogHelperProvider,
+    UserUiUpdate {
     private lateinit var textViewAccount: TextView
     private lateinit var imageViewAccount: ImageView
-    private lateinit var binding: ActivityMainBinding
-    private val dialogHelper = DialogHelper(this) { AccountHelper(this) }
-    private val dialog = DialogSpinnerHelper()
-    val mAuth = Firebase.auth
-    lateinit var googleSignInLauncher: ActivityResultLauncher<Intent>
-    val viewModel: FirebaseViewModel by viewModels()
 
-    private var bManager: BillingManager? = null
+    private lateinit var binding: ActivityMainBinding
+    private lateinit var orderByFilterDialogManager: OrderByFilterDialogManager
+
+    private val viewModel: FirebaseViewModel by viewModels()
 
     private val onItemSelectedListener: RcViewSearchSpinnerAdapter.OnItemSelectedListener? = null
     private var adapterSearch = RcViewSearchSpinnerAdapter(onItemSelectedListener)
 
-    private lateinit var defPreferences: SharedPreferences
     private var lastClickTime: Long = 0
     private val doubleClickThreshold = 300
 
@@ -129,26 +121,40 @@ class MainActivity :
         SearchHelper(this, this)
     }
 
+    private lateinit var accountHelper: AccountHelper
+
+    private val googleSignInLauncher =
+        registerForActivityResult(
+            ActivityResultContracts.StartActivityForResult(),
+        ) { result ->
+            accountHelper.handleGoogleSignInResult(result)
+        }
+
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     override fun onCreate(savedInstanceState: Bundle?) {
-        defPreferences = PreferenceManager.getDefaultSharedPreferences(this)
-        setTheme(getSelectedTheme())
+        setTheme(ThemeManager.getSelectedTheme(PreferenceManager.getDefaultSharedPreferences(this)))
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
-//        val toolbar: Toolbar = findViewById(R.id.toolbar)
-//        setSupportActionBar(toolbar)
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            // Create the NotificationChannel.
-            val name = getString(R.string.ad_car)
-            val descriptionText = getString(R.string.ad_car)
-            val importance = NotificationManager.IMPORTANCE_DEFAULT
-            val mChannel = NotificationChannel("123", name, importance)
-            mChannel.description = descriptionText
+        val gso =
+            GoogleSignInOptions
+                .Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+                .requestIdToken(getStringAccountHelper(R.string.default_web_client_id))
+                .requestEmail()
+                .build()
 
-            val notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
-            notificationManager.createNotificationChannel(mChannel)
-        }
+        val googleSignInClient = GoogleSignIn.getClient(this, gso)
+
+        accountHelper =
+            AccountHelper(
+                this,
+                googleSignInClient,
+                this,
+            )
+
+        textViewAccount = binding.navigationView.getHeaderView(0).findViewById(R.id.text_view_account_email)
+        imageViewAccount = binding.navigationView.getHeaderView(0).findViewById(R.id.image_view_account_image)
 
         voiceRecognitionLauncher =
             registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
@@ -156,26 +162,14 @@ class MainActivity :
             }
         voiceRecognitionHandler = VoiceRecognitionHandler(this, voiceRecognitionLauncher)
 
-        if (ContextCompat.checkSelfPermission(
-                this,
-                Manifest.permission.POST_NOTIFICATIONS,
-            ) != PackageManager.PERMISSION_GRANTED
-        ) {
-            // Запрос разрешения
-            ActivityCompat.requestPermissions(
-                this,
-                arrayOf(Manifest.permission.POST_NOTIFICATIONS),
-                PERMISSION_REQUEST_CODE,
-            )
-        } else {
-            // Разрешение уже предоставлено, можно отправлять уведомления
-            Timber.tag("POST_NOTIFICATIONS_PER_TRUE").d("POST_NOTIFICATIONS_PER_TRUE")
-        }
+        PermissionManager.checkAndRequestNotificationPermission(this)
 
         initRecyclerView()
         initViewModel()
         init()
-        onClickSelectOrderByFilter()
+
+        orderByFilterDialogManager = OrderByFilterDialogManager(this, viewModel)
+        orderByFilterDialogManager.setupOrderByFilter(binding.mainContent.autoComplete)
         searchHelper.initSearchAdd()
         setupBottomMenu()
     }
@@ -186,75 +180,8 @@ class MainActivity :
         grantResults: IntArray,
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        when (requestCode) {
-            PERMISSION_REQUEST_CODE -> {
-                if ((grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED)) {
-                    // Разрешение предоставлено, можно отправлять уведомления
-                    Timber.tag("POST_NOTIFICATIONS_PER_TRUE").d("POST_NOTIFICATIONS_PER_TRUE")
-                } else {
-                    Timber.tag("POST_NOTIFICATIONS_PER_FALSE").d("POST_NOTIFICATIONS_PER_FALSE")
-                    Toast
-                        .makeText(
-                            this,
-                            "Permission denied, notifications cannot be sent",
-                            Toast.LENGTH_SHORT,
-                        ).show()
-                }
-                return
-            }
-        }
+        PermissionManager.handleRequestPermissionsResult(requestCode, grantResults, this)
     }
-
-    private fun onClickSelectOrderByFilter() =
-        with(binding) {
-            mainContent.autoComplete.setOnClickListener {
-                val listVariant: ArrayList<Pair<String, String>> =
-                    if (viewModel
-                            .getFilterValue("price_from")
-                            ?.isNotEmpty() == true ||
-                        viewModel
-                            .getFilterValue("price_to")
-                            ?.isNotEmpty() == true
-                    ) {
-                        arrayListOf(
-                            Pair(getString(R.string.sort_by_ascending_price), "single"),
-                            Pair(getString(R.string.sort_by_descending_price), "single"),
-                        )
-                    } else {
-                        arrayListOf(
-                            Pair(getString(R.string.sort_by_newest), "single"),
-                            Pair(getString(R.string.sort_by_popularity), "single"),
-                            Pair(getString(R.string.sort_by_ascending_price), "single"),
-                            Pair(getString(R.string.sort_by_descending_price), "single"),
-                        )
-                    }
-                val onItemSelectedListener =
-                    object : RcViewDialogSpinnerAdapter.OnItemSelectedListener {
-                        override fun onItemSelected(item: String) {
-                            Toast
-                                .makeText(this@MainActivity, "Item: $item", Toast.LENGTH_SHORT)
-                                .show()
-
-                            viewModel.addToFilter("orderBy", getSortOption(this@MainActivity, item))
-                        }
-                    }
-
-                dialog.showSpinnerPopup(
-                    this@MainActivity,
-                    mainContent.autoComplete,
-                    listVariant,
-                    mainContent.autoComplete,
-                    onItemSelectedListener,
-                    false,
-                )
-            }
-
-            mainContent.filterButtonMain.setOnClickListener {
-                if (!filterFragment.isAdded) {
-                    filterFragment.show(supportFragmentManager, FilterFragment.TAG)
-                }
-            }
-        }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
         menuInflater.inflate(R.menu.main_menu, menu)
@@ -262,17 +189,15 @@ class MainActivity :
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        Timber.tag("MenuClick").d("CLICK - " + item)
         when (item.itemId) {
             android.R.id.home -> {
                 binding.drawerLayout.openDrawer(GravityCompat.START)
             }
 
             R.id.id_search -> {
-                if (!viewModel.getFilterValue("keyWords").isNullOrEmpty()) {
-                    // Текущая иконка НЕ является ic_search
+                if (!viewModel.getFilterValue(KEYWORDS_FIELD).isNullOrEmpty()) {
                     binding.mainContent.searchBar.clearText()
-                    viewModel.addToFilter("keyWords", "")
+                    viewModel.addToFilter(KEYWORDS_FIELD, "")
                     item.setIcon(R.drawable.ic_search)
                 } else {
                     binding.mainContent.searchBar.performClick()
@@ -294,28 +219,9 @@ class MainActivity :
         binding.mainContent.bottomNavView.selectedItemId = R.id.id_home
     }
 
-    private fun onActivityResult() {
-        googleSignInLauncher =
-            registerForActivityResult(
-                ActivityResultContracts.StartActivityForResult(),
-            ) {
-                val task = GoogleSignIn.getSignedInAccountFromIntent(it.data)
-
-                try {
-                    val account = task.getResult(ApiException::class.java)
-                    if (account != null) {
-                        dialogHelper.accHelper.signInFirebaseWithGoogle(account.idToken!!)
-                    }
-                } catch (e: ApiException) {
-                    Toast.makeText(this, "Api exception: ${e.message}", Toast.LENGTH_SHORT).show()
-                    Timber.tag("MyLog").d("Api exception: " + e.message + " ")
-                }
-            }
-    }
-
     override fun onStart() {
         super.onStart()
-        uiUpdate(mAuth.currentUser)
+        updateUi(viewModel.getAuth().currentUser)
     }
 
     private fun initViewModel() {
@@ -325,7 +231,6 @@ class MainActivity :
                     val sortOptionId = event.filter[ORDER_BY_FIELD] ?: return@collectLatest
                     val sortOptionText = getSortOptionText(this@MainActivity, sortOptionId)
                     binding.mainContent.autoComplete.setText(sortOptionText)
-                    Timber.d("MainActivity filter changed orderBy : $sortOptionText")
                 }
             }
         }
@@ -334,6 +239,25 @@ class MainActivity :
             handleAdapterData(viewModel.favoriteAds, favAdsAdapter)
             handleAdapterData(viewModel.homeAdsData, adsAdapter)
             handleAdapterData(viewModel.myAds, myAdsAdapter)
+        }
+    }
+
+    private fun updateUi(user: FirebaseUser?) {
+        if (user == null) {
+            accountHelper.signInAnonymously {
+                textViewAccount.text = this.getString(R.string.guest)
+                imageViewAccount.setImageResource(R.drawable.ic_my_ads)
+            }
+        } else if (user.isAnonymous) {
+            textViewAccount.text = this.getString(R.string.guest)
+            imageViewAccount.setImageResource(R.drawable.ic_my_ads)
+        } else if (!user.isAnonymous) {
+            textViewAccount.text = user.email
+            Glide // meibe
+                .with(this)
+                .load(user.photoUrl)
+                .apply(RequestOptions().transform(RoundedCorners(20)))
+                .into(imageViewAccount)
         }
     }
 
@@ -394,12 +318,10 @@ class MainActivity :
         Timber.d("updateAnimationVisibility Item count: $itemCount")
 
         if (itemCount == 0) {
-            // Показать анимацию
             binding.mainContent.nothinkWhiteAnim.visibility = View.VISIBLE
             binding.mainContent.nothinkWhiteAnim.repeatCount = LottieDrawable.INFINITE
             binding.mainContent.nothinkWhiteAnim.playAnimation()
         } else {
-            // Скрыть анимацию
             binding.mainContent.nothinkWhiteAnim.cancelAnimation()
             binding.mainContent.nothinkWhiteAnim.visibility = View.GONE
         }
@@ -414,15 +336,17 @@ class MainActivity :
             )
         viewModel.updateFilters(newFilters)
         setSupportActionBar(binding.mainContent.searchBar)
-        onActivityResult()
+
         navViewSetting()
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         supportActionBar?.setDisplayShowHomeEnabled(true)
         binding.navigationView.setNavigationItemSelectedListener(this)
-        textViewAccount =
-            binding.navigationView.getHeaderView(0).findViewById(R.id.text_view_account_email)
-        imageViewAccount =
-            binding.navigationView.getHeaderView(0).findViewById(R.id.image_view_account_image)
+
+        binding.mainContent.filterButtonMain.setOnClickListener {
+            if (!filterFragment.isAdded) {
+                filterFragment.show(supportFragmentManager, FilterFragment.TAG)
+            }
+        }
 
         binding.mainContent.swipeRefreshLayout.setOnRefreshListener {
             val currentAdapterType =
@@ -438,7 +362,6 @@ class MainActivity :
     }
 
     private fun refreshAdapter(adapterType: Int) {
-        Timber.d("refreshAdapter() called with: adapterType = $adapterType")
         when (adapterType) {
             ADS_ADAPTER -> adsAdapter.refresh()
             FAV_ADAPTER -> favAdsAdapter.refresh()
@@ -452,7 +375,6 @@ class MainActivity :
                 val currentTime = System.currentTimeMillis()
 
                 if (currentTime - lastClickTime <= doubleClickThreshold) {
-                    // Двойной клик
                     refreshAdapter(item.itemId)
                 }
                 lastClickTime = currentTime
@@ -487,15 +409,12 @@ class MainActivity :
         }
 
         val onItemSelectedListener =
-            object : RcViewSearchSpinnerAdapter.OnItemSelectedListener {
-                override fun onItemSelected(item: String) {
-                    Toast.makeText(this@MainActivity, "Item: $item", Toast.LENGTH_SHORT).show()
-                    binding.mainContent.searchViewMainContent.editText
-                        .setText(item)
-                    binding.mainContent.searchViewMainContent.editText.setSelection(
-                        binding.mainContent.searchViewMainContent.editText.text.length,
-                    )
-                }
+            RcViewSearchSpinnerAdapter.OnItemSelectedListener { item ->
+                binding.mainContent.searchViewMainContent.editText
+                    .setText(item)
+                binding.mainContent.searchViewMainContent.editText.setSelection(
+                    binding.mainContent.searchViewMainContent.editText.text.length,
+                )
             }
         adapterSearch = RcViewSearchSpinnerAdapter(onItemSelectedListener)
 
@@ -528,21 +447,31 @@ class MainActivity :
             }
 
             R.id.id_sign_up -> {
-                dialogHelper.createSignDialog(DialogConst.SIGN_UP_STATE)
+                SignInDialogFragment(
+                    googleSignInLauncher,
+                    DialogConst.SIGN_UP_STATE,
+                    accountHelper,
+                    this,
+                ).show(supportFragmentManager, "SignUpDialog")
             }
 
             R.id.id_sign_in -> {
-                dialogHelper.createSignDialog(DialogConst.SIGN_IN_STATE)
+                SignInDialogFragment(
+                    googleSignInLauncher,
+                    DialogConst.SIGN_IN_STATE,
+                    accountHelper,
+                    this,
+                ).show(supportFragmentManager, "SignInDialog")
             }
 
             R.id.id_sign_out -> {
-                if (mAuth.currentUser?.isAnonymous == true) {
+                if (viewModel.getAuth().currentUser?.isAnonymous == true) {
                     binding.drawerLayout.closeDrawer(GravityCompat.START)
                     return true
                 }
-                uiUpdate(null)
-                mAuth.signOut()
-                dialogHelper.accHelper.signOutGoogle()
+                updateUi(null)
+                viewModel.getAuth().signOut()
+                accountHelper.signOutGoogle()
             }
         }
         binding.drawerLayout.closeDrawer(GravityCompat.START)
@@ -559,69 +488,13 @@ class MainActivity :
         viewModel.updateFilters(newFilters)
     }
 
-    fun uiUpdate(user: FirebaseUser?) {
-        if (user == null) {
-            dialogHelper.accHelper.signInAnonymously(
-                object : AccountHelper.Listener {
-                    override fun onComplete() {
-                        textViewAccount.text = getString(R.string.guest)
-                        imageViewAccount.setImageResource(R.drawable.ic_my_ads)
-                    }
-                },
-            )
-        } else if (user.isAnonymous) {
-            textViewAccount.text = getString(R.string.guest)
-            imageViewAccount.setImageResource(R.drawable.ic_my_ads)
-        } else if (!user.isAnonymous) {
-            textViewAccount.text = user.email
-            Glide
-                .with(this)
-                .load(user.photoUrl)
-                .apply(RequestOptions().transform(RoundedCorners(20)))
-                .into(imageViewAccount)
-        }
+    private fun navViewSetting() {
+        val menu = binding.navigationView.menu
+        val colorPrimary = R.color.md_theme_light_primary
+
+        NavigationViewHelper.setMenuItemStyle(menu, R.id.adsCat, colorPrimary, this)
+        NavigationViewHelper.setMenuItemStyle(menu, R.id.accCat, colorPrimary, this)
     }
-
-    private fun navViewSetting() =
-        with(binding) {
-            val menu = navigationView.menu
-            val adsCat = menu.findItem(R.id.adsCat)
-            val spanAdsCat = SpannableString(adsCat.title)
-
-            val colorPrimary = R.color.md_theme_light_primary
-
-            adsCat.title?.let {
-                spanAdsCat.setSpan(
-                    ForegroundColorSpan(
-                        ContextCompat.getColor(
-                            this@MainActivity,
-                            colorPrimary,
-                        ),
-                    ),
-                    0,
-                    it.length,
-                    0,
-                )
-            }
-            adsCat.title = spanAdsCat
-
-            val accCat = menu.findItem(R.id.accCat)
-            val spanAccCat = SpannableString(accCat.title)
-            accCat.title?.let {
-                spanAccCat.setSpan(
-                    ForegroundColorSpan(
-                        ContextCompat.getColor(
-                            this@MainActivity,
-                            colorPrimary,
-                        ),
-                    ),
-                    0,
-                    it.length,
-                    0,
-                )
-            }
-            accCat.title = spanAccCat
-        }
 
     private fun switchAdapter(
         adapter: RecyclerView.Adapter<*>,
@@ -644,38 +517,12 @@ class MainActivity :
         currentTabPosition = tabPosition
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
-        bManager?.closeConnection()
-    }
-
-    private fun getSelectedTheme(): Int =
-        when (
-            defPreferences.getString(
-                SettingsActivity.THEME_KEY,
-                SettingsActivity.DEFAULT_THEME,
-            )
-        ) {
-            SettingsActivity.DEFAULT_THEME -> {
-                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
-                R.style.Base_Theme_Bulletin_board_light
-            }
-
-            else -> {
-                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
-                R.style.Base_Theme_Bulletin_board_dark
-            }
-        }
-
     companion object {
         const val EDIT_STATE = "edit_state"
         const val ADS_DATA = "ads_data"
-        const val SCROLL_DOWN = 1
-        const val REQUEST_CODE_SPEECH_INPUT = 100
-        private const val PERMISSION_REQUEST_CODE = 1
-        private const val ADS_ADAPTER = 0
-        private const val FAV_ADAPTER = 1
-        private const val MY_ADAPTER = 2
+        const val ADS_ADAPTER = 0
+        const val FAV_ADAPTER = 1
+        const val MY_ADAPTER = 2
     }
 
     override fun onAdClick(ad: Ad) {
@@ -708,7 +555,7 @@ class MainActivity :
         }
     }
 
-    override fun isOwner(adUid: String): Boolean = adUid == mAuth.currentUser?.uid
+    override fun isOwner(adUid: String): Boolean = adUid == viewModel.getAuth().currentUser?.uid
 
     override fun clearSearchResults() {
         adapterSearch.clearAdapter()
@@ -786,7 +633,35 @@ class MainActivity :
         Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
     }
 
-    private fun onVoiceButtonClick() {
-        voiceRecognitionHandler.startVoiceRecognition()
+    override fun saveToken(token: String) {
+        viewModel.viewModelScope.launch {
+            viewModel.saveTokenFCM(token)
+        }
+    }
+
+    override val mAuth: FirebaseAuth
+        get() = viewModel.getAuth()
+
+    override fun showToast(
+        message: String,
+        duration: Int,
+    ) {
+        Toast.makeText(this, message, duration).show()
+    }
+
+    override fun getStringAccountHelper(resId: Int): String = this.getString(resId)
+
+    override val mAuthImpl: FirebaseAuth
+        get() = viewModel.getAuth()
+
+    override fun showToastImpl(
+        message: String,
+        duration: Int,
+    ) {
+        Toast.makeText(this, message, duration).show()
+    }
+
+    override fun updateUiImpl(user: FirebaseUser?) {
+        updateUi(user)
     }
 }

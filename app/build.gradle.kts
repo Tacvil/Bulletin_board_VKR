@@ -15,6 +15,10 @@ android {
     namespace = "com.example.bulletin_board"
     compileSdk = 34
 
+    lint {
+        disable.addAll(setOf("PlayServiceAdsVersion", "AppMetricaSdkVersion", "MobileAdsSdkVersion"))
+    }
+
     signingConfigs {
         create("config") {
             keyAlias = "BulBord"
@@ -142,7 +146,7 @@ dependencies {
     implementation("io.reactivex.rxjava3:rxkotlin:3.0.1")
 
     implementation("androidx.media3:media3-database:1.4.1")
-    implementation("com.google.android.gms:play-services-fido:20.0.1")
+    implementation("com.google.android.gms:play-services-fido:21.1.0")
     implementation("androidx.compose.ui:ui-text-android:1.6.8")
 
 //    implementation  ("io.ak1.pix:piximagepicker:1.6.3")
@@ -169,16 +173,16 @@ dependencies {
     // firebase
     implementation("com.google.firebase:firebase-firestore:25.1.0")
     implementation("com.google.firebase:firebase-firestore-ktx:25.1.0")
-    implementation(platform("com.google.firebase:firebase-bom:33.2.0"))
+    implementation(platform("com.google.firebase:firebase-bom:33.4.0"))
     implementation("com.google.firebase:firebase-auth-ktx")
     implementation("com.google.firebase:firebase-database-ktx")
     implementation("com.google.firebase:firebase-storage-ktx")
     implementation("com.google.android.gms:play-services-auth:21.2.0")
     implementation("androidx.legacy:legacy-support-v4:1.0.0")
     implementation("androidx.preference:preference-ktx:1.2.1")
-    implementation("com.google.firebase:firebase-messaging-ktx:24.0.1")
+    implementation("com.google.firebase:firebase-messaging-ktx:24.0.2")
     implementation("com.google.firebase:firebase-analytics")
-    implementation("com.google.firebase:firebase-messaging-directboot:24.0.1")
+    implementation("com.google.firebase:firebase-messaging-directboot:24.0.2")
 
     implementation("com.firebaseui:firebase-ui-firestore:8.0.2")
 
@@ -189,7 +193,7 @@ dependencies {
     implementation("com.github.bumptech.glide:glide:4.16.0")
     implementation("jp.wasabeef:glide-transformations:4.3.0")
 
-    implementation("com.google.android.gms:play-services-ads:23.1.0")
+    implementation("com.google.android.gms:play-services-ads:23.4.0")
     implementation("com.yandex.android:mobileads:5.10.0")
     implementation("com.yandex.ads.adapter:admob-mobileads:5.10.0.0")
 
