@@ -10,18 +10,9 @@ import androidx.activity.result.ActivityResultLauncher
 import androidx.fragment.app.DialogFragment
 import com.example.bulletin_board.R
 import com.example.bulletin_board.databinding.SignDialogBinding
-import com.google.firebase.auth.FirebaseAuth
+import com.example.bulletin_board.domain.AuthProvider
+import com.example.bulletin_board.domain.ToastHelper
 import timber.log.Timber
-
-// Интерфейсы для взаимодействия
-interface DialogHelperProvider {
-    fun showToastImpl(
-        message: String,
-        duration: Int,
-    )
-
-    val mAuthImpl: FirebaseAuth
-}
 
 interface SignUpInHandler {
     fun signInWithGoogleImpl(googleSignInLauncher: ActivityResultLauncher<Intent>)
@@ -41,7 +32,8 @@ class SignInDialogFragment(
     private val googleSignInLauncher: ActivityResultLauncher<Intent>,
     private val index: Int,
     private val signUpInHandler: SignUpInHandler,
-    private val dialogHelperProvider: DialogHelperProvider,
+    private val authProvider: AuthProvider,
+    private val toastHelper: ToastHelper,
 ) : DialogFragment() {
     private var _binding: SignDialogBinding? = null
     val binding get() = _binding!!
@@ -73,11 +65,11 @@ class SignInDialogFragment(
 
     private fun setOnClickResetPassword() {
         if (binding.editSignEmail.text?.isNotEmpty() == true) {
-            dialogHelperProvider.mAuthImpl
+            authProvider.auth
                 .sendPasswordResetEmail(binding.editSignEmail.text.toString())
                 .addOnCompleteListener { task ->
                     if (task.isSuccessful) {
-                        dialogHelperProvider.showToastImpl(getString(R.string.email_reset), Toast.LENGTH_LONG)
+                        toastHelper.showToast(getString(R.string.email_reset), Toast.LENGTH_LONG)
                     }
                 }
             dismiss()

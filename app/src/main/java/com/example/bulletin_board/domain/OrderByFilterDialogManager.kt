@@ -1,32 +1,38 @@
 package com.example.bulletin_board.domain
 
-import android.widget.Toast
+import android.content.Context
 import com.example.bulletin_board.R
-import com.example.bulletin_board.act.MainActivity
 import com.example.bulletin_board.dialogs.DialogSpinnerHelper
 import com.example.bulletin_board.dialogs.RcViewDialogSpinnerAdapter
+import com.example.bulletin_board.utils.FilterUpdater
 import com.example.bulletin_board.utils.SortUtils.getSortOption
-import com.example.bulletin_board.viewmodel.FirebaseViewModel
 import com.google.android.material.textfield.TextInputEditText
 
+interface FilterReader {
+    fun getFilterValue(key: String): String?
+}
+
 class OrderByFilterDialogManager(
-    private val activity: MainActivity,
-    private val viewModel: FirebaseViewModel,
+    private val resourceStringProvider: ResourceStringProvider,
+    private val filterUpdater: FilterUpdater,
+    private val filterReader: FilterReader,
     private val dialog: DialogSpinnerHelper = DialogSpinnerHelper(),
 ) {
-    fun setupOrderByFilter(autoComplete: TextInputEditText) {
+    fun setupOrderByFilter(
+        context: Context,
+        autoComplete: TextInputEditText,
+    ) {
         autoComplete.setOnClickListener {
             val listVariant: ArrayList<Pair<String, String>> = getFilterOptions()
             val onItemSelectedListener =
                 object : RcViewDialogSpinnerAdapter.OnItemSelectedListener {
                     override fun onItemSelected(item: String) {
-                        Toast.makeText(activity, "Item: $item", Toast.LENGTH_SHORT).show()
-                        viewModel.addToFilter("orderBy", getSortOption(activity, item))
+                        filterUpdater.addToFilter("orderBy", getSortOption(context, item))
                     }
                 }
 
             dialog.showSpinnerPopup(
-                activity,
+                context,
                 autoComplete,
                 listVariant,
                 autoComplete,
@@ -37,19 +43,19 @@ class OrderByFilterDialogManager(
     }
 
     private fun getFilterOptions(): ArrayList<Pair<String, String>> =
-        if (viewModel.getFilterValue("price_from")?.isNotEmpty() == true ||
-            viewModel.getFilterValue("price_to")?.isNotEmpty() == true
+        if (filterReader.getFilterValue("price_from")?.isNotEmpty() == true ||
+            filterReader.getFilterValue("price_to")?.isNotEmpty() == true
         ) {
             arrayListOf(
-                Pair(activity.getStringAccountHelper(R.string.sort_by_ascending_price), "single"),
-                Pair(activity.getStringAccountHelper(R.string.sort_by_descending_price), "single"),
+                Pair(resourceStringProvider.getStringImpl(R.string.sort_by_ascending_price), "single"),
+                Pair(resourceStringProvider.getStringImpl(R.string.sort_by_descending_price), "single"),
             )
         } else {
             arrayListOf(
-                Pair(activity.getStringAccountHelper(R.string.sort_by_newest), "single"),
-                Pair(activity.getStringAccountHelper(R.string.sort_by_popularity), "single"),
-                Pair(activity.getStringAccountHelper(R.string.sort_by_ascending_price), "single"),
-                Pair(activity.getStringAccountHelper(R.string.sort_by_descending_price), "single"),
+                Pair(resourceStringProvider.getStringImpl(R.string.sort_by_newest), "single"),
+                Pair(resourceStringProvider.getStringImpl(R.string.sort_by_popularity), "single"),
+                Pair(resourceStringProvider.getStringImpl(R.string.sort_by_ascending_price), "single"),
+                Pair(resourceStringProvider.getStringImpl(R.string.sort_by_descending_price), "single"),
             )
         }
 }

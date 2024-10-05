@@ -1,6 +1,7 @@
 package com.example.bulletin_board.act
 
 import android.content.Intent
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.Parcelable
@@ -9,9 +10,7 @@ import android.view.Menu
 import android.view.MenuItem
 import android.view.View
 import android.widget.ImageView
-import android.widget.TextView
 import android.widget.Toast
-import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.annotation.RequiresApi
@@ -19,32 +18,36 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.GravityCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.viewModelScope
-import androidx.paging.LoadState
-import androidx.paging.PagingData
-import androidx.paging.PagingDataAdapter
 import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
-import com.airbnb.lottie.LottieDrawable
 import com.bumptech.glide.Glide
-import com.bumptech.glide.load.resource.bitmap.RoundedCorners
 import com.bumptech.glide.request.RequestOptions
 import com.example.bulletin_board.R
-import com.example.bulletin_board.accounthelper.AccountHelper
-import com.example.bulletin_board.accounthelper.AccountHelperProvider
-import com.example.bulletin_board.accounthelper.UserUiUpdate
 import com.example.bulletin_board.adapterFirestore.AdsAdapter
 import com.example.bulletin_board.adapterFirestore.FavoriteAdsAdapter
 import com.example.bulletin_board.adapterFirestore.MyAdsAdapter
 import com.example.bulletin_board.databinding.ActivityMainBinding
 import com.example.bulletin_board.dialoghelper.DialogConst
-import com.example.bulletin_board.dialoghelper.DialogHelperProvider
 import com.example.bulletin_board.dialoghelper.SignInDialogFragment
 import com.example.bulletin_board.dialogs.RcViewSearchSpinnerAdapter
+import com.example.bulletin_board.domain.AccountManager
+import com.example.bulletin_board.domain.AdapterManager
+import com.example.bulletin_board.domain.AdapterViewManager
+import com.example.bulletin_board.domain.AuthCallback
+import com.example.bulletin_board.domain.DataAdapterManager
+import com.example.bulletin_board.domain.FilterReader
+import com.example.bulletin_board.domain.ImageLoader
 import com.example.bulletin_board.domain.NavigationViewHelper
 import com.example.bulletin_board.domain.OrderByFilterDialogManager
 import com.example.bulletin_board.domain.PermissionManager
+import com.example.bulletin_board.domain.ResourceStringProvider
+import com.example.bulletin_board.domain.SearchAdapterUpdateCallback
+import com.example.bulletin_board.domain.SearchAdapterUpdater
+import com.example.bulletin_board.domain.SearchManager
+import com.example.bulletin_board.domain.SearchUiInitializer
 import com.example.bulletin_board.domain.ThemeManager
+import com.example.bulletin_board.domain.ToastHelper
+import com.example.bulletin_board.domain.TokenSaveHandler
 import com.example.bulletin_board.domain.VoiceRecognitionHandler
 import com.example.bulletin_board.domain.VoiceRecognitionListener
 import com.example.bulletin_board.model.Ad
@@ -56,19 +59,14 @@ import com.example.bulletin_board.packroom.RemoteAdDataSource.Companion.KEYWORDS
 import com.example.bulletin_board.packroom.RemoteAdDataSource.Companion.ORDER_BY_FIELD
 import com.example.bulletin_board.packroom.SortOption
 import com.example.bulletin_board.settings.SettingsActivity
-import com.example.bulletin_board.utils.SearchActions
-import com.example.bulletin_board.utils.SearchHelper
+import com.example.bulletin_board.utils.FilterUpdater
 import com.example.bulletin_board.utils.SearchUi
 import com.example.bulletin_board.utils.SortUtils.getSortOptionText
 import com.example.bulletin_board.viewmodel.FirebaseViewModel
-import com.google.android.gms.auth.api.signin.GoogleSignIn
-import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.android.material.navigation.NavigationView.OnNavigationItemSelectedListener
-import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.catch
+import jakarta.inject.Inject
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import timber.log.Timber
@@ -78,28 +76,32 @@ class MainActivity :
     AppCompatActivity(),
     OnNavigationItemSelectedListener,
     AdItemClickListener,
+    TokenSaveHandler,
+    ToastHelper,
+    ResourceStringProvider,
+    ImageLoader,
+    SearchUiInitializer,
     SearchUi,
-    SearchActions,
+    SearchAdapterUpdater,
     VoiceRecognitionListener,
-    AccountHelperProvider,
-    DialogHelperProvider,
-    UserUiUpdate {
-    private lateinit var textViewAccount: TextView
-    private lateinit var imageViewAccount: ImageView
-
-    private lateinit var binding: ActivityMainBinding
-    private lateinit var orderByFilterDialogManager: OrderByFilterDialogManager
-
+    FilterUpdater,
+    FilterReader {
     private val viewModel: FirebaseViewModel by viewModels()
 
-    private val onItemSelectedListener: RcViewSearchSpinnerAdapter.OnItemSelectedListener? = null
-    private var adapterSearch = RcViewSearchSpinnerAdapter(onItemSelectedListener)
+    private lateinit var binding: ActivityMainBinding
+
+    private lateinit var orderByFilterDialogManager: OrderByFilterDialogManager // Inject
 
     private var lastClickTime: Long = 0
     private val doubleClickThreshold = 300
 
-    private lateinit var voiceRecognitionHandler: VoiceRecognitionHandler
-    private lateinit var voiceRecognitionLauncher: ActivityResultLauncher<Intent>
+    @Inject
+    lateinit var voiceRecognitionHandler: VoiceRecognitionHandler
+
+    private val voiceRecognitionLauncher =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            voiceRecognitionHandler.handleRecognitionResult(result)
+        }
 
     private val favAdsAdapter by lazy {
         FavoriteAdsAdapter(viewModel)
@@ -112,22 +114,34 @@ class MainActivity :
     private val myAdsAdapter by lazy {
         MyAdsAdapter(viewModel)
     }
+
     private val scrollStateMap = mutableMapOf<Int, Parcelable?>()
     private var currentTabPosition: Int = 0
 
     private val filterFragment by lazy { FilterFragment() }
 
-    private val searchHelper by lazy {
-        SearchHelper(this, this)
-    }
+    @Inject
+    private lateinit var searchManager: SearchManager
 
-    private lateinit var accountHelper: AccountHelper
+    @Inject
+    lateinit var accountManager: AccountManager
 
     private val googleSignInLauncher =
         registerForActivityResult(
             ActivityResultContracts.StartActivityForResult(),
         ) { result ->
-            accountHelper.handleGoogleSignInResult(result)
+            accountManager.handleGoogleSignInResult(
+                result,
+                object : AuthCallback {
+                    override fun onAuthComplete(user: FirebaseUser?) {
+                        accountManager.updateUi(user)
+                    }
+
+                    override fun onSaveToken(token: String) {
+                        accountManager.saveToken(token)
+                    }
+                },
+            )
         }
 
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
@@ -137,40 +151,24 @@ class MainActivity :
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        val gso =
-            GoogleSignInOptions
-                .Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-                .requestIdToken(getStringAccountHelper(R.string.default_web_client_id))
-                .requestEmail()
-                .build()
+        AdapterManager.registerAdapter(0, adsAdapter)
+        AdapterManager.registerAdapter(1, favAdsAdapter)
+        AdapterManager.registerAdapter(2, myAdsAdapter)
 
-        val googleSignInClient = GoogleSignIn.getClient(this, gso)
+        AdapterViewManager.initViews(binding)
 
-        accountHelper =
-            AccountHelper(
-                this,
-                googleSignInClient,
-                this,
-            )
+        accountManager.initUi(binding)
 
-        textViewAccount = binding.navigationView.getHeaderView(0).findViewById(R.id.text_view_account_email)
-        imageViewAccount = binding.navigationView.getHeaderView(0).findViewById(R.id.image_view_account_image)
-
-        voiceRecognitionLauncher =
-            registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-                voiceRecognitionHandler.handleRecognitionResult(result)
-            }
-        voiceRecognitionHandler = VoiceRecognitionHandler(this, voiceRecognitionLauncher)
+        AdapterManager.initRecyclerView(binding.mainContent.recyclerViewMainContent, adsAdapter, this)
 
         PermissionManager.checkAndRequestNotificationPermission(this)
 
-        initRecyclerView()
         initViewModel()
         init()
 
-        orderByFilterDialogManager = OrderByFilterDialogManager(this, viewModel)
-        orderByFilterDialogManager.setupOrderByFilter(binding.mainContent.autoComplete)
-        searchHelper.initSearchAdd()
+        orderByFilterDialogManager = OrderByFilterDialogManager(this, searchManager, searchManager)
+        orderByFilterDialogManager.setupOrderByFilter(this, binding.mainContent.autoComplete)
+        searchManager.initSearchAdd()
         setupBottomMenu()
     }
 
@@ -206,7 +204,7 @@ class MainActivity :
             }
 
             R.id.id_voice -> {
-                voiceRecognitionHandler.startVoiceRecognition()
+                voiceRecognitionHandler.startVoiceRecognition(voiceRecognitionLauncher)
                 return true
             }
         }
@@ -221,7 +219,7 @@ class MainActivity :
 
     override fun onStart() {
         super.onStart()
-        updateUi(viewModel.getAuth().currentUser)
+        accountManager.updateUi(accountManager.auth.currentUser)
     }
 
     private fun initViewModel() {
@@ -236,94 +234,9 @@ class MainActivity :
         }
 
         lifecycleScope.launch {
-            handleAdapterData(viewModel.favoriteAds, favAdsAdapter)
-            handleAdapterData(viewModel.homeAdsData, adsAdapter)
-            handleAdapterData(viewModel.myAds, myAdsAdapter)
-        }
-    }
-
-    private fun updateUi(user: FirebaseUser?) {
-        if (user == null) {
-            accountHelper.signInAnonymously {
-                textViewAccount.text = this.getString(R.string.guest)
-                imageViewAccount.setImageResource(R.drawable.ic_my_ads)
-            }
-        } else if (user.isAnonymous) {
-            textViewAccount.text = this.getString(R.string.guest)
-            imageViewAccount.setImageResource(R.drawable.ic_my_ads)
-        } else if (!user.isAnonymous) {
-            textViewAccount.text = user.email
-            Glide // meibe
-                .with(this)
-                .load(user.photoUrl)
-                .apply(RequestOptions().transform(RoundedCorners(20)))
-                .into(imageViewAccount)
-        }
-    }
-
-    private fun handleAdapterData(
-        dataFlow: Flow<PagingData<Ad>>,
-        adapter: PagingDataAdapter<Ad, *>,
-    ) {
-        lifecycleScope.launch {
-            dataFlow
-                .catch { e ->
-                    Timber.tag("MainActivity").e(e, "Error loading ads data")
-                }.collectLatest { pagingData ->
-                    Timber.d("Received PagingData: $pagingData")
-                    adapter.submitData(lifecycle, pagingData)
-
-                    adapter.addLoadStateListener { loadStates ->
-                        if (loadStates.refresh is LoadState.NotLoading) {
-                            val layoutManager = binding.mainContent.recyclerViewMainContent.layoutManager
-                            layoutManager?.scrollToPosition(0)
-                        }
-                    }
-
-                    adapter.registerAdapterDataObserver(
-                        object :
-                            RecyclerView.AdapterDataObserver() {
-                            override fun onItemRangeInserted(
-                                positionStart: Int,
-                                itemCount: Int,
-                            ) {
-                                super.onItemRangeInserted(positionStart, itemCount)
-                                Timber.d("onItemRangeInserted $adapter")
-                                updateAnimationVisibility(adapter.itemCount)
-                            }
-
-                            override fun onItemRangeRemoved(
-                                positionStart: Int,
-                                itemCount: Int,
-                            ) {
-                                super.onItemRangeRemoved(positionStart, itemCount)
-                                Timber.d("onItemRangeRemoved $adapter")
-                                updateAnimationVisibility(adapter.itemCount)
-                            }
-
-                            override fun onChanged() {
-                                super.onChanged()
-                                Timber.d("onChanged $adapter")
-                                updateAnimationVisibility(adapter.itemCount)
-                            }
-                        },
-                    )
-                    Timber.d("After $adapter")
-                    updateAnimationVisibility(adapter.itemCount)
-                }
-        }
-    }
-
-    private fun updateAnimationVisibility(itemCount: Int) {
-        Timber.d("updateAnimationVisibility Item count: $itemCount")
-
-        if (itemCount == 0) {
-            binding.mainContent.nothinkWhiteAnim.visibility = View.VISIBLE
-            binding.mainContent.nothinkWhiteAnim.repeatCount = LottieDrawable.INFINITE
-            binding.mainContent.nothinkWhiteAnim.playAnimation()
-        } else {
-            binding.mainContent.nothinkWhiteAnim.cancelAnimation()
-            binding.mainContent.nothinkWhiteAnim.visibility = View.GONE
+            launch { DataAdapterManager.handleAdapterData(viewModel.favoriteAds, favAdsAdapter, AdapterViewManager) }
+            launch { DataAdapterManager.handleAdapterData(viewModel.homeAdsData, adsAdapter, AdapterViewManager) }
+            launch { DataAdapterManager.handleAdapterData(viewModel.myAds, myAdsAdapter, AdapterViewManager) }
         }
     }
 
@@ -349,23 +262,8 @@ class MainActivity :
         }
 
         binding.mainContent.swipeRefreshLayout.setOnRefreshListener {
-            val currentAdapterType =
-                when (binding.mainContent.bottomNavView.selectedItemId) {
-                    R.id.id_home -> ADS_ADAPTER
-                    R.id.id_favs -> FAV_ADAPTER
-                    R.id.id_my_ads -> MY_ADAPTER
-                    else -> ADS_ADAPTER
-                }
-            refreshAdapter(currentAdapterType)
+            AdapterManager.refreshAdapter(binding.mainContent.bottomNavView.selectedItemId)
             binding.mainContent.swipeRefreshLayout.isRefreshing = false
-        }
-    }
-
-    private fun refreshAdapter(adapterType: Int) {
-        when (adapterType) {
-            ADS_ADAPTER -> adsAdapter.refresh()
-            FAV_ADAPTER -> favAdsAdapter.refresh()
-            MY_ADAPTER -> myAdsAdapter.refresh()
         }
     }
 
@@ -375,52 +273,27 @@ class MainActivity :
                 val currentTime = System.currentTimeMillis()
 
                 if (currentTime - lastClickTime <= doubleClickThreshold) {
-                    refreshAdapter(item.itemId)
+                    AdapterManager.refreshAdapter(item.itemId)
                 }
                 lastClickTime = currentTime
 
                 when (item.itemId) {
-                    R.id.id_settings -> {
-                        startActivity(Intent(this@MainActivity, SettingsActivity::class.java))
-                    }
-                    R.id.id_my_ads -> {
-                        switchAdapter(myAdsAdapter, 2)
-                        viewModel.myAds
-                    }
-                    R.id.id_favs -> {
-                        switchAdapter(favAdsAdapter, 1)
-                        viewModel.favoriteAds
-                    }
-                    R.id.id_home -> {
-                        switchAdapter(adsAdapter, 0)
-                        getAdsFromCat("")
-                    }
+                    R.id.id_settings ->
+                        startActivity(
+                            Intent(
+                                this@MainActivity,
+                                SettingsActivity::class.java,
+                            ),
+                        )
+
+                    R.id.id_my_ads -> switchAdapter(MY_ADAPTER)
+
+                    R.id.id_favs -> switchAdapter(FAV_ADAPTER)
+
+                    R.id.id_home -> switchAdapter(ADS_ADAPTER)
                 }
                 true
             }
-        }
-    }
-
-    private fun initRecyclerView() {
-        binding.apply {
-            mainContent.recyclerViewMainContent.layoutManager =
-                LinearLayoutManager(this@MainActivity)
-            mainContent.recyclerViewMainContent.adapter = adsAdapter
-        }
-
-        val onItemSelectedListener =
-            RcViewSearchSpinnerAdapter.OnItemSelectedListener { item ->
-                binding.mainContent.searchViewMainContent.editText
-                    .setText(item)
-                binding.mainContent.searchViewMainContent.editText.setSelection(
-                    binding.mainContent.searchViewMainContent.editText.text.length,
-                )
-            }
-        adapterSearch = RcViewSearchSpinnerAdapter(onItemSelectedListener)
-
-        binding.apply {
-            mainContent.recyclerViewSearch.layoutManager = LinearLayoutManager(this@MainActivity)
-            mainContent.recyclerViewSearch.adapter = adapterSearch
         }
     }
 
@@ -430,27 +303,24 @@ class MainActivity :
                 Toast.makeText(this, "pressed my ads", Toast.LENGTH_SHORT).show()
             }
 
-            R.id.id_car -> {
-                getAdsFromCat(SortOption.AD_CAR.id)
-            }
-
-            R.id.id_pc -> {
-                getAdsFromCat(SortOption.AD_PC.id)
-            }
-
-            R.id.id_smartphone -> {
-                getAdsFromCat(SortOption.AD_SMARTPHONE.id)
-            }
-
-            R.id.id_dm -> {
-                getAdsFromCat(SortOption.AD_DM.id)
+            R.id.id_car, R.id.id_pc, R.id.id_smartphone, R.id.id_dm -> {
+                getAdsFromCat(
+                    when (item.itemId) {
+                        R.id.id_car -> SortOption.AD_CAR.id
+                        R.id.id_pc -> SortOption.AD_PC.id
+                        R.id.id_smartphone -> SortOption.AD_SMARTPHONE.id
+                        R.id.id_dm -> SortOption.AD_DM.id
+                        else -> ""
+                    },
+                )
             }
 
             R.id.id_sign_up -> {
                 SignInDialogFragment(
                     googleSignInLauncher,
                     DialogConst.SIGN_UP_STATE,
-                    accountHelper,
+                    accountManager,
+                    accountManager,
                     this,
                 ).show(supportFragmentManager, "SignUpDialog")
             }
@@ -459,19 +329,20 @@ class MainActivity :
                 SignInDialogFragment(
                     googleSignInLauncher,
                     DialogConst.SIGN_IN_STATE,
-                    accountHelper,
+                    accountManager,
+                    accountManager,
                     this,
                 ).show(supportFragmentManager, "SignInDialog")
             }
 
             R.id.id_sign_out -> {
-                if (viewModel.getAuth().currentUser?.isAnonymous == true) {
+                if (accountManager.isAnonymous()) {
                     binding.drawerLayout.closeDrawer(GravityCompat.START)
                     return true
                 }
-                updateUi(null)
-                viewModel.getAuth().signOut()
-                accountHelper.signOutGoogle()
+                accountManager.updateUi(null)
+                accountManager.signOut()
+                accountManager.signOutGoogle()
             }
         }
         binding.drawerLayout.closeDrawer(GravityCompat.START)
@@ -482,7 +353,10 @@ class MainActivity :
         val newFilters =
             mapOf(
                 CATEGORY_FIELD to cat,
-                ORDER_BY_FIELD to (viewModel.getFilterValue(ORDER_BY_FIELD) ?: SortOption.BY_NEWEST.id),
+                ORDER_BY_FIELD to (
+                    viewModel.getFilterValue(ORDER_BY_FIELD)
+                        ?: SortOption.BY_NEWEST.id
+                ),
             )
         Timber.d("newFilters called getAdsFromCat")
         viewModel.updateFilters(newFilters)
@@ -496,24 +370,8 @@ class MainActivity :
         NavigationViewHelper.setMenuItemStyle(menu, R.id.accCat, colorPrimary, this)
     }
 
-    private fun switchAdapter(
-        adapter: RecyclerView.Adapter<*>,
-        tabPosition: Int,
-    ) {
-        updateAnimationVisibility(adapter.itemCount)
-        // Сохранение текущего состояния
-        scrollStateMap[currentTabPosition] =
-            binding.mainContent.recyclerViewMainContent.layoutManager
-                ?.onSaveInstanceState()
-
-        // Переключение адаптера
-        binding.mainContent.recyclerViewMainContent.adapter = adapter
-
-        // Восстановление состояния для новой вкладки
-        binding.mainContent.recyclerViewMainContent.layoutManager
-            ?.onRestoreInstanceState(scrollStateMap[tabPosition])
-
-        // Обновляем текущую позицию вкладки
+    private fun switchAdapter(tabPosition: Int) {
+        AdapterManager.switchAdapter(AdapterViewManager, tabPosition, scrollStateMap, currentTabPosition)
         currentTabPosition = tabPosition
     }
 
@@ -555,10 +413,45 @@ class MainActivity :
         }
     }
 
-    override fun isOwner(adUid: String): Boolean = adUid == viewModel.getAuth().currentUser?.uid
+    override fun isOwner(adUid: String): Boolean = adUid == accountManager.auth.currentUser?.uid
 
-    override fun clearSearchResults() {
-        adapterSearch.clearAdapter()
+    override fun saveToken(token: String) {
+        viewModel.viewModelScope.launch {
+            viewModel.saveTokenFCM(token)
+        }
+    }
+
+    override fun showToast(
+        message: String,
+        duration: Int,
+    ) {
+        Toast.makeText(this, message, duration).show()
+    }
+
+    override fun getStringImpl(resId: Int): String = this.getString(resId)
+
+    override fun loadImage(
+        imageView: ImageView,
+        imageUrl: Uri?,
+        requestOptions: RequestOptions,
+    ) {
+        Glide
+            .with(this)
+            .load(imageUrl)
+            .apply(requestOptions)
+            .into(imageView)
+    }
+
+    override fun initSearchAdapter(item: String) {
+        binding.mainContent.searchViewMainContent.editText
+            .setText(item)
+        binding.mainContent.searchViewMainContent.editText
+            .setSelection(binding.mainContent.searchViewMainContent.editText.text.length)
+    }
+
+    override fun initRecyclerView(adapter: RcViewSearchSpinnerAdapter) {
+        binding.mainContent.recyclerViewSearch.layoutManager = LinearLayoutManager(this)
+        binding.mainContent.recyclerViewSearch.adapter = adapter
     }
 
     override fun updateSearchBar(query: String) {
@@ -599,20 +492,16 @@ class MainActivity :
         binding.mainContent.searchBar.text
             .toString()
 
-    override fun addToFilter(
-        key: String,
-        value: String,
+    override fun updateAdapter(
+        query: String,
+        callback: SearchAdapterUpdateCallback,
     ) {
-        viewModel.addToFilter(key, value)
-    }
-
-    override fun handleSearchQuery(query: String) {
         lifecycleScope.launch {
             viewModel.fetchSearchResults(query)
             viewModel.appState.collectLatest { appState ->
                 if (appState.searchResults.isNotEmpty()) {
                     val formattedResults = viewModel.formatSearchResults(appState.searchResults, query)
-                    adapterSearch.updateAdapter(formattedResults)
+                    callback.onAdapterUpdated(formattedResults)
                 }
             }
         }
@@ -625,43 +514,15 @@ class MainActivity :
             .setIcon(R.drawable.ic_cancel)
 
         val validateText = spokenText.split(" ").joinToString("-")
-        Timber.d("validate text = $validateText")
         viewModel.addToFilter(KEYWORDS_FIELD, validateText)
     }
 
-    override fun onVoiceRecognitionError(message: String) {
-        Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
-    }
-
-    override fun saveToken(token: String) {
-        viewModel.viewModelScope.launch {
-            viewModel.saveTokenFCM(token)
-        }
-    }
-
-    override val mAuth: FirebaseAuth
-        get() = viewModel.getAuth()
-
-    override fun showToast(
-        message: String,
-        duration: Int,
+    override fun addToFilter(
+        key: String,
+        value: String,
     ) {
-        Toast.makeText(this, message, duration).show()
+        viewModel.addToFilter(key, value)
     }
 
-    override fun getStringAccountHelper(resId: Int): String = this.getString(resId)
-
-    override val mAuthImpl: FirebaseAuth
-        get() = viewModel.getAuth()
-
-    override fun showToastImpl(
-        message: String,
-        duration: Int,
-    ) {
-        Toast.makeText(this, message, duration).show()
-    }
-
-    override fun updateUiImpl(user: FirebaseUser?) {
-        updateUi(user)
-    }
+    override fun getFilterValue(key: String): String? = viewModel.getFilterValue(key)
 }

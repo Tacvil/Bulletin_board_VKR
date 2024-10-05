@@ -12,7 +12,6 @@ import com.example.bulletin_board.model.UseCases
 import com.example.bulletin_board.model.ViewData
 import com.example.bulletin_board.packroom.RemoteAdDataSource.Companion.CATEGORY_FIELD
 import com.example.bulletin_board.packroom.Result
-import com.google.firebase.auth.FirebaseAuth
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -36,13 +35,10 @@ class FirebaseViewModel
         private val useCasesFilters: UseCases.Filters,
         private val useCasesSearch: UseCases.Search,
         private val useCasesPriceFilters: UseCases.PriceFilters,
-        private val auth: FirebaseAuth,
     ) : ViewModel() {
         init {
             Timber.d("ViewModel created: $this")
         }
-
-        fun getAuth(): FirebaseAuth = auth
 
         companion object {
             const val PAGE_SIZE = 2

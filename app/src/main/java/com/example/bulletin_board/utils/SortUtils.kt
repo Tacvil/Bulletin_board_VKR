@@ -30,6 +30,6 @@ object SortUtils {
             SortOption.BY_POPULARITY.id -> context.getString(R.string.sort_by_popularity)
             SortOption.BY_PRICE_ASC.id -> context.getString(R.string.sort_by_ascending_price)
             SortOption.BY_PRICE_DESC.id -> context.getString(R.string.sort_by_descending_price)
-            else -> sortOptionId // Возвращаем исходное значение, если не найдено соответствие
+            else -> sortOptionId
         }
 }

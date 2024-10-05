@@ -7,8 +7,8 @@ plugins {
     id("com.google.gms.google-services")
     id("io.gitlab.arturbosch.detekt") version "1.23.6"
     id("com.google.dagger.hilt.android")
-    id("com.google.devtools.ksp") version "2.0.20-1.0.25"
-    kotlin("plugin.serialization") version "2.0.20"
+    id("com.google.devtools.ksp") version "2.0.21-RC-1.0.25"
+    kotlin("plugin.serialization") version "2.0.21-RC"
 }
 
 android {

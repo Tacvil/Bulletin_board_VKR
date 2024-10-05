@@ -17,6 +17,7 @@ import com.bumptech.glide.load.resource.bitmap.RoundedCorners
 import com.bumptech.glide.request.RequestOptions
 import com.example.bulletin_board.R
 import com.example.bulletin_board.databinding.AdListItemBinding
+import com.example.bulletin_board.domain.Adapter
 import com.example.bulletin_board.model.Ad
 import com.example.bulletin_board.model.AdItemClickListener
 import com.example.bulletin_board.model.AdUpdateEvent
@@ -34,7 +35,8 @@ class MyAdsAdapter
     @Inject
     constructor(
         viewModel: FirebaseViewModel,
-    ) : PagingDataAdapter<Ad, MyAdsAdapter.AdHolder>(MyAdDiffCallback()) {
+    ) : PagingDataAdapter<Ad, MyAdsAdapter.AdHolder>(MyAdDiffCallback()),
+        Adapter {
         init {
             viewModel.viewModelScope.launch {
                 viewModel.appState.drop(1).collectLatest { event ->
@@ -198,6 +200,13 @@ class MyAdsAdapter
                 holder.bind(ad)
             }
         }
+
+        override fun refreshAdapter() {
+            refresh()
+        }
+
+        override val itemCountAdapter: Int
+            get() = itemCount
     }
 
 class MyAdDiffCallback : DiffUtil.ItemCallback<Ad>() {

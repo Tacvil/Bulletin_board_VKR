@@ -20,10 +20,10 @@ import com.example.bulletin_board.useCase.tokenManagement.SaveTokenUseCase
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
-import dagger.hilt.android.components.ViewModelComponent
+import dagger.hilt.components.SingletonComponent
 
 @Module
-@InstallIn(ViewModelComponent::class)
+@InstallIn(SingletonComponent::class)
 object UseCasesModule {
     @Provides
     fun provideSearchUseCases(
@@ -47,9 +47,8 @@ object UseCasesModule {
     ): UseCases.DataUpdate = UseCases.DataUpdate(updateFavoriteAdUseCase, adViewedUseCase, insertAdUseCase, deleteAdUseCase)
 
     @Provides
-    fun providePriceFiltersUseCases(
-        getMinMaxPriceUseCase: GetMinMaxPriceUseCase,
-    ): UseCases.PriceFilters = UseCases.PriceFilters(getMinMaxPriceUseCase)
+    fun providePriceFiltersUseCases(getMinMaxPriceUseCase: GetMinMaxPriceUseCase): UseCases.PriceFilters =
+        UseCases.PriceFilters(getMinMaxPriceUseCase)
 
     @Provides
     fun provideTokenManagementUseCases(saveTokenUseCase: SaveTokenUseCase): UseCases.TokenManagement =
