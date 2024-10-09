@@ -1,16 +1,19 @@
 package com.example.bulletin_board.di
 
+import androidx.fragment.app.FragmentActivity
 import com.example.bulletin_board.domain.AccountHelper
 import com.example.bulletin_board.domain.AccountHelperProvider
 import com.example.bulletin_board.domain.AccountManager
 import com.example.bulletin_board.domain.AccountUiHandler
 import com.example.bulletin_board.domain.AccountUiManager
+import com.example.bulletin_board.domain.AccountUiViewsProvider
 import com.example.bulletin_board.domain.ResourceStringProvider
 import com.example.bulletin_board.domain.SignInAnonymouslyProvider
 import com.example.bulletin_board.domain.ToastHelper
 import com.example.bulletin_board.domain.TokenHandler
 import com.example.bulletin_board.domain.TokenManager
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 import dagger.Binds
 import dagger.Module
 import dagger.Provides
@@ -24,6 +27,7 @@ object AccountManagerModule {
     @Provides
     fun provideAccountManager(
         firebaseAuth: FirebaseAuth,
+        firestore: FirebaseFirestore,
         accountUiHandler: AccountUiHandler,
         accountHelperProvider: AccountHelperProvider,
         tokenHandler: TokenHandler,
@@ -31,6 +35,7 @@ object AccountManagerModule {
     ): AccountManager =
         AccountManager(
             firebaseAuth,
+            firestore,
             accountUiHandler,
             accountHelperProvider,
             tokenHandler,
@@ -54,20 +59,25 @@ abstract class AccountHelperBindingModule {
 @InstallIn(ActivityComponent::class)
 object ResourceProviderModule {
     @Provides
-    @ActivityScoped
-    fun provideToastHelper(androidResourceProvider: AndroidResourceProvider): ToastHelper = androidResourceProvider
+    fun provideToastHelper(activity: FragmentActivity): ToastHelper = activity as ToastHelper
 
     @Provides
-    @ActivityScoped
-    fun provideResourceStringProvider(androidResourceProvider: AndroidResourceProvider): ResourceStringProvider = androidResourceProvider
+    fun provideResourceStringProvider(activity: FragmentActivity): ResourceStringProvider = activity as ResourceStringProvider
 }
 
 @Module
 @InstallIn(ActivityComponent::class)
-abstract class AccountUiHandlerModule {
+abstract class AccountUiHandlerBindingModule {
     @Binds
     @ActivityScoped
     abstract fun bindAccountUiHandler(accountUiManager: AccountUiManager): AccountUiHandler
+}
+
+@Module
+@InstallIn(ActivityComponent::class)
+object AccountUiHandlerModule {
+    @Provides
+    fun provideAccountUiViewsProvider(activity: FragmentActivity): AccountUiViewsProvider = activity as AccountUiViewsProvider
 }
 
 @Module

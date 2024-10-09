@@ -36,7 +36,6 @@ import timber.log.Timber
 class FilterFragment : BottomSheetDialogFragment() {
     private var _binding: ActivityFilterBinding? = null
     val binding get() = _binding!!
-    private val dialog = DialogSpinnerHelper()
     private lateinit var defPreferences: SharedPreferences
     private val viewModel: FirebaseViewModel by activityViewModels()
 
@@ -167,7 +166,7 @@ class FilterFragment : BottomSheetDialogFragment() {
         isCountry: Boolean = true,
         onItemSelected: (String) -> Unit,
     ) {
-        dialog.showSpinnerPopup(
+        DialogSpinnerHelper.showSpinnerPopup(
             requireContext(),
             textView,
             items,

@@ -13,6 +13,9 @@ import com.example.bulletin_board.useCase.filters.ClearFiltersUseCase
 import com.example.bulletin_board.useCase.filters.GetFilterValueUseCase
 import com.example.bulletin_board.useCase.filters.RemoveFromFilterUseCase
 import com.example.bulletin_board.useCase.filters.UpdateFiltersUseCase
+import com.example.bulletin_board.useCase.imageManagement.DeleteUserImageUseCase
+import com.example.bulletin_board.useCase.imageManagement.UpdateUserImageUseCase
+import com.example.bulletin_board.useCase.imageManagement.UploadUserImageUseCase
 import com.example.bulletin_board.useCase.priceFilters.GetMinMaxPriceUseCase
 import com.example.bulletin_board.useCase.search.FormatSearchResultsUseCase
 import com.example.bulletin_board.useCase.search.GetSearchResultsUseCase
@@ -63,4 +66,11 @@ object UseCasesModule {
         clearFiltersUseCase: ClearFiltersUseCase,
     ): UseCases.Filters =
         UseCases.Filters(addToFilterUseCase, getFilterValueUseCase, updateFiltersUseCase, removeFromFilterUseCase, clearFiltersUseCase)
+
+    @Provides
+    fun provideImageManagementUseCases(
+        uploadUserImageUseCase: UploadUserImageUseCase,
+        updateUserImageUseCase: UpdateUserImageUseCase,
+        deleteUserImageUseCase: DeleteUserImageUseCase,
+    ): UseCases.ImageManagement = UseCases.ImageManagement(uploadUserImageUseCase, updateUserImageUseCase, deleteUserImageUseCase)
 }

@@ -1,18 +1,15 @@
 package com.example.bulletin_board.act
 
-import android.content.Intent
-import android.content.SharedPreferences
+import android.content.ContentResolver
 import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
-import android.util.Log
 import android.view.View
 import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
-import androidx.appcompat.app.AppCompatDelegate
 import androidx.lifecycle.viewModelScope
 import androidx.preference.PreferenceManager
 import androidx.viewpager2.widget.ViewPager2
@@ -21,42 +18,53 @@ import com.example.bulletin_board.adapters.ImageAdapter
 import com.example.bulletin_board.databinding.ActivityEditAdsBinding
 import com.example.bulletin_board.dialogs.DialogSpinnerHelper
 import com.example.bulletin_board.dialogs.RcViewDialogSpinnerAdapter
+import com.example.bulletin_board.domain.AccountManager
+import com.example.bulletin_board.domain.ThemeManager
+import com.example.bulletin_board.domain.ToastHelper
+import com.example.bulletin_board.domain.image.ContentResolverProvider
+import com.example.bulletin_board.domain.image.ImageManager
+import com.example.bulletin_board.domain.image.PixImagePickerActions
+import com.example.bulletin_board.domain.image.ViewModelHandler
+import com.example.bulletin_board.fragments.EditImagePosListener
 import com.example.bulletin_board.fragments.FragmentCloseInterface
 import com.example.bulletin_board.fragments.ImageListFrag
 import com.example.bulletin_board.model.Ad
-import com.example.bulletin_board.model.DbManager
-import com.example.bulletin_board.model.DbManager.Companion.MAIN_NODE
-import com.example.bulletin_board.settings.SettingsActivity
+import com.example.bulletin_board.pix.models.Options
 import com.example.bulletin_board.utils.CityHelper
-import com.example.bulletin_board.utils.ImageManager.fillImageArray
-import com.example.bulletin_board.utils.ImagePicker
 import com.example.bulletin_board.viewmodel.FirebaseViewModel
-import com.google.android.gms.tasks.OnCompleteListener
+import dagger.hilt.android.AndroidEntryPoint
+import io.ak1.pix.helpers.PixEventCallback
+import io.ak1.pix.helpers.addPixToActivity
 import io.ak1.pix.helpers.showStatusBar
+import jakarta.inject.Inject
 import kotlinx.coroutines.launch
-import java.io.ByteArrayOutputStream
-import java.io.Serializable
-import kotlin.collections.ArrayList
 
+@AndroidEntryPoint
 class EditAdsActivity :
     AppCompatActivity(),
-    FragmentCloseInterface {
-    var chooseImageFrag: ImageListFrag? = null
+    FragmentCloseInterface,
+    ToastHelper,
+    ViewModelHandler,
+    ContentResolverProvider,
+    PixImagePickerActions,
+    EditImagePosListener {
+    private var chooseImageFrag: ImageListFrag? = null
     lateinit var binding: ActivityEditAdsBinding
-    private val dialog = DialogSpinnerHelper()
-    lateinit var imageAdapter: ImageAdapter
-    private val dbManager = DbManager()
-    var editImagePos = 0
-    private var imageIndex = 0
+    private lateinit var imageAdapter: ImageAdapter
+    private var editImagePos = 0
     private var isEditState = false
     private var ad: Ad? = null
     private val viewModel: FirebaseViewModel by viewModels()
-    private lateinit var defPreferences: SharedPreferences
+
+    @Inject
+    lateinit var accountManager: AccountManager
+
+    @Inject
+    lateinit var imageManager: ImageManager
 
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     override fun onCreate(savedInstanceState: Bundle?) {
-        defPreferences = PreferenceManager.getDefaultSharedPreferences(this)
-        setTheme(getSelectedTheme())
+        setTheme(ThemeManager.getSelectedTheme(PreferenceManager.getDefaultSharedPreferences(this)))
         super.onCreate(savedInstanceState)
         binding = ActivityEditAdsBinding.inflate(layoutInflater)
         setContentView(binding.root)
@@ -78,20 +86,6 @@ class EditAdsActivity :
         }
     }
 
-    private inline fun <reified T : Serializable> Intent.serializable(key: String): T? =
-        when {
-            Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU ->
-                getSerializableExtra(
-                    key,
-                    T::class.java,
-                )
-
-            else ->
-                @Suppress("DEPRECATION")
-                getSerializableExtra(key)
-                    as? T
-        }
-
     private fun isEditState(): Boolean = intent.getBooleanExtra(MainActivity.EDIT_STATE, false)
 
     private fun fillViews(ad: Ad) =
@@ -103,27 +97,23 @@ class EditAdsActivity :
             textViewSelectTelNumb.setText(ad.tel)
             textViewSelectEmail.setText(ad.email)
             textViewSelectCategory.setText(ad.category)
-            // checkBoxWithSend.isChecked = ad.withSend.toBoolean()
             textViewSelectWithSend.setText(ad.withSend)
             textViewPrice.setText(ad.price.toString())
             textViewDescription.setText(ad.description)
             updateImageCounter(0)
-            fillImageArray(ad, imageAdapter)
+            imageManager.fillImageArray(ad, imageAdapter)
         }
 
     private fun init() {
         imageAdapter = ImageAdapter()
         binding.viewPagerImages.adapter = imageAdapter
-
-//        val listCountry = CityHelper.getAllCountries(this)
-//        dialog.showSpinnerDialog(this, listCountry)
     }
 
     private fun onClickSelectCountryCity() {
         binding.textViewSelectCountry.setOnClickListener {
             val listCountry = CityHelper.getAllCountries(this)
-            if (binding.textViewSelectCity.text.toString() != "") { // getString(R.string.select_city)
-                binding.textViewSelectCity.setText("") // getString(R.string.select_city)
+            if (binding.textViewSelectCity.text.toString() != "") {
+                binding.textViewSelectCity.setText("")
             }
             val onItemSelectedListener =
                 object : RcViewDialogSpinnerAdapter.OnItemSelectedListener {
@@ -131,7 +121,7 @@ class EditAdsActivity :
                         binding.textViewSelectCountry.setText(item)
                     }
                 }
-            dialog.showSpinnerPopup(
+            DialogSpinnerHelper.showSpinnerPopup(
                 this,
                 binding.textViewSelectCountry,
                 listCountry,
@@ -151,7 +141,7 @@ class EditAdsActivity :
                             binding.textViewSelectCity.setText(item)
                         }
                     }
-                dialog.showSpinnerPopup(
+                DialogSpinnerHelper.showSpinnerPopup(
                     this,
                     binding.textViewSelectCity,
                     listCity,
@@ -178,7 +168,7 @@ class EditAdsActivity :
                         binding.textViewSelectWithSend.setText(item)
                     }
                 }
-            dialog.showSpinnerPopup(
+            DialogSpinnerHelper.showSpinnerPopup(
                 this,
                 binding.textViewSelectWithSend,
                 listVariant,
@@ -188,22 +178,11 @@ class EditAdsActivity :
             )
         }
 
-//        binding.textViewSelectCity.setOnClickListener {
-//            val selectedCountry = binding.textViewSelectCountry.text.toString()
-//            if (selectedCountry != getString(R.string.select_country)) {
-//                val listCity = CityHelper.getAllCities(selectedCountry, this)
-//                dialog.showSpinnerDialog(this, listCity, binding.textViewSelectCity)
-//            } else {
-//                Toast.makeText(this, "No country selected", Toast.LENGTH_LONG).show()
-//            }
-//        }
-
         binding.imageButton.setOnClickListener {
             if (imageAdapter.mainArray.size == 0) {
-                ImagePicker.getMultiImages(this, 3)
-                // ImagePicker.getImages(this)
+                imageManager.getMultiImages(3)
             } else {
-                openChooseImageFrag(null)
+                showImageListFrag(null)
                 chooseImageFrag?.updateAdapterFromEdit(imageAdapter.mainArray)
             }
         }
@@ -222,7 +201,13 @@ class EditAdsActivity :
             }
             binding.progressLayout.visibility = View.VISIBLE
             ad = fillAnnouncement()
-            uploadImages()
+            viewModel.viewModelScope.launch {
+                imageManager.uploadImages(ad, imageAdapter, 0) {
+                    binding.progressLayout.visibility = View.GONE
+                    // Toast.makeText(this@EditAdsActivity, "Объявление отправлено на модерацию!", Toast.LENGTH_SHORT).show()
+                    finish()
+                }
+            }
         }
     }
 
@@ -243,10 +228,7 @@ class EditAdsActivity :
         binding.apply {
             adTemp =
                 Ad(
-                    ad?.key ?: dbManager.firestore
-                        .collection(MAIN_NODE)
-                        .document()
-                        .id,
+                    ad?.key ?: accountManager.generateAdId(),
                     textViewTitle.text.toString(),
                     textViewTitle.text.toString().lowercase(),
                     createKeyWords(textViewTitle.text.toString()),
@@ -262,7 +244,7 @@ class EditAdsActivity :
                     ad?.mainImage ?: "empty",
                     ad?.image2 ?: "empty",
                     ad?.image3 ?: "empty",
-                    dbManager.auth.uid,
+                    accountManager.auth.uid,
                     ad?.time ?: System.currentTimeMillis().toString(),
                 )
         }
@@ -270,11 +252,8 @@ class EditAdsActivity :
     }
 
     private fun createKeyWords(title: String): ArrayList<String> {
-        Log.d("EdAdsAct title", title)
         val words = title.split(" ")
-        Log.d("EdAdsAct words", "$words")
         val combinations = generateCombinations(words)
-        Log.d("EdAdsAct combinations ", "$combinations")
         return combinations as ArrayList<String>
     }
 
@@ -307,14 +286,15 @@ class EditAdsActivity :
     private fun onClickSelectCategory() {
         binding.textViewSelectCategory.setOnClickListener {
             val listCategory = resources.getStringArray(R.array.category)
-            val pairsCategory = ArrayList<Pair<String, String>>(listCategory.map { Pair(it, "empty") })
+            val pairsCategory =
+                ArrayList<Pair<String, String>>(listCategory.map { Pair(it, "empty") })
             val onItemSelectedListener =
                 object : RcViewDialogSpinnerAdapter.OnItemSelectedListener {
                     override fun onItemSelected(item: String) {
                         binding.textViewSelectCategory.setText(item)
                     }
                 }
-            dialog.showSpinnerPopup(
+            DialogSpinnerHelper.showSpinnerPopup(
                 this,
                 binding.textViewSelectCategory,
                 pairsCategory,
@@ -332,114 +312,14 @@ class EditAdsActivity :
         updateImageCounter(binding.viewPagerImages.currentItem)
     }
 
-    fun openChooseImageFrag(newList: ArrayList<Uri>?) {
-        chooseImageFrag = ImageListFrag(this)
-        if (newList != null) chooseImageFrag?.resizeSelectedImages(newList, true, this)
+    override fun showImageListFrag(uris: ArrayList<Uri>?) {
+        chooseImageFrag = ImageListFrag(this, this)
+        if (uris != null) chooseImageFrag?.resizeSelectedImages(uris, true, this)
         binding.scrollViewMain.visibility = View.GONE
         val fm = supportFragmentManager.beginTransaction()
         fm.replace(R.id.place_holder, chooseImageFrag!!)
         fm.commit()
         showStatusBar()
-    }
-
-    private fun uploadImages() {
-        if (imageIndex == 3) {
-            viewModel.viewModelScope.launch {
-                val result = viewModel.insertAd(ad!!)
-                binding.progressLayout.visibility = View.GONE
-                if (result) {
-                    Toast
-                        .makeText(this@EditAdsActivity, "Объявление отправлено на модерацию!", Toast.LENGTH_SHORT)
-                        .show()
-                } else {
-                    Toast.makeText(this@EditAdsActivity, "Ошибка отправки!", Toast.LENGTH_SHORT).show()
-                }
-                finish()
-            }
-            return
-        }
-        val oldUrl = getUrlFromAd()
-        if (imageAdapter.mainArray.size > imageIndex) {
-            val byteArray = prepareImageByteArray(imageAdapter.mainArray[imageIndex])
-            if (oldUrl.startsWith("http")) {
-                updateImage(byteArray, oldUrl) {
-                    nextImage(it.result.toString())
-                }
-            } else {
-                uploadImage(byteArray) {
-                    // dbManager.publishAnnouncement(ad!!, onPublishFinish())
-                    nextImage(it.result.toString())
-                }
-            }
-        } else {
-            if (oldUrl.startsWith("http")) {
-                deleteImageByUrl(oldUrl) {
-                    nextImage("empty")
-                }
-            } else {
-                nextImage("empty")
-            }
-        }
-    }
-
-    private fun nextImage(uri: String) {
-        setImageUriToAd(uri)
-        imageIndex++
-        uploadImages()
-    }
-
-    private fun setImageUriToAd(uri: String) {
-        when (imageIndex) {
-            0 -> ad = ad?.copy(mainImage = uri)
-            1 -> ad = ad?.copy(image2 = uri)
-            2 -> ad = ad?.copy(image3 = uri)
-        }
-    }
-
-    private fun getUrlFromAd(): String = listOf(ad?.mainImage!!, ad?.image2!!, ad?.image3!!)[imageIndex]
-
-    private fun prepareImageByteArray(bitmap: Bitmap): ByteArray {
-        val outStream = ByteArrayOutputStream()
-        bitmap.compress(Bitmap.CompressFormat.JPEG, 20, outStream)
-        return outStream.toByteArray()
-    }
-
-    private fun uploadImage(
-        byteArray: ByteArray,
-        listener: OnCompleteListener<Uri>,
-    ) {
-        val imStorageRef =
-            dbManager.dbStorage
-                .child(dbManager.auth.uid!!)
-                .child("image_${System.currentTimeMillis()}")
-        val upTask = imStorageRef.putBytes(byteArray)
-        upTask
-            .continueWithTask { task ->
-                imStorageRef.downloadUrl
-            }.addOnCompleteListener(listener)
-    }
-
-    private fun updateImage(
-        byteArray: ByteArray,
-        url: String,
-        listener: OnCompleteListener<Uri>,
-    ) {
-        val imStorageRef = dbManager.dbStorage.storage.getReferenceFromUrl(url)
-        val upTask = imStorageRef.putBytes(byteArray)
-        upTask
-            .continueWithTask { task ->
-                imStorageRef.downloadUrl
-            }.addOnCompleteListener(listener)
-    }
-
-    private fun deleteImageByUrl(
-        oldUrl: String,
-        listener: OnCompleteListener<Void>,
-    ) {
-        dbManager.dbStorage.storage
-            .getReferenceFromUrl(oldUrl)
-            .delete()
-            .addOnCompleteListener(listener)
     }
 
     private fun imageChangeCounter() {
@@ -462,15 +342,77 @@ class EditAdsActivity :
         binding.textViewImageCounter.text = imageCounter
     }
 
-    private fun getSelectedTheme(): Int =
-        when (defPreferences.getString(SettingsActivity.THEME_KEY, SettingsActivity.DEFAULT_THEME)) {
-            SettingsActivity.DEFAULT_THEME -> {
-                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
-                R.style.Base_Theme_Bulletin_board_light
-            }
-            else -> {
-                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
-                R.style.Base_Theme_Bulletin_board_dark
-            }
+    override fun showToast(
+        message: String,
+        duration: Int,
+    ) {
+        Toast.makeText(this, message, duration).show()
+    }
+
+    override fun insertAd(
+        ad: Ad,
+        onResult: (Boolean) -> Unit,
+    ) {
+        viewModel.viewModelScope.launch {
+            onResult(viewModel.insertAd(ad))
         }
+    }
+
+    override fun updateImage(
+        byteArray: ByteArray,
+        oldUrl: String,
+        onResult: (Uri) -> Unit,
+    ) {
+        viewModel.viewModelScope.launch {
+            viewModel.updateImage(byteArray, oldUrl)?.let { onResult(it) }
+        }
+    }
+
+    override fun uploadImage(
+        byteArray: ByteArray,
+        onResult: (Uri) -> Unit,
+    ) {
+        viewModel.viewModelScope.launch {
+            viewModel.uploadImage(byteArray)?.let { onResult(it) }
+        }
+    }
+
+    override fun deleteImageByUrl(url: String) {
+        viewModel.viewModelScope.launch {
+            viewModel.deleteImageByUrl(url)
+        }
+    }
+
+    override fun getContentResolverAct(): ContentResolver = this.contentResolver
+
+    override fun addPixToActivityImpl(
+        placeholderId: Int,
+        options: Options,
+        callback: (PixEventCallback.Results) -> Unit,
+    ) {
+        this.addPixToActivity(placeholderId, options, callback)
+    }
+
+    override fun showStatusBarImpl() {
+        this.showStatusBar()
+    }
+
+    override fun openChooseImageFrag() {
+        this.supportFragmentManager
+            .beginTransaction()
+            .replace(R.id.place_holder, this.chooseImageFrag!!)
+            .commit()
+    }
+
+    override fun updateAdapter(uris: ArrayList<Uri>) {
+        this.chooseImageFrag?.updateAdapter(uris, this)
+    }
+
+    override fun setSingleImage(uri: Uri) {
+        this.chooseImageFrag?.setSingleImage(uri, this.editImagePos)
+    }
+
+    override fun updateEditImagePos(pos: Int) {
+        editImagePos = pos
+    }
 }

@@ -3,6 +3,7 @@ package com.example.bulletin_board.di
 import com.example.bulletin_board.packroom.RemoteAdDataSource
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.storage.StorageReference
 import dagger.Module
 import dagger.hilt.InstallIn
 import dagger.hilt.android.components.ViewModelComponent
@@ -13,5 +14,6 @@ object DataSourceModule {
     fun provideRemoteAdDataSource(
         firestore: FirebaseFirestore,
         auth: FirebaseAuth,
-    ): RemoteAdDataSource = RemoteAdDataSource(firestore, auth)
+        dbStorage: StorageReference,
+    ): RemoteAdDataSource = RemoteAdDataSource(firestore, auth, dbStorage)
 }

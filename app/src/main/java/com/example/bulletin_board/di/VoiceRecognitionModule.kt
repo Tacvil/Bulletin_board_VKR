@@ -1,6 +1,7 @@
 package com.example.bulletin_board.di
 
 import android.app.Activity
+import com.example.bulletin_board.domain.ToastHelper
 import com.example.bulletin_board.domain.VoiceRecognitionHandler
 import com.example.bulletin_board.domain.VoiceRecognitionListener
 import dagger.Module
@@ -21,5 +22,8 @@ object VoiceRecognitionModule {
     }
 
     @Provides
-    fun provideVoiceRecognitionHandler(listener: VoiceRecognitionListener): VoiceRecognitionHandler = VoiceRecognitionHandler(listener)
+    fun provideVoiceRecognitionHandler(
+        listener: VoiceRecognitionListener,
+        toastHelper: ToastHelper,
+    ): VoiceRecognitionHandler = VoiceRecognitionHandler(listener, toastHelper)
 }

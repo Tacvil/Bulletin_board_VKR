@@ -5,7 +5,6 @@ import android.content.Context
 import androidx.appcompat.app.AppCompatActivity
 import com.example.bulletin_board.R
 import com.example.bulletin_board.domain.AccountHelper
-import com.example.bulletin_board.domain.ContextProvider
 import com.example.bulletin_board.domain.ResourceStringProvider
 import com.example.bulletin_board.domain.ToastHelper
 import com.google.android.gms.auth.api.signin.GoogleSignIn
@@ -45,14 +44,6 @@ object AccountHelperModule {
             toastHelper,
             resourceStringProvider,
         )
-
-    @Provides
-    fun provideContextProvider(
-        @ActivityContext context: Context,
-    ): ContextProvider =
-        object : ContextProvider {
-            override fun getContext(): Context = context
-        }
 
     @Provides
     fun provideAppCompatActivity(

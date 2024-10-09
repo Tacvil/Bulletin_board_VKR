@@ -1,5 +1,6 @@
 package com.example.bulletin_board.packroom
 
+import android.net.Uri
 import androidx.compose.ui.geometry.isEmpty
 import com.example.bulletin_board.model.Ad
 import com.example.bulletin_board.model.DbManager.Companion.USER_NODE
@@ -14,7 +15,7 @@ import com.google.firebase.firestore.FirebaseFirestoreException
 import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.SetOptions
 import com.google.firebase.firestore.getField
-import com.google.firebase.ktx.Firebase
+import com.google.firebase.storage.StorageReference
 import jakarta.inject.Inject
 import kotlinx.coroutines.tasks.await
 import timber.log.Timber
@@ -23,7 +24,8 @@ class RemoteAdDataSource
     @Inject
     constructor(
         private val firestore: FirebaseFirestore,
-        private val auth: FirebaseAuth = Firebase.auth,
+        private val auth: FirebaseAuth,
+        private val dbStorage: StorageReference,
     ) {
         companion object {
             const val MAIN_COLLECTION = "main"
@@ -541,6 +543,56 @@ class RemoteAdDataSource
 
                 Result.Success(results)
             } catch (e: Exception) {
+                Result.Error(e)
+            }
+
+        suspend fun uploadImage(byteArray: ByteArray): Result<Uri> =
+            try {
+                val imageFileName = "image_${System.currentTimeMillis()}"
+                val imageRef = dbStorage.child(auth.uid!!).child(imageFileName)
+                val downloadUri =
+                    imageRef
+                        .putBytes(byteArray)
+                        .continueWithTask { task ->
+                            if (!task.isSuccessful) {
+                                task.exception?.let { throw it }
+                            }
+                            imageRef.downloadUrl
+                        }.await()
+                Result.Success(downloadUri)
+            } catch (e: Exception) {
+                Timber.e(e, "Error uploading image")
+                Result.Error(e)
+            }
+
+        suspend fun updateImage(
+            byteArray: ByteArray,
+            url: String,
+        ): Result<Uri> =
+            try {
+                val imageRef = dbStorage.storage.getReferenceFromUrl(url)
+                val downloadUri =
+                    imageRef
+                        .putBytes(byteArray)
+                        .continueWithTask { task ->
+                            if (!task.isSuccessful) {
+                                task.exception?.let { throw it }
+                            }
+                            imageRef.downloadUrl
+                        }.await()
+                Result.Success(downloadUri)
+            } catch (e: Exception) {
+                Timber.e(e, "Error updating image")
+                Result.Error(e)
+            }
+
+        suspend fun deleteImageByUrl(oldUrl: String) =
+            try {
+                val imageRef = dbStorage.storage.getReferenceFromUrl(oldUrl)
+                imageRef.delete().await()
+                Result.Success(true)
+            } catch (e: Exception) {
+                Timber.e(e, "Error deleting image")
                 Result.Error(e)
             }
 

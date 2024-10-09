@@ -3,10 +3,11 @@ package com.example.bulletin_board.domain
 import android.content.Intent
 import androidx.activity.result.ActivityResult
 import androidx.activity.result.ActivityResultLauncher
-import com.example.bulletin_board.databinding.ActivityMainBinding
 import com.example.bulletin_board.dialoghelper.SignUpInHandler
+import com.example.bulletin_board.packroom.RemoteAdDataSource.Companion.MAIN_COLLECTION
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
+import com.google.firebase.firestore.FirebaseFirestore
 import jakarta.inject.Inject
 
 interface AccountUiHandler {
@@ -15,7 +16,7 @@ interface AccountUiHandler {
         callback: SignInAnonymouslyListenerCallback,
     )
 
-    fun initViews(binding: ActivityMainBinding)
+    fun initializeUi()
 }
 
 interface SignInAnonymouslyProvider {
@@ -69,6 +70,7 @@ class AccountManager
     @Inject
     constructor(
         private val firebaseAuth: FirebaseAuth,
+        private val firestore: FirebaseFirestore,
         private val accountUiHandler: AccountUiHandler,
         private val accountHelperProvider: AccountHelperProvider,
         private val tokenHandler: TokenHandler,
@@ -82,8 +84,14 @@ class AccountManager
         override val auth: FirebaseAuth
             get() = firebaseAuth
 
-        fun initUi(binding: ActivityMainBinding) {
-            accountUiHandler.initViews(binding)
+        fun generateAdId(): String =
+            firestore
+                .collection(MAIN_COLLECTION)
+                .document()
+                .id
+
+        fun init() {
+            accountUiHandler.initializeUi()
         }
 
         fun updateUi(user: FirebaseUser?) {

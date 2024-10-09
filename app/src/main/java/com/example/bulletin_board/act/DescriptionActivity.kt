@@ -16,17 +16,24 @@ import androidx.viewpager2.widget.ViewPager2
 import com.example.bulletin_board.R
 import com.example.bulletin_board.adapters.ImageAdapter
 import com.example.bulletin_board.databinding.ActivityDescriptionBinding
+import com.example.bulletin_board.domain.image.ImageManager
 import com.example.bulletin_board.model.Ad
 import com.example.bulletin_board.settings.SettingsActivity
-import com.example.bulletin_board.utils.ImageManager.fillImageArray
+import dagger.hilt.android.AndroidEntryPoint
+import jakarta.inject.Inject
 import java.io.Serializable
 
+@AndroidEntryPoint
 class DescriptionActivity : AppCompatActivity() {
     lateinit var binding: ActivityDescriptionBinding
     lateinit var adapter: ImageAdapter
     private var ad: Ad? = null
     private lateinit var defPreferences: SharedPreferences
 
+    @Inject
+    lateinit var imageManager: ImageManager
+
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     override fun onCreate(savedInstanceState: Bundle?) {
         defPreferences = PreferenceManager.getDefaultSharedPreferences(this)
         setTheme(getSelectedTheme())
@@ -56,7 +63,7 @@ class DescriptionActivity : AppCompatActivity() {
     }
 
     private fun updateUI(ad: Ad) {
-        fillImageArray(ad, adapter)
+        imageManager.fillImageArray(ad, adapter)
         fillTextViews(ad)
     }
 

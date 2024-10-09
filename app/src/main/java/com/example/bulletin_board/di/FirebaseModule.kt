@@ -1,7 +1,11 @@
 package com.example.bulletin_board.di
 
+import com.example.bulletin_board.packroom.RemoteAdDataSource.Companion.MAIN_COLLECTION
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.ktx.Firebase
+import com.google.firebase.storage.StorageReference
+import com.google.firebase.storage.ktx.storage
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -15,4 +19,7 @@ object FirebaseModule {
 
     @Provides
     fun provideFirebaseAuth(): FirebaseAuth = FirebaseAuth.getInstance()
+
+    @Provides
+    fun provideStorageReference(): StorageReference = Firebase.storage.reference.child(MAIN_COLLECTION)
 }

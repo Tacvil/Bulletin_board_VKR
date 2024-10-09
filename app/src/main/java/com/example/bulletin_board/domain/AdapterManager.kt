@@ -20,11 +20,10 @@ interface Adapter {
 object AdapterManager {
     private val adapters = mutableMapOf<Int, Adapter>()
 
-    fun registerAdapter(
-        tabPosition: Int,
-        adapter: Adapter,
-    ) {
-        adapters[tabPosition] = adapter
+    fun registerAdapters(vararg adapters: Pair<Int, Adapter>) {
+        adapters.forEach { (tabPosition, adapter) ->
+            this.adapters[tabPosition] = adapter
+        }
     }
 
     fun refreshAdapter(tabPosition: Int) {

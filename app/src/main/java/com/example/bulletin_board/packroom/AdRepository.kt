@@ -1,5 +1,6 @@
 package com.example.bulletin_board.packroom
 
+import android.net.Uri
 import com.example.bulletin_board.model.Ad
 import com.example.bulletin_board.model.FavData
 import com.example.bulletin_board.model.ViewData
@@ -37,4 +38,13 @@ interface AdRepository {
     suspend fun getMinMaxPrice(category: String?): Result<Pair<Int?, Int?>>
 
     suspend fun fetchSearchResults(inputSearchQuery: String): Result<List<String>>
+
+    suspend fun uploadImage(byteArray: ByteArray): Result<Uri>
+
+    suspend fun updateImage(
+        byteArray: ByteArray,
+        url: String,
+    ): Result<Uri>
+
+    suspend fun deleteImageByUrl(oldUrl: String): Result<Boolean>
 }

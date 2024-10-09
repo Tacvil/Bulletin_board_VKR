@@ -1,6 +1,8 @@
 package com.example.bulletin_board.act
 
+import android.annotation.SuppressLint
 import android.content.Intent
+import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -10,7 +12,9 @@ import android.view.Menu
 import android.view.MenuItem
 import android.view.View
 import android.widget.ImageView
+import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.result.ActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.annotation.RequiresApi
@@ -20,6 +24,8 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.viewModelScope
 import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import com.airbnb.lottie.LottieAnimationView
 import com.bumptech.glide.Glide
 import com.bumptech.glide.request.RequestOptions
 import com.example.bulletin_board.R
@@ -29,21 +35,27 @@ import com.example.bulletin_board.adapterFirestore.MyAdsAdapter
 import com.example.bulletin_board.databinding.ActivityMainBinding
 import com.example.bulletin_board.dialoghelper.DialogConst
 import com.example.bulletin_board.dialoghelper.SignInDialogFragment
+import com.example.bulletin_board.dialogs.DialogSpinnerHelper
+import com.example.bulletin_board.dialogs.RcViewDialogSpinnerAdapter
 import com.example.bulletin_board.dialogs.RcViewSearchSpinnerAdapter
 import com.example.bulletin_board.domain.AccountManager
+import com.example.bulletin_board.domain.AccountUiViewsProvider
 import com.example.bulletin_board.domain.AdapterManager
-import com.example.bulletin_board.domain.AdapterViewManager
+import com.example.bulletin_board.domain.AdapterView
 import com.example.bulletin_board.domain.AuthCallback
 import com.example.bulletin_board.domain.DataAdapterManager
 import com.example.bulletin_board.domain.FilterReader
+import com.example.bulletin_board.domain.FilterUpdater
 import com.example.bulletin_board.domain.ImageLoader
 import com.example.bulletin_board.domain.NavigationViewHelper
+import com.example.bulletin_board.domain.OrderByFilterDialog
 import com.example.bulletin_board.domain.OrderByFilterDialogManager
 import com.example.bulletin_board.domain.PermissionManager
 import com.example.bulletin_board.domain.ResourceStringProvider
-import com.example.bulletin_board.domain.SearchAdapterUpdateCallback
-import com.example.bulletin_board.domain.SearchAdapterUpdater
 import com.example.bulletin_board.domain.SearchManager
+import com.example.bulletin_board.domain.SearchQueryHandler
+import com.example.bulletin_board.domain.SearchQueryHandlerCallback
+import com.example.bulletin_board.domain.SearchUi
 import com.example.bulletin_board.domain.SearchUiInitializer
 import com.example.bulletin_board.domain.ThemeManager
 import com.example.bulletin_board.domain.ToastHelper
@@ -59,9 +71,7 @@ import com.example.bulletin_board.packroom.RemoteAdDataSource.Companion.KEYWORDS
 import com.example.bulletin_board.packroom.RemoteAdDataSource.Companion.ORDER_BY_FIELD
 import com.example.bulletin_board.packroom.SortOption
 import com.example.bulletin_board.settings.SettingsActivity
-import com.example.bulletin_board.utils.FilterUpdater
-import com.example.bulletin_board.utils.SearchUi
-import com.example.bulletin_board.utils.SortUtils.getSortOptionText
+import com.example.bulletin_board.utils.SortUtils
 import com.example.bulletin_board.viewmodel.FirebaseViewModel
 import com.google.android.material.navigation.NavigationView.OnNavigationItemSelectedListener
 import com.google.firebase.auth.FirebaseUser
@@ -82,66 +92,45 @@ class MainActivity :
     ImageLoader,
     SearchUiInitializer,
     SearchUi,
-    SearchAdapterUpdater,
     VoiceRecognitionListener,
     FilterUpdater,
-    FilterReader {
+    FilterReader,
+    SearchQueryHandler,
+    AccountUiViewsProvider,
+    AdapterView,
+    OrderByFilterDialog {
     private val viewModel: FirebaseViewModel by viewModels()
-
     private lateinit var binding: ActivityMainBinding
 
-    private lateinit var orderByFilterDialogManager: OrderByFilterDialogManager // Inject
+    @Inject lateinit var orderByFilterDialogManager: OrderByFilterDialogManager
+
+    @Inject lateinit var sortUtils: SortUtils
+
+    @Inject lateinit var voiceRecognitionHandler: VoiceRecognitionHandler
+
+    @Inject lateinit var searchManager: SearchManager
+
+    @Inject lateinit var accountManager: AccountManager
 
     private var lastClickTime: Long = 0
     private val doubleClickThreshold = 300
+    private val scrollStateMap = mutableMapOf<Int, Parcelable?>()
+    private var currentTabPosition: Int = 0
 
-    @Inject
-    lateinit var voiceRecognitionHandler: VoiceRecognitionHandler
+    private val favAdsAdapter by lazy { FavoriteAdsAdapter(viewModel) }
+    private val adsAdapter by lazy { AdsAdapter(viewModel) }
+    private val myAdsAdapter by lazy { MyAdsAdapter(viewModel) }
+
+    private val filterFragment by lazy { FilterFragment() }
 
     private val voiceRecognitionLauncher =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
             voiceRecognitionHandler.handleRecognitionResult(result)
         }
 
-    private val favAdsAdapter by lazy {
-        FavoriteAdsAdapter(viewModel)
-    }
-
-    private val adsAdapter by lazy {
-        AdsAdapter(viewModel)
-    }
-
-    private val myAdsAdapter by lazy {
-        MyAdsAdapter(viewModel)
-    }
-
-    private val scrollStateMap = mutableMapOf<Int, Parcelable?>()
-    private var currentTabPosition: Int = 0
-
-    private val filterFragment by lazy { FilterFragment() }
-
-    @Inject
-    private lateinit var searchManager: SearchManager
-
-    @Inject
-    lateinit var accountManager: AccountManager
-
     private val googleSignInLauncher =
-        registerForActivityResult(
-            ActivityResultContracts.StartActivityForResult(),
-        ) { result ->
-            accountManager.handleGoogleSignInResult(
-                result,
-                object : AuthCallback {
-                    override fun onAuthComplete(user: FirebaseUser?) {
-                        accountManager.updateUi(user)
-                    }
-
-                    override fun onSaveToken(token: String) {
-                        accountManager.saveToken(token)
-                    }
-                },
-            )
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            handleGoogleSignInResult(result)
         }
 
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
@@ -151,34 +140,196 @@ class MainActivity :
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        AdapterManager.registerAdapter(0, adsAdapter)
-        AdapterManager.registerAdapter(1, favAdsAdapter)
-        AdapterManager.registerAdapter(2, myAdsAdapter)
-
-        AdapterViewManager.initViews(binding)
-
-        accountManager.initUi(binding)
-
-        AdapterManager.initRecyclerView(binding.mainContent.recyclerViewMainContent, adsAdapter, this)
-
-        PermissionManager.checkAndRequestNotificationPermission(this)
-
+        initFilters()
+        initAdapters()
+        requestNotificationPermission()
+        accountManager.init()
         initViewModel()
-        init()
-
-        orderByFilterDialogManager = OrderByFilterDialogManager(this, searchManager, searchManager)
-        orderByFilterDialogManager.setupOrderByFilter(this, binding.mainContent.autoComplete)
-        searchManager.initSearchAdd()
+        initUiComponents()
+        setupSearchFunctionality()
         setupBottomMenu()
     }
 
-    override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<out String>,
-        grantResults: IntArray,
-    ) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        PermissionManager.handleRequestPermissionsResult(requestCode, grantResults, this)
+    private fun initFilters() {
+        val newFilters = mapOf(CATEGORY_FIELD to "", ORDER_BY_FIELD to SortOption.BY_NEWEST.id)
+        viewModel.updateFilters(newFilters)
+    }
+
+    private fun initAdapters() {
+        AdapterManager.registerAdapters(
+            ADS_ADAPTER to adsAdapter,
+            FAV_ADAPTER to favAdsAdapter,
+            MY_ADAPTER to myAdsAdapter,
+        )
+        AdapterManager.initRecyclerView(
+            binding.mainContent.recyclerViewMainContent,
+            adsAdapter,
+            this,
+        )
+    }
+
+    @SuppressLint("NewApi")
+    private fun requestNotificationPermission() {
+        PermissionManager.checkAndRequestNotificationPermission(this)
+    }
+
+    private fun initViewModel() {
+        lifecycleScope.launch {
+            viewModel.appState.collectLatest { event ->
+                updateSortOption(event.filter)
+            }
+        }
+        initAdapterData()
+    }
+
+    private fun updateSortOption(filter: Map<String, String>) {
+        if (filter.isNotEmpty()) {
+            val sortOptionId = filter[ORDER_BY_FIELD] ?: return
+            val sortOptionText = sortUtils.getSortOptionText(sortOptionId)
+            binding.mainContent.autoComplete.setText(sortOptionText)
+        }
+    }
+
+    private fun initAdapterData() {
+        lifecycleScope.launch {
+            launch { DataAdapterManager.handleAdapterData(viewModel.favoriteAds, favAdsAdapter, this@MainActivity) }
+            launch { DataAdapterManager.handleAdapterData(viewModel.homeAdsData, adsAdapter, this@MainActivity) }
+            launch { DataAdapterManager.handleAdapterData(viewModel.myAds, myAdsAdapter, this@MainActivity) }
+        }
+    }
+
+    private fun initUiComponents() {
+        setSupportActionBar(binding.mainContent.searchBar)
+        supportActionBar?.setDisplayHomeAsUpEnabled(true)
+        supportActionBar?.setDisplayShowHomeEnabled(true)
+
+        binding.navigationView.setNavigationItemSelectedListener(this)
+        binding.mainContent.filterButtonMain.setOnClickListener { showFilterFragment() }
+        binding.mainContent.swipeRefreshLayout.setOnRefreshListener { refreshCurrentAdapter() }
+
+        binding.mainContent.floatingActButton.setOnClickListener {
+            val intent = Intent(this, EditAdsActivity::class.java)
+            startActivity(intent)
+        }
+
+        navViewSetting()
+    }
+
+    private fun showFilterFragment() {
+        if (!filterFragment.isAdded) {
+            filterFragment.show(supportFragmentManager, FilterFragment.TAG)
+        }
+    }
+
+    private fun refreshCurrentAdapter() {
+        AdapterManager.refreshAdapter(binding.mainContent.bottomNavView.selectedItemId)
+        binding.mainContent.swipeRefreshLayout.isRefreshing = false
+    }
+
+    private fun setupSearchFunctionality() {
+        orderByFilterDialogManager.setupOrderByFilter(binding.mainContent.autoComplete)
+        searchManager.initializeSearchFunctionality()
+    }
+
+    private fun handleGoogleSignInResult(result: ActivityResult) {
+        accountManager.handleGoogleSignInResult(
+            result,
+            object : AuthCallback {
+                override fun onAuthComplete(user: FirebaseUser?) {
+                    accountManager.updateUi(user)
+                }
+
+                override fun onSaveToken(token: String) {
+                    accountManager.saveToken(token)
+                }
+            },
+        )
+    }
+
+    private fun setupBottomMenu() {
+        with(binding) {
+            mainContent.bottomNavView.setOnItemSelectedListener { item ->
+                handleBottomNavigation(item)
+                true
+            }
+        }
+    }
+
+    private fun handleBottomNavigation(item: MenuItem) {
+        val currentTime = System.currentTimeMillis()
+
+        if (currentTime - lastClickTime <= doubleClickThreshold) {
+            AdapterManager.refreshAdapter(item.itemId)
+        }
+        lastClickTime = currentTime
+
+        when (item.itemId) {
+            R.id.id_settings -> startActivity(Intent(this, SettingsActivity::class.java))
+            R.id.id_my_ads -> switchAdapter(MY_ADAPTER)
+            R.id.id_favs -> switchAdapter(FAV_ADAPTER)
+            R.id.id_home -> switchAdapter(ADS_ADAPTER)
+        }
+    }
+
+    private fun switchAdapter(tabPosition: Int) {
+        AdapterManager.switchAdapter(this, tabPosition, scrollStateMap, currentTabPosition)
+        currentTabPosition = tabPosition
+    }
+
+    override fun onNavigationItemSelected(item: MenuItem): Boolean {
+        handleDrawerNavigation(item)
+        binding.drawerLayout.closeDrawer(GravityCompat.START)
+        return true
+    }
+
+    private fun handleDrawerNavigation(item: MenuItem) {
+        when (item.itemId) {
+            R.id.id_my_ads -> Toast.makeText(this, "pressed my ads", Toast.LENGTH_SHORT).show()
+            R.id.id_car, R.id.id_pc, R.id.id_smartphone, R.id.id_dm -> {
+                getAdsFromCat(sortUtils.getCategoryFromItem(item.itemId))
+            }
+            R.id.id_sign_up -> showSignInDialog(DialogConst.SIGN_UP_STATE)
+            R.id.id_sign_in -> showSignInDialog(DialogConst.SIGN_IN_STATE)
+            R.id.id_sign_out -> handleSignOut()
+        }
+    }
+
+    private fun showSignInDialog(state: Int) {
+        SignInDialogFragment(
+            googleSignInLauncher,
+            state,
+            accountManager,
+            accountManager,
+            this,
+        ).show(supportFragmentManager, "SignInDialog")
+    }
+
+    private fun handleSignOut() {
+        if (accountManager.isAnonymous()) {
+            binding.drawerLayout.closeDrawer(GravityCompat.START)
+            return
+        }
+        accountManager.updateUi(null)
+        accountManager.signOut()
+        accountManager.signOutGoogle()
+    }
+
+    private fun getAdsFromCat(category: String) {
+        val newFilters =
+            mapOf(
+                CATEGORY_FIELD to category,
+                ORDER_BY_FIELD to viewModel.getFilterValue(ORDER_BY_FIELD)!!,
+            )
+        Timber.d("New filters applied in getAdsFromCat")
+        viewModel.updateFilters(newFilters)
+    }
+
+    private fun navViewSetting() {
+        val menu = binding.navigationView.menu
+        val colorPrimary = R.color.md_theme_light_primary
+
+        NavigationViewHelper.setMenuItemStyle(menu, R.id.adsCat, colorPrimary, this)
+        NavigationViewHelper.setMenuItemStyle(menu, R.id.accCat, colorPrimary, this)
     }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
@@ -191,25 +342,32 @@ class MainActivity :
             android.R.id.home -> {
                 binding.drawerLayout.openDrawer(GravityCompat.START)
             }
-
-            R.id.id_search -> {
-                if (!viewModel.getFilterValue(KEYWORDS_FIELD).isNullOrEmpty()) {
-                    binding.mainContent.searchBar.clearText()
-                    viewModel.addToFilter(KEYWORDS_FIELD, "")
-                    item.setIcon(R.drawable.ic_search)
-                } else {
-                    binding.mainContent.searchBar.performClick()
-                }
-                return true
-            }
-
+            R.id.id_search -> handleSearchIconClick(item)
             R.id.id_voice -> {
                 voiceRecognitionHandler.startVoiceRecognition(voiceRecognitionLauncher)
                 return true
             }
         }
-
         return super.onOptionsItemSelected(item)
+    }
+
+    private fun handleSearchIconClick(item: MenuItem) {
+        if (!viewModel.getFilterValue(KEYWORDS_FIELD).isNullOrEmpty()) {
+            binding.mainContent.searchBar.clearText()
+            viewModel.addToFilter(KEYWORDS_FIELD, "")
+            item.setIcon(R.drawable.ic_search)
+        } else {
+            binding.mainContent.searchBar.performClick()
+        }
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray,
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        PermissionManager.handleRequestPermissionsResult(requestCode, grantResults, this)
     }
 
     override fun onResume() {
@@ -220,159 +378,6 @@ class MainActivity :
     override fun onStart() {
         super.onStart()
         accountManager.updateUi(accountManager.auth.currentUser)
-    }
-
-    private fun initViewModel() {
-        lifecycleScope.launch {
-            viewModel.appState.collectLatest { event ->
-                if (event.filter.isNotEmpty()) {
-                    val sortOptionId = event.filter[ORDER_BY_FIELD] ?: return@collectLatest
-                    val sortOptionText = getSortOptionText(this@MainActivity, sortOptionId)
-                    binding.mainContent.autoComplete.setText(sortOptionText)
-                }
-            }
-        }
-
-        lifecycleScope.launch {
-            launch { DataAdapterManager.handleAdapterData(viewModel.favoriteAds, favAdsAdapter, AdapterViewManager) }
-            launch { DataAdapterManager.handleAdapterData(viewModel.homeAdsData, adsAdapter, AdapterViewManager) }
-            launch { DataAdapterManager.handleAdapterData(viewModel.myAds, myAdsAdapter, AdapterViewManager) }
-        }
-    }
-
-    private fun init() {
-        Timber.d("init() called")
-        val newFilters =
-            mapOf(
-                CATEGORY_FIELD to "",
-                ORDER_BY_FIELD to SortOption.BY_NEWEST.id,
-            )
-        viewModel.updateFilters(newFilters)
-        setSupportActionBar(binding.mainContent.searchBar)
-
-        navViewSetting()
-        supportActionBar?.setDisplayHomeAsUpEnabled(true)
-        supportActionBar?.setDisplayShowHomeEnabled(true)
-        binding.navigationView.setNavigationItemSelectedListener(this)
-
-        binding.mainContent.filterButtonMain.setOnClickListener {
-            if (!filterFragment.isAdded) {
-                filterFragment.show(supportFragmentManager, FilterFragment.TAG)
-            }
-        }
-
-        binding.mainContent.swipeRefreshLayout.setOnRefreshListener {
-            AdapterManager.refreshAdapter(binding.mainContent.bottomNavView.selectedItemId)
-            binding.mainContent.swipeRefreshLayout.isRefreshing = false
-        }
-    }
-
-    private fun setupBottomMenu() {
-        with(binding) {
-            mainContent.bottomNavView.setOnItemSelectedListener { item ->
-                val currentTime = System.currentTimeMillis()
-
-                if (currentTime - lastClickTime <= doubleClickThreshold) {
-                    AdapterManager.refreshAdapter(item.itemId)
-                }
-                lastClickTime = currentTime
-
-                when (item.itemId) {
-                    R.id.id_settings ->
-                        startActivity(
-                            Intent(
-                                this@MainActivity,
-                                SettingsActivity::class.java,
-                            ),
-                        )
-
-                    R.id.id_my_ads -> switchAdapter(MY_ADAPTER)
-
-                    R.id.id_favs -> switchAdapter(FAV_ADAPTER)
-
-                    R.id.id_home -> switchAdapter(ADS_ADAPTER)
-                }
-                true
-            }
-        }
-    }
-
-    override fun onNavigationItemSelected(item: MenuItem): Boolean {
-        when (item.itemId) {
-            R.id.id_my_ads -> {
-                Toast.makeText(this, "pressed my ads", Toast.LENGTH_SHORT).show()
-            }
-
-            R.id.id_car, R.id.id_pc, R.id.id_smartphone, R.id.id_dm -> {
-                getAdsFromCat(
-                    when (item.itemId) {
-                        R.id.id_car -> SortOption.AD_CAR.id
-                        R.id.id_pc -> SortOption.AD_PC.id
-                        R.id.id_smartphone -> SortOption.AD_SMARTPHONE.id
-                        R.id.id_dm -> SortOption.AD_DM.id
-                        else -> ""
-                    },
-                )
-            }
-
-            R.id.id_sign_up -> {
-                SignInDialogFragment(
-                    googleSignInLauncher,
-                    DialogConst.SIGN_UP_STATE,
-                    accountManager,
-                    accountManager,
-                    this,
-                ).show(supportFragmentManager, "SignUpDialog")
-            }
-
-            R.id.id_sign_in -> {
-                SignInDialogFragment(
-                    googleSignInLauncher,
-                    DialogConst.SIGN_IN_STATE,
-                    accountManager,
-                    accountManager,
-                    this,
-                ).show(supportFragmentManager, "SignInDialog")
-            }
-
-            R.id.id_sign_out -> {
-                if (accountManager.isAnonymous()) {
-                    binding.drawerLayout.closeDrawer(GravityCompat.START)
-                    return true
-                }
-                accountManager.updateUi(null)
-                accountManager.signOut()
-                accountManager.signOutGoogle()
-            }
-        }
-        binding.drawerLayout.closeDrawer(GravityCompat.START)
-        return true
-    }
-
-    private fun getAdsFromCat(cat: String) {
-        val newFilters =
-            mapOf(
-                CATEGORY_FIELD to cat,
-                ORDER_BY_FIELD to (
-                    viewModel.getFilterValue(ORDER_BY_FIELD)
-                        ?: SortOption.BY_NEWEST.id
-                ),
-            )
-        Timber.d("newFilters called getAdsFromCat")
-        viewModel.updateFilters(newFilters)
-    }
-
-    private fun navViewSetting() {
-        val menu = binding.navigationView.menu
-        val colorPrimary = R.color.md_theme_light_primary
-
-        NavigationViewHelper.setMenuItemStyle(menu, R.id.adsCat, colorPrimary, this)
-        NavigationViewHelper.setMenuItemStyle(menu, R.id.accCat, colorPrimary, this)
-    }
-
-    private fun switchAdapter(tabPosition: Int) {
-        AdapterManager.switchAdapter(AdapterViewManager, tabPosition, scrollStateMap, currentTabPosition)
-        currentTabPosition = tabPosition
     }
 
     companion object {
@@ -432,14 +437,26 @@ class MainActivity :
 
     override fun loadImage(
         imageView: ImageView,
-        imageUrl: Uri?,
+        imageUrl: Any?,
         requestOptions: RequestOptions,
     ) {
-        Glide
-            .with(this)
-            .load(imageUrl)
-            .apply(requestOptions)
-            .into(imageView)
+        when (imageUrl) {
+            is Uri -> {
+                Glide
+                    .with(this)
+                    .load(imageUrl)
+                    .apply(requestOptions)
+                    .into(imageView)
+            }
+
+            is Bitmap -> {
+                Glide
+                    .with(this)
+                    .load(imageUrl)
+                    .apply(requestOptions)
+                    .into(imageView)
+            }
+        }
     }
 
     override fun initSearchAdapter(item: String) {
@@ -492,16 +509,17 @@ class MainActivity :
         binding.mainContent.searchBar.text
             .toString()
 
-    override fun updateAdapter(
-        query: String,
-        callback: SearchAdapterUpdateCallback,
+    override fun handleSearchQuery(
+        inputSearchQuery: String,
+        callback: SearchQueryHandlerCallback,
     ) {
         lifecycleScope.launch {
-            viewModel.fetchSearchResults(query)
+            viewModel.fetchSearchResults(inputSearchQuery)
             viewModel.appState.collectLatest { appState ->
                 if (appState.searchResults.isNotEmpty()) {
-                    val formattedResults = viewModel.formatSearchResults(appState.searchResults, query)
-                    callback.onAdapterUpdated(formattedResults)
+                    val formattedResults =
+                        viewModel.formatSearchResults(appState.searchResults, inputSearchQuery)
+                    callback.onSearchResultsUpdated(formattedResults)
                 }
             }
         }
@@ -525,4 +543,31 @@ class MainActivity :
     }
 
     override fun getFilterValue(key: String): String? = viewModel.getFilterValue(key)
+
+    override fun getTextViewAccount(): TextView = binding.navigationView.getHeaderView(0).findViewById(R.id.text_view_account_email)
+
+    override fun getImageViewAccount(): ImageView = binding.navigationView.getHeaderView(0).findViewById(R.id.image_view_account_image)
+
+    override val nothinkWhiteAnim: LottieAnimationView
+        get() = binding.mainContent.nothinkWhiteAnim
+
+    override val recyclerViewMainContent: RecyclerView
+        get() = binding.mainContent.recyclerViewMainContent
+
+    override fun showSpinnerPopup(
+        anchorView: View,
+        list: ArrayList<Pair<String, String>>,
+        tvSelection: TextView,
+        onItemSelectedListener: RcViewDialogSpinnerAdapter.OnItemSelectedListener?,
+        isSearchable: Boolean,
+    ) {
+        DialogSpinnerHelper.showSpinnerPopup(
+            this,
+            anchorView,
+            list,
+            tvSelection,
+            onItemSelectedListener,
+            isSearchable,
+        )
+    }
 }

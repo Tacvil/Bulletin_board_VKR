@@ -1,7 +1,9 @@
 package com.example.bulletin_board.domain
 
+import androidx.paging.LoadState
 import androidx.paging.PagingData
 import androidx.paging.PagingDataAdapter
+import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.bulletin_board.model.Ad
 import kotlinx.coroutines.flow.Flow
@@ -16,13 +18,16 @@ object DataAdapterManager {
         adapterView: AdapterView,
     ) {
         setupAdapterObserver(adapter, adapterView)
-
+        adapter.addLoadStateListener { loadStates ->
+            if (loadStates.refresh is LoadState.NotLoading) {
+                (adapterView.recyclerViewMainContent.layoutManager as? LinearLayoutManager)?.scrollToPosition(0)
+            }
+        }
         dataFlow
             .catch { e ->
                 Timber.tag("MainActivity").e(e, "Error loading ads data")
             }.collectLatest { pagingData ->
                 adapter.submitData(pagingData)
-                LoadingAnimationManager.updateAnimationVisibility(adapter.itemCount, adapterView)
             }
     }
 

@@ -1,5 +1,6 @@
 package com.example.bulletin_board.viewmodel
 
+import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.paging.PagingData
@@ -35,6 +36,7 @@ class FirebaseViewModel
         private val useCasesFilters: UseCases.Filters,
         private val useCasesSearch: UseCases.Search,
         private val useCasesPriceFilters: UseCases.PriceFilters,
+        private val useCasesImageManagement: UseCases.ImageManagement,
     ) : ViewModel() {
         init {
             Timber.d("ViewModel created: $this")
@@ -129,6 +131,38 @@ class FirebaseViewModel
             results: List<String>,
             inputSearchQuery: String,
         ): List<Pair<String, String>> = useCasesSearch.formatSearchResultsUseCase(results, inputSearchQuery)
+
+        suspend fun uploadImage(byteArray: ByteArray): Uri? {
+            when (val result = useCasesImageManagement.uploadUserImageUseCase(byteArray)) {
+                is Result.Success -> return result.data
+                is Result.Error -> {
+                    Timber.e(result.exception, "Error uploading image")
+                    return null
+                }
+            }
+        }
+
+        suspend fun updateImage(
+            byteArray: ByteArray,
+            url: String,
+        ): Uri? {
+            when (val result = useCasesImageManagement.updateUserImageUseCase(byteArray, url)) {
+                is Result.Success -> return result.data
+                is Result.Error -> {
+                    Timber.e(result.exception, "Error updating image")
+                    return null
+                }
+            }
+        }
+
+        suspend fun deleteImageByUrl(oldUrl: String)  {
+            when (val result = useCasesImageManagement.deleteUserImageUseCase(oldUrl)) {
+                is Result.Success -> Timber.d("Success delete image")
+                is Result.Error -> {
+                    Timber.e(result.exception, "Error delete image")
+                }
+            }
+        }
 
         fun addToFilter(
             key: String,

@@ -1,11 +1,11 @@
 package com.example.bulletin_board.packroom
 
+import android.net.Uri
 import com.example.bulletin_board.model.Ad
 import com.example.bulletin_board.model.FavData
 import com.example.bulletin_board.model.ViewData
 import com.google.firebase.firestore.DocumentSnapshot
 import jakarta.inject.Inject
-import timber.log.Timber
 
 class AdRepositoryImpl
     @Inject
@@ -17,9 +17,7 @@ class AdRepositoryImpl
             key: DocumentSnapshot?,
             limit: Long,
         ): Pair<List<Ad>, DocumentSnapshot?> {
-            Timber.d("AdRepositoryImpl.getAllAds: key = $key") // Логируем key
             val (ads, nextKey) = remoteAdDataSource.getAllAds(filter, key, limit)
-            Timber.d("AdRepositoryImpl.getAllAds: nextKey = $nextKey") // Логируем nextKey
             return ads to nextKey
         }
 
@@ -55,4 +53,13 @@ class AdRepositoryImpl
 
         override suspend fun fetchSearchResults(inputSearchQuery: String): Result<List<String>> =
             remoteAdDataSource.fetchSearchResults(inputSearchQuery)
+
+        override suspend fun uploadImage(byteArray: ByteArray): Result<Uri> = remoteAdDataSource.uploadImage(byteArray)
+
+        override suspend fun updateImage(
+            byteArray: ByteArray,
+            url: String,
+        ): Result<Uri> = remoteAdDataSource.updateImage(byteArray, url)
+
+        override suspend fun deleteImageByUrl(oldUrl: String): Result<Boolean> = remoteAdDataSource.deleteImageByUrl(oldUrl)
     }

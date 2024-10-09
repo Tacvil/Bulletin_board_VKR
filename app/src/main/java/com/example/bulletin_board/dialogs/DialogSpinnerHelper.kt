@@ -2,18 +2,14 @@ package com.example.bulletin_board.dialogs
 
 import android.content.Context
 import android.graphics.Color
-import android.graphics.Point
 import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.InsetDrawable
 import android.text.Editable
 import android.text.TextWatcher
 import android.util.Log
-import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.view.WindowManager
-import android.widget.PopupMenu
 import android.widget.PopupWindow
 import android.widget.TextView
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -24,16 +20,14 @@ import com.google.android.material.appbar.AppBarLayout
 import com.google.android.material.search.SearchView
 import com.google.android.material.search.SearchView.TransitionState
 
-
-class DialogSpinnerHelper {
-
+object DialogSpinnerHelper {
     fun showSpinnerPopup(
         context: Context,
         anchorView: View,
         list: ArrayList<Pair<String, String>>,
         tvSelection: TextView,
         onItemSelectedListener: RcViewDialogSpinnerAdapter.OnItemSelectedListener? = null,
-        isSearchable: Boolean
+        isSearchable: Boolean,
     ) {
         val binding = LayoutInflater.from(context).inflate(R.layout.spinner_layout, null)
 
@@ -45,21 +39,23 @@ class DialogSpinnerHelper {
             appBarL.visibility = View.VISIBLE
             searchView.visibility = View.VISIBLE
 
-            val popupWindow = PopupWindow(
-                binding,
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT,
-                true
-            )
+            val popupWindow =
+                PopupWindow(
+                    binding,
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.WRAP_CONTENT,
+                    true,
+                )
 
             val marginInPixels = context.resources.getDimensionPixelSize(R.dimen.popup_offset_x)
-            val inset = InsetDrawable(
-                ColorDrawable(Color.TRANSPARENT),
-                marginInPixels,
-                marginInPixels,
-                marginInPixels,
-                marginInPixels
-            )
+            val inset =
+                InsetDrawable(
+                    ColorDrawable(Color.TRANSPARENT),
+                    marginInPixels,
+                    marginInPixels,
+                    marginInPixels,
+                    marginInPixels,
+                )
             popupWindow.setBackgroundDrawable(inset)
 
             val adapter =
@@ -77,7 +73,11 @@ class DialogSpinnerHelper {
 
             setSearchView(adapter, list, searchView)
 
-            searchView.addTransitionListener { _: com.google.android.material.search.SearchView?, _: TransitionState?, newState: TransitionState ->
+            searchView.addTransitionListener {
+                    _: com.google.android.material.search.SearchView?,
+                    _: TransitionState?,
+                    newState: TransitionState,
+                ->
                 if (newState == TransitionState.HIDDEN) {
                     adapter.updateAdapter(list)
                 }
@@ -89,14 +89,14 @@ class DialogSpinnerHelper {
             popupWindow.showAsDropDown(anchorView, xOffset, yOffset)
 
             adapter.updateAdapter(list)
-
         } else {
-            val popupWindow = PopupWindow(
-                binding,
-                ViewGroup.LayoutParams.WRAP_CONTENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT,
-                false
-            )
+            val popupWindow =
+                PopupWindow(
+                    binding,
+                    ViewGroup.LayoutParams.WRAP_CONTENT,
+                    ViewGroup.LayoutParams.WRAP_CONTENT,
+                    false,
+                )
 
             val adapter = RcViewDialogSpinnerAdapter(tvSelection, popupWindow, onItemSelectedListener)
             val rcView1 = binding.findViewById<RecyclerView>(R.id.recycler_view_spinner1)
@@ -109,9 +109,7 @@ class DialogSpinnerHelper {
             val yOffset = anchorView.resources.getDimensionPixelSize(R.dimen.popup_offset_y)
             val xOffset = 0
 
-
             popupWindow.showAsDropDown(anchorView, xOffset, yOffset)
-
 
             adapter.updateAdapter(list)
         }
@@ -120,32 +118,32 @@ class DialogSpinnerHelper {
     private fun setSearchView(
         adapter: RcViewDialogSpinnerAdapter,
         list: ArrayList<Pair<String, String>>,
-        sv: SearchView
+        sv: SearchView,
     ) {
-        sv.editText.addTextChangedListener(object : TextWatcher {
-            /*            override fun onQueryTextSubmit(p0: String?): Boolean {
-                            return false
-                        }
+        sv.editText.addTextChangedListener(
+            object : TextWatcher {
+                override fun beforeTextChanged(
+                    s: CharSequence?,
+                    start: Int,
+                    count: Int,
+                    after: Int,
+                ) {
+                }
 
-                        override fun onQueryTextChange(newText: String?): Boolean {
-                            val tempList = CityHelper.filterListData(list, newText)
-                            adapter.updateAdapter(tempList)
-                            return true
-                        }*/
+                override fun onTextChanged(
+                    s: CharSequence?,
+                    start: Int,
+                    before: Int,
+                    count: Int,
+                ) {
+                    val tempList = CityHelper.filterListData(list, s.toString())
+                    Log.d("Dialog", "tempList: $s.toString()")
+                    adapter.updateAdapter(tempList)
+                }
 
-            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {
-
-            }
-
-            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-                val tempList = CityHelper.filterListData(list, s.toString())
-                Log.d("Dialog", "tempList: $s.toString()")
-                adapter.updateAdapter(tempList)
-            }
-
-            override fun afterTextChanged(s: Editable?) {
-
-            }
-        })
+                override fun afterTextChanged(s: Editable?) {
+                }
+            },
+        )
     }
 }

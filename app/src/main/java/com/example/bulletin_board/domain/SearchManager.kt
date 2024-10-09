@@ -1,12 +1,25 @@
 package com.example.bulletin_board.domain
 
 import com.example.bulletin_board.dialogs.RcViewSearchSpinnerAdapter
-import com.example.bulletin_board.utils.ClearSearchResults
-import com.example.bulletin_board.utils.SearchQueryHandler
 import jakarta.inject.Inject
+import timber.log.Timber
 
-interface InitSearchAdd {
-    fun initSearchAddImpl()
+interface InitTextWatcher {
+    fun initTextWatcherHelperl(callback: TextWatcherCallback)
+}
+
+interface TextWatcherCallback {
+    fun onTextChanged(inputSearchQuery: String)
+
+    fun clearSearchResults()
+}
+
+interface InitSearchActionHelper {
+    fun setupSearchActionListener()
+}
+
+interface InitSearchBarClickListenerHelper {
+    fun setupSearchBarClickListener()
 }
 
 interface SearchUiInitializer {
@@ -15,34 +28,60 @@ interface SearchUiInitializer {
     fun initRecyclerView(adapter: RcViewSearchSpinnerAdapter)
 }
 
-interface SearchAdapterUpdateCallback {
-    fun onAdapterUpdated(results: List<Pair<String, String>>)
+interface SearchQueryHandler {
+    fun handleSearchQuery(
+        inputSearchQuery: String,
+        callback: SearchQueryHandlerCallback,
+    )
 }
 
-interface SearchAdapterUpdater {
-    fun updateAdapter(
-        query: String,
-        callback: SearchAdapterUpdateCallback,
-    )
+interface SearchQueryHandlerCallback {
+    fun onSearchResultsUpdated(results: List<Pair<String, String>>)
 }
 
 class SearchManager
     @Inject
     constructor(
-        private val initSearchAdd: InitSearchAdd,
+        private val initTextWatcher: InitTextWatcher,
+        private val initSearchActionHelper: InitSearchActionHelper,
+        private val initSearchBarClickListenerHelper: InitSearchBarClickListenerHelper,
         private val searchUiInitializer: SearchUiInitializer,
-        private val searchQueryHandler: SearchAdapterUpdater,
-    ) : SearchQueryHandler,
-        ClearSearchResults {
+        private val searchQueryHandler: SearchQueryHandler,
+    ) {
         private lateinit var adapterSearch: RcViewSearchSpinnerAdapter
 
-        init {
+        fun initializeSearchFunctionality()  {
             initSearchAdapter()
             initRecyclerView()
+            setupSearchListeners()
         }
 
-        fun initSearchAdd() {
-            initSearchAdd.initSearchAddImpl()
+        private fun setupSearchListeners() {
+            initTextWatcher.initTextWatcherHelperl(
+                object : TextWatcherCallback {
+                    override fun onTextChanged(inputSearchQuery: String) {
+                        handleSearchQuery(inputSearchQuery)
+                    }
+
+                    override fun clearSearchResults() {
+                        clearSearchResultsAdapter()
+                    }
+                },
+            )
+            initSearchActionHelper.setupSearchActionListener()
+            initSearchBarClickListenerHelper.setupSearchBarClickListener()
+        }
+
+        fun handleSearchQuery(inputSearchQuery: String) {
+            searchQueryHandler.handleSearchQuery(
+                inputSearchQuery,
+                object : SearchQueryHandlerCallback {
+                    override fun onSearchResultsUpdated(results: List<Pair<String, String>>) {
+                        Timber.d("onSearchResultsUpdated() called with: results = $results")
+                        adapterSearch.updateAdapter(results)
+                    }
+                },
+            )
         }
 
         private fun initSearchAdapter() {
@@ -57,18 +96,7 @@ class SearchManager
             searchUiInitializer.initRecyclerView(adapterSearch)
         }
 
-        override fun clearSearchResults() {
+        fun clearSearchResultsAdapter() {
             adapterSearch.clearAdapter()
-        }
-
-        override fun handleSearchQuery(query: String) {
-            searchQueryHandler.updateAdapter(
-                query,
-                object : SearchAdapterUpdateCallback {
-                    override fun onAdapterUpdated(results: List<Pair<String, String>>) {
-                        adapterSearch.updateAdapter(results)
-                    }
-                },
-            )
         }
     }
