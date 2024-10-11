@@ -7,6 +7,7 @@ import com.example.bulletin_board.pix.models.Options
 import com.example.bulletin_board.pix.models.Ratio
 import io.ak1.pix.helpers.PixEventCallback
 import jakarta.inject.Inject
+import timber.log.Timber
 
 interface PixImagePickerActions {
     fun addPixToActivityImpl(
@@ -37,6 +38,7 @@ class PixImagePicker
             pixImagePickerActions.addPixToActivityImpl(R.id.place_holder, getOptions(imageCounter)) { result ->
                 when (result.status) {
                     PixEventCallback.Status.SUCCESS -> {
+                        Timber.d("Success ${result.data}")
                         getMultiSelectImages(result.data)
                         pixImagePickerActions.showStatusBarImpl()
                     }
@@ -75,7 +77,10 @@ class PixImagePicker
 
         private fun getMultiSelectImages(uris: List<Uri>) {
             when {
-                uris.isNotEmpty() -> pixImagePickerActions.showImageListFrag(uris as ArrayList<Uri>)
+                uris.isNotEmpty() -> {
+                    Timber.d("uris.isNotEmpty")
+                    pixImagePickerActions.showImageListFrag(uris as ArrayList<Uri>)
+                }
                 else -> return
             }
 /*            if (uris.size > 1 && edAct.chooseImageFrag == null) {

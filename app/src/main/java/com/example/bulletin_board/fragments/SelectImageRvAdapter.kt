@@ -12,6 +12,7 @@ import com.example.bulletin_board.databinding.SelectImageFragItemBinding
 import com.example.bulletin_board.domain.ImageLoader
 import com.example.bulletin_board.utils.AdapterCallback
 import com.example.bulletin_board.utils.ItemTouchMoveCallback
+import timber.log.Timber
 
 interface GetSingleImagesHandler {
     fun getSingleImages(editImagePos: Int)
@@ -33,6 +34,10 @@ class SelectImageRvAdapter(
     private val imageLoader: ImageLoader,
 ) : RecyclerView.Adapter<SelectImageRvAdapter.ImageHolder>(),
     ItemTouchMoveCallback.ItemTouchAdapter {
+    init {
+        Timber.d("SelectImageRvAdapter init")
+    }
+
     val mainArray = ArrayList<Bitmap>()
 
     class ImageHolder(

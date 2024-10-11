@@ -9,6 +9,7 @@ import com.example.bulletin_board.domain.ToastHelper
 import com.example.bulletin_board.domain.image.ImageLoader.getBitmapFromUris
 import com.example.bulletin_board.model.Ad
 import jakarta.inject.Inject
+import timber.log.Timber
 import java.io.ByteArrayOutputStream
 
 interface ViewModelHandler {
@@ -70,6 +71,7 @@ class ImageManager
         private val chooseScaleTypeHandler: ChooseScaleTypeHandler,
     ) {
         fun getMultiImages(imageCounter: Int) {
+            Timber.d("getMultiImages")
             getMultiImagesProvider.getMultiImages(imageCounter)
         }
 
@@ -165,7 +167,6 @@ class ImageManager
             bitmap.compress(Bitmap.CompressFormat.JPEG, 20, outStream)
             return outStream.toByteArray()
         }
-        // ---------------------------------------------------------------------------------------
 
         fun fillImageArray(
             ad: Ad,

@@ -13,5 +13,8 @@ import dagger.hilt.android.scopes.ActivityScoped
 object TokenSaveHandlerModule {
     @Provides
     @ActivityScoped
-    fun provideTokenSaveHandler(activity: Activity): TokenSaveHandler = activity as TokenSaveHandler
+    fun provideTokenSaveHandler(activity: Activity): TokenSaveHandler =
+        activity as? TokenSaveHandler ?: object : TokenSaveHandler {
+            override fun saveToken(token: String) {}
+        }
 }

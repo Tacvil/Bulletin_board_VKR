@@ -2,8 +2,6 @@ package com.example.bulletin_board.act
 
 import android.annotation.SuppressLint
 import android.content.Intent
-import android.graphics.Bitmap
-import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.Parcelable
@@ -26,8 +24,6 @@ import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.airbnb.lottie.LottieAnimationView
-import com.bumptech.glide.Glide
-import com.bumptech.glide.request.RequestOptions
 import com.example.bulletin_board.R
 import com.example.bulletin_board.adapterFirestore.AdsAdapter
 import com.example.bulletin_board.adapterFirestore.FavoriteAdsAdapter
@@ -46,7 +42,6 @@ import com.example.bulletin_board.domain.AuthCallback
 import com.example.bulletin_board.domain.DataAdapterManager
 import com.example.bulletin_board.domain.FilterReader
 import com.example.bulletin_board.domain.FilterUpdater
-import com.example.bulletin_board.domain.ImageLoader
 import com.example.bulletin_board.domain.NavigationViewHelper
 import com.example.bulletin_board.domain.OrderByFilterDialog
 import com.example.bulletin_board.domain.OrderByFilterDialogManager
@@ -89,7 +84,6 @@ class MainActivity :
     TokenSaveHandler,
     ToastHelper,
     ResourceStringProvider,
-    ImageLoader,
     SearchUiInitializer,
     SearchUi,
     VoiceRecognitionListener,
@@ -434,30 +428,6 @@ class MainActivity :
     }
 
     override fun getStringImpl(resId: Int): String = this.getString(resId)
-
-    override fun loadImage(
-        imageView: ImageView,
-        imageUrl: Any?,
-        requestOptions: RequestOptions,
-    ) {
-        when (imageUrl) {
-            is Uri -> {
-                Glide
-                    .with(this)
-                    .load(imageUrl)
-                    .apply(requestOptions)
-                    .into(imageView)
-            }
-
-            is Bitmap -> {
-                Glide
-                    .with(this)
-                    .load(imageUrl)
-                    .apply(requestOptions)
-                    .into(imageView)
-            }
-        }
-    }
 
     override fun initSearchAdapter(item: String) {
         binding.mainContent.searchViewMainContent.editText

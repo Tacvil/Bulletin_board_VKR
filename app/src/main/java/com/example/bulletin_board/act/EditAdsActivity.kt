@@ -38,6 +38,7 @@ import io.ak1.pix.helpers.addPixToActivity
 import io.ak1.pix.helpers.showStatusBar
 import jakarta.inject.Inject
 import kotlinx.coroutines.launch
+import timber.log.Timber
 
 @AndroidEntryPoint
 class EditAdsActivity :
@@ -48,7 +49,9 @@ class EditAdsActivity :
     ContentResolverProvider,
     PixImagePickerActions,
     EditImagePosListener {
-    private var chooseImageFrag: ImageListFrag? = null
+    @Inject
+    lateinit var chooseImageFrag: ImageListFrag
+
     lateinit var binding: ActivityEditAdsBinding
     private lateinit var imageAdapter: ImageAdapter
     private var editImagePos = 0
@@ -180,6 +183,7 @@ class EditAdsActivity :
 
         binding.imageButton.setOnClickListener {
             if (imageAdapter.mainArray.size == 0) {
+                Timber.d("click empty")
                 imageManager.getMultiImages(3)
             } else {
                 showImageListFrag(null)
@@ -308,16 +312,15 @@ class EditAdsActivity :
     override fun onFragClose(list: ArrayList<Bitmap>) {
         binding.scrollViewMain.visibility = View.VISIBLE
         imageAdapter.update(list)
-        chooseImageFrag = null
         updateImageCounter(binding.viewPagerImages.currentItem)
     }
 
     override fun showImageListFrag(uris: ArrayList<Uri>?) {
-        chooseImageFrag = ImageListFrag(this, this)
-        if (uris != null) chooseImageFrag?.resizeSelectedImages(uris, true, this)
+        Timber.d("showImageListFrag $uris")
+        if (uris != null) chooseImageFrag.resizeSelectedImages(uris, true, this)
         binding.scrollViewMain.visibility = View.GONE
         val fm = supportFragmentManager.beginTransaction()
-        fm.replace(R.id.place_holder, chooseImageFrag!!)
+        fm.replace(R.id.place_holder, chooseImageFrag)
         fm.commit()
         showStatusBar()
     }
