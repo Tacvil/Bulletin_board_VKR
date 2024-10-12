@@ -7,7 +7,6 @@ import com.example.bulletin_board.pix.models.Options
 import com.example.bulletin_board.pix.models.Ratio
 import io.ak1.pix.helpers.PixEventCallback
 import jakarta.inject.Inject
-import timber.log.Timber
 
 interface PixImagePickerActions {
     fun addPixToActivityImpl(
@@ -38,7 +37,6 @@ class PixImagePicker
             pixImagePickerActions.addPixToActivityImpl(R.id.place_holder, getOptions(imageCounter)) { result ->
                 when (result.status) {
                     PixEventCallback.Status.SUCCESS -> {
-                        Timber.d("Success ${result.data}")
                         getMultiSelectImages(result.data)
                         pixImagePickerActions.showStatusBarImpl()
                     }
@@ -78,22 +76,10 @@ class PixImagePicker
         private fun getMultiSelectImages(uris: List<Uri>) {
             when {
                 uris.isNotEmpty() -> {
-                    Timber.d("uris.isNotEmpty")
                     pixImagePickerActions.showImageListFrag(uris as ArrayList<Uri>)
                 }
                 else -> return
             }
-/*            if (uris.size > 1 && edAct.chooseImageFrag == null) {
-                edAct.openChooseImageFrag(uris as ArrayList<Uri>)
-            } else if (uris.size == 1 && edAct.chooseImageFrag == null) {
-                CoroutineScope(Dispatchers.Main).launch {
-                    edAct.binding.progressBarLoad.visibility = View.VISIBLE
-                    val bitMapArray = ImageManager.imageResize(uris as ArrayList<Uri>, edAct) as ArrayList<Bitmap>
-                    edAct.binding.progressBarLoad.visibility = View.GONE
-                    edAct.imageAdapter.update(bitMapArray)
-                    closePixFrag(edAct)
-                }
-            }*/
         }
 
         private fun getOptions(imageCounter: Int): Options {
@@ -110,7 +96,5 @@ class PixImagePicker
 
         companion object {
             const val MAX_IMAGE_COUNT = 3
-            const val REQUEST_CODE_GET_IMAGES = 999
-            const val REQUEST_CODE_GET_SINGLE_IMAGE = 998
         }
     }

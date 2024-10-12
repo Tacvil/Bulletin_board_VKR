@@ -3,6 +3,7 @@ package com.example.bulletin_board.di
 import android.app.Activity
 import android.widget.ImageView
 import android.widget.TextView
+import android.widget.Toast
 import androidx.fragment.app.FragmentActivity
 import com.example.bulletin_board.R
 import com.example.bulletin_board.domain.AccountHelper
@@ -64,7 +65,19 @@ abstract class AccountHelperBindingModule {
 @InstallIn(ActivityComponent::class)
 object ResourceProviderModule {
     @Provides
-    fun provideToastHelper(activity: FragmentActivity): ToastHelper = activity as ToastHelper
+    fun provideToastHelper(activity: FragmentActivity): ToastHelper =
+        if (activity is ToastHelper) {
+            activity
+        } else {
+            object : ToastHelper {
+                override fun showToast(
+                    message: String,
+                    duration: Int,
+                ) {
+                    Toast.makeText(activity, message, duration).show()
+                }
+            }
+        }
 
     @Provides
     fun provideResourceStringProvider(activity: Activity): ResourceStringProvider =

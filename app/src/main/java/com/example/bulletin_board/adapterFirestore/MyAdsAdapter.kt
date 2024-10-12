@@ -8,7 +8,6 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.annotation.RequiresApi
-import androidx.lifecycle.viewModelScope
 import androidx.paging.PagingDataAdapter
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
@@ -23,30 +22,22 @@ import com.example.bulletin_board.model.AdItemClickListener
 import com.example.bulletin_board.model.AdUpdateEvent
 import com.example.bulletin_board.model.FavData
 import com.example.bulletin_board.model.ViewData
-import com.example.bulletin_board.viewmodel.FirebaseViewModel
 import jakarta.inject.Inject
-import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.drop
-import kotlinx.coroutines.launch
 import timber.log.Timber
 import java.util.Locale
 
 class MyAdsAdapter
     @Inject
     constructor(
-        viewModel: FirebaseViewModel,
+        appStateListener: AppStateListener,
     ) : PagingDataAdapter<Ad, MyAdsAdapter.AdHolder>(MyAdDiffCallback()),
         Adapter {
         init {
-            viewModel.viewModelScope.launch {
-                viewModel.appState.drop(1).collectLatest { event ->
-                    event.adEvent?.let { adEvent ->
-                        when (adEvent) {
-                            is AdUpdateEvent.FavUpdated -> updateFav(adEvent.favData)
-                            is AdUpdateEvent.ViewCountUpdated -> updateViewCount(adEvent.viewData)
-                            is AdUpdateEvent.AdDeleted -> refresh()
-                        }
-                    }
+            appStateListener.onAppStateEvent { adEvent ->
+                when (adEvent) {
+                    is AdUpdateEvent.FavUpdated -> updateFav(adEvent.favData)
+                    is AdUpdateEvent.ViewCountUpdated -> updateViewCount(adEvent.viewData)
+                    is AdUpdateEvent.AdDeleted -> refresh()
                 }
             }
         }

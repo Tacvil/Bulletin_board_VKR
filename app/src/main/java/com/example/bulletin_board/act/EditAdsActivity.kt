@@ -6,6 +6,7 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.view.View
+import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.annotation.RequiresApi
@@ -27,7 +28,7 @@ import com.example.bulletin_board.domain.image.PixImagePickerActions
 import com.example.bulletin_board.domain.image.ViewModelHandler
 import com.example.bulletin_board.fragments.EditImagePosListener
 import com.example.bulletin_board.fragments.FragmentCloseInterface
-import com.example.bulletin_board.fragments.ImageListFrag
+import com.example.bulletin_board.fragments.ImageListFragment
 import com.example.bulletin_board.model.Ad
 import com.example.bulletin_board.pix.models.Options
 import com.example.bulletin_board.utils.CityHelper
@@ -38,7 +39,6 @@ import io.ak1.pix.helpers.addPixToActivity
 import io.ak1.pix.helpers.showStatusBar
 import jakarta.inject.Inject
 import kotlinx.coroutines.launch
-import timber.log.Timber
 
 @AndroidEntryPoint
 class EditAdsActivity :
@@ -50,20 +50,21 @@ class EditAdsActivity :
     PixImagePickerActions,
     EditImagePosListener {
     @Inject
-    lateinit var chooseImageFrag: ImageListFrag
-
-    lateinit var binding: ActivityEditAdsBinding
-    private lateinit var imageAdapter: ImageAdapter
-    private var editImagePos = 0
-    private var isEditState = false
-    private var ad: Ad? = null
-    private val viewModel: FirebaseViewModel by viewModels()
+    lateinit var imageListFragment: ImageListFragment
 
     @Inject
     lateinit var accountManager: AccountManager
 
     @Inject
     lateinit var imageManager: ImageManager
+
+    private lateinit var binding: ActivityEditAdsBinding
+    private lateinit var imageAdapter: ImageAdapter
+    private val viewModel: FirebaseViewModel by viewModels()
+
+    private var selectedImagePosition = 0
+    private var isInEditMode = false
+    private var currentAd: Ad? = null
 
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -72,26 +73,178 @@ class EditAdsActivity :
         binding = ActivityEditAdsBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        init()
-        checkEditState()
-        onClickSelectCountryCity()
+        initializeComponents()
+        handleEditMode()
+        setupSelectors()
+        handleImageSelection()
         onClickSelectCategory()
-        onClickPublish()
+        setupPublishButton()
         imageChangeCounter()
     }
 
-    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
-    private fun checkEditState() {
-        if (isEditState()) {
-            isEditState = true
-            ad = intent.getParcelableExtra(MainActivity.ADS_DATA, Ad::class.java)
-            ad?.let { fillViews(it) }
+    private fun initializeComponents() {
+        imageAdapter = ImageAdapter()
+        binding.viewPagerImages.adapter = imageAdapter
+    }
+
+    private fun setupSelectors() {
+        with(binding) {
+            textViewSelectCountry.setOnClickListener {
+                val countryList = CityHelper.getAllCountries(this@EditAdsActivity)
+                textViewSelectCity.setText("")
+                showSelectDialog(textViewSelectCountry, countryList, true) { item ->
+                    textViewSelectCountry.setText(item)
+                }
+            }
+
+            textViewSelectCity.setOnClickListener {
+                val selectedCountry = textViewSelectCountry.text.toString()
+                if (selectedCountry != getString(R.string.select_country)) {
+                    val cityList = CityHelper.getAllCities(selectedCountry, this@EditAdsActivity)
+                    showSelectDialog(textViewSelectCity, cityList, true) { item ->
+                        textViewSelectCity.setText(item)
+                    }
+                } else {
+                    showToast("No country selected", Toast.LENGTH_LONG)
+                }
+            }
+
+            textViewSelectWithSend.setOnClickListener {
+                val deliveryOptionsList =
+                    arrayListOf(
+                        Pair(getString(R.string.no_matter), ""),
+                        Pair(getString(R.string.with_sending), ""),
+                        Pair(getString(R.string.without_sending), ""),
+                    )
+                showSelectDialog(textViewSelectWithSend, deliveryOptionsList, false) { item ->
+                    textViewSelectWithSend.setText(item)
+                }
+            }
         }
     }
 
-    private fun isEditState(): Boolean = intent.getBooleanExtra(MainActivity.EDIT_STATE, false)
+    private fun handleImageSelection() {
+        binding.addImageButton.setOnClickListener {
+            if (imageAdapter.mainArray.size == 0) {
+                imageManager.getMultiImages(3)
+            } else {
+                showImageListFrag(null)
+                imageListFragment.updateAdapterFromEdit(imageAdapter.mainArray)
+            }
+        }
+    }
 
-    private fun fillViews(ad: Ad) =
+    private fun imageChangeCounter() {
+        binding.viewPagerImages.registerOnPageChangeCallback(
+            object :
+                ViewPager2.OnPageChangeCallback() {
+                override fun onPageSelected(position: Int) {
+                    super.onPageSelected(position)
+                    updateImageCounter(position)
+                }
+            },
+        )
+    }
+
+    private fun updateImageCounter(counter: Int) =
+        with(binding) {
+            val itemCount = viewPagerImages.adapter?.itemCount ?: 0
+            val index = if (itemCount == 0) 0 else 1
+            val imageCounter = "${counter + index}/$itemCount"
+            textViewImageCounter.text = imageCounter
+        }
+
+    private fun showSelectDialog(
+        textView: TextView,
+        items: ArrayList<Pair<String, String>>,
+        isCountryCity: Boolean,
+        onItemSelected: (String) -> Unit,
+    ) {
+        DialogSpinnerHelper.showSpinnerPopup(
+            this,
+            textView,
+            items,
+            textView,
+            onItemSelectedListener =
+                object : RcViewDialogSpinnerAdapter.OnItemSelectedListener {
+                    override fun onItemSelected(item: String) {
+                        onItemSelected(item)
+                    }
+                },
+            isCountryCity,
+        )
+    }
+
+    private fun setupPublishButton() {
+        binding.buttonPublish.setOnClickListener {
+            if (areRequiredFieldsEmpty()) {
+                showToast("Внимание! Все поля должны быть заполнены!", Toast.LENGTH_SHORT)
+                return@setOnClickListener
+            }
+            binding.progressLayout.visibility = View.VISIBLE
+            currentAd = createAdFromForm()
+            viewModel.viewModelScope.launch {
+                imageManager.uploadImages(currentAd, imageAdapter, 0) {
+                    binding.progressLayout.visibility = View.GONE
+                    // showToast("Объявление отправлено на модерацию!", Toast.LENGTH_SHORT)
+                    finish()
+                }
+            }
+        }
+    }
+
+    private fun areRequiredFieldsEmpty() =
+        with(binding) {
+            listOf(
+                textViewSelectCountry,
+                textViewSelectCity,
+                textViewSelectCategory,
+                textViewTitle,
+                textViewPrice,
+                textViewIndex,
+                textViewDescription,
+                textViewSelectTelNumb,
+            ).any { it.text.isNullOrEmpty() }
+        }
+
+    private fun createAdFromForm(): Ad =
+        binding.run {
+            Ad(
+                currentAd?.key ?: accountManager.generateAdId(),
+                textViewTitle.text.toString(),
+                textViewTitle.text.toString().lowercase(),
+                createKeyWords(textViewTitle.text.toString()),
+                textViewSelectCountry.text.toString(),
+                textViewSelectCity.text.toString(),
+                textViewIndex.text.toString(),
+                textViewSelectTelNumb.text.toString(),
+                textViewSelectWithSend.text.toString(),
+                textViewSelectCategory.text.toString(),
+                textViewPrice.text.toString().toInt(),
+                textViewDescription.text.toString(),
+                textViewSelectEmail.text.toString(),
+                currentAd?.mainImage ?: "",
+                currentAd?.image2 ?: "",
+                currentAd?.image3 ?: "",
+                accountManager.auth.uid,
+                currentAd?.time ?: System.currentTimeMillis().toString(),
+            )
+        }
+
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+    private fun handleEditMode() {
+        if (isInEditMode()) {
+            isInEditMode = true
+            intent.getParcelableExtra(MainActivity.ADS_DATA, Ad::class.java)?.let {
+                currentAd = it
+                populateFields(it)
+            }
+        }
+    }
+
+    private fun isInEditMode(): Boolean = intent.getBooleanExtra(MainActivity.EDIT_STATE, false)
+
+    private fun populateFields(ad: Ad) =
         with(binding) {
             textViewTitle.setText(ad.title)
             textViewSelectCountry.setText(ad.country)
@@ -106,154 +259,6 @@ class EditAdsActivity :
             updateImageCounter(0)
             imageManager.fillImageArray(ad, imageAdapter)
         }
-
-    private fun init() {
-        imageAdapter = ImageAdapter()
-        binding.viewPagerImages.adapter = imageAdapter
-    }
-
-    private fun onClickSelectCountryCity() {
-        binding.textViewSelectCountry.setOnClickListener {
-            val listCountry = CityHelper.getAllCountries(this)
-            if (binding.textViewSelectCity.text.toString() != "") {
-                binding.textViewSelectCity.setText("")
-            }
-            val onItemSelectedListener =
-                object : RcViewDialogSpinnerAdapter.OnItemSelectedListener {
-                    override fun onItemSelected(item: String) {
-                        binding.textViewSelectCountry.setText(item)
-                    }
-                }
-            DialogSpinnerHelper.showSpinnerPopup(
-                this,
-                binding.textViewSelectCountry,
-                listCountry,
-                binding.textViewSelectCountry,
-                onItemSelectedListener,
-                true,
-            )
-        }
-
-        binding.textViewSelectCity.setOnClickListener {
-            val selectedCountry = binding.textViewSelectCountry.text.toString()
-            if (selectedCountry != getString(R.string.select_country)) {
-                val listCity = CityHelper.getAllCities(selectedCountry, this)
-                val onItemSelectedListener =
-                    object : RcViewDialogSpinnerAdapter.OnItemSelectedListener {
-                        override fun onItemSelected(item: String) {
-                            binding.textViewSelectCity.setText(item)
-                        }
-                    }
-                DialogSpinnerHelper.showSpinnerPopup(
-                    this,
-                    binding.textViewSelectCity,
-                    listCity,
-                    binding.textViewSelectCity,
-                    onItemSelectedListener,
-                    true,
-                )
-            } else {
-                Toast.makeText(this, "No country selected", Toast.LENGTH_LONG).show()
-            }
-        }
-
-        binding.textViewSelectWithSend.setOnClickListener {
-            val listVariant =
-                arrayListOf(
-                    Pair("Не важно", "empty"),
-                    Pair("С отправкой", "empty"),
-                    Pair("Без отправки", "empty)"),
-                )
-
-            val onItemSelectedListener =
-                object : RcViewDialogSpinnerAdapter.OnItemSelectedListener {
-                    override fun onItemSelected(item: String) {
-                        binding.textViewSelectWithSend.setText(item)
-                    }
-                }
-            DialogSpinnerHelper.showSpinnerPopup(
-                this,
-                binding.textViewSelectWithSend,
-                listVariant,
-                binding.textViewSelectWithSend,
-                onItemSelectedListener,
-                false,
-            )
-        }
-
-        binding.imageButton.setOnClickListener {
-            if (imageAdapter.mainArray.size == 0) {
-                Timber.d("click empty")
-                imageManager.getMultiImages(3)
-            } else {
-                showImageListFrag(null)
-                chooseImageFrag?.updateAdapterFromEdit(imageAdapter.mainArray)
-            }
-        }
-    }
-
-    private fun onClickPublish() {
-        binding.buttonPublish.setOnClickListener {
-            if (isFieldsEmpty()) {
-                Toast
-                    .makeText(
-                        this,
-                        "Внимание! Все поля должны быть заполнены!",
-                        Toast.LENGTH_SHORT,
-                    ).show()
-                return@setOnClickListener
-            }
-            binding.progressLayout.visibility = View.VISIBLE
-            ad = fillAnnouncement()
-            viewModel.viewModelScope.launch {
-                imageManager.uploadImages(ad, imageAdapter, 0) {
-                    binding.progressLayout.visibility = View.GONE
-                    // Toast.makeText(this@EditAdsActivity, "Объявление отправлено на модерацию!", Toast.LENGTH_SHORT).show()
-                    finish()
-                }
-            }
-        }
-    }
-
-    private fun isFieldsEmpty(): Boolean =
-        with(binding) {
-            return textViewSelectCountry.text.toString() == getString(R.string.select_country) ||
-                textViewSelectCity.text.toString() == getString(R.string.select_city) ||
-                textViewSelectCategory.text.toString() == getString(R.string.select_category) ||
-                textViewTitle.text?.isEmpty() ?: true ||
-                textViewPrice.text?.isEmpty() ?: true ||
-                textViewIndex.text?.isEmpty() ?: true ||
-                textViewDescription.text?.isEmpty() ?: true ||
-                textViewSelectTelNumb.text?.isEmpty() ?: true
-        }
-
-    private fun fillAnnouncement(): Ad {
-        val adTemp: Ad
-        binding.apply {
-            adTemp =
-                Ad(
-                    ad?.key ?: accountManager.generateAdId(),
-                    textViewTitle.text.toString(),
-                    textViewTitle.text.toString().lowercase(),
-                    createKeyWords(textViewTitle.text.toString()),
-                    textViewSelectCountry.text.toString(),
-                    textViewSelectCity.text.toString(),
-                    textViewIndex.text.toString(),
-                    textViewSelectTelNumb.text.toString(),
-                    textViewSelectWithSend.text.toString(),
-                    textViewSelectCategory.text.toString(),
-                    textViewPrice.text.toString().toInt(),
-                    textViewDescription.text.toString(),
-                    textViewSelectEmail.text.toString(),
-                    ad?.mainImage ?: "empty",
-                    ad?.image2 ?: "empty",
-                    ad?.image3 ?: "empty",
-                    accountManager.auth.uid,
-                    ad?.time ?: System.currentTimeMillis().toString(),
-                )
-        }
-        return adTemp
-    }
 
     private fun createKeyWords(title: String): ArrayList<String> {
         val words = title.split(" ")
@@ -291,21 +296,10 @@ class EditAdsActivity :
         binding.textViewSelectCategory.setOnClickListener {
             val listCategory = resources.getStringArray(R.array.category)
             val pairsCategory =
-                ArrayList<Pair<String, String>>(listCategory.map { Pair(it, "empty") })
-            val onItemSelectedListener =
-                object : RcViewDialogSpinnerAdapter.OnItemSelectedListener {
-                    override fun onItemSelected(item: String) {
-                        binding.textViewSelectCategory.setText(item)
-                    }
-                }
-            DialogSpinnerHelper.showSpinnerPopup(
-                this,
-                binding.textViewSelectCategory,
-                pairsCategory,
-                binding.textViewSelectCategory,
-                onItemSelectedListener,
-                false,
-            )
+                ArrayList<Pair<String, String>>(listCategory.map { Pair(it, "") })
+            showSelectDialog(binding.textViewSelectCategory, pairsCategory, false) { item ->
+                binding.textViewSelectCategory.setText(item)
+            }
         }
     }
 
@@ -316,33 +310,14 @@ class EditAdsActivity :
     }
 
     override fun showImageListFrag(uris: ArrayList<Uri>?) {
-        Timber.d("showImageListFrag $uris")
-        if (uris != null) chooseImageFrag.resizeSelectedImages(uris, true, this)
+        uris
+            ?.takeIf { it.isNotEmpty() }
+            ?.let { imageListFragment.resizeSelectedImages(it, true, this) }
         binding.scrollViewMain.visibility = View.GONE
         val fm = supportFragmentManager.beginTransaction()
-        fm.replace(R.id.place_holder, chooseImageFrag)
+        fm.replace(R.id.place_holder, imageListFragment)
         fm.commit()
         showStatusBar()
-    }
-
-    private fun imageChangeCounter() {
-        binding.viewPagerImages.registerOnPageChangeCallback(
-            object :
-                ViewPager2.OnPageChangeCallback() {
-                override fun onPageSelected(position: Int) {
-                    super.onPageSelected(position)
-                    updateImageCounter(position)
-                }
-            },
-        )
-    }
-
-    private fun updateImageCounter(counter: Int) {
-        var index = 1
-        val itemCount = binding.viewPagerImages.adapter?.itemCount
-        if (itemCount == 0) index = 0
-        val imageCounter = "${counter + index}/$itemCount"
-        binding.textViewImageCounter.text = imageCounter
     }
 
     override fun showToast(
@@ -403,19 +378,19 @@ class EditAdsActivity :
     override fun openChooseImageFrag() {
         this.supportFragmentManager
             .beginTransaction()
-            .replace(R.id.place_holder, this.chooseImageFrag!!)
+            .replace(R.id.place_holder, this.imageListFragment)
             .commit()
     }
 
     override fun updateAdapter(uris: ArrayList<Uri>) {
-        this.chooseImageFrag?.updateAdapter(uris, this)
+        this.imageListFragment.updateAdapter(uris, this)
     }
 
     override fun setSingleImage(uri: Uri) {
-        this.chooseImageFrag?.setSingleImage(uri, this.editImagePos)
+        this.imageListFragment.setSingleImage(uri, this.selectedImagePosition)
     }
 
     override fun updateEditImagePos(pos: Int) {
-        editImagePos = pos
+        selectedImagePosition = pos
     }
 }

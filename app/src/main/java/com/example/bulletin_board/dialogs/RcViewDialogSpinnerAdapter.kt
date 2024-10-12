@@ -9,9 +9,11 @@ import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.example.bulletin_board.R
 
-class RcViewDialogSpinnerAdapter(var tvSelection: TextView, var popupWindow: PopupWindow?, var onItemSelectedListener: OnItemSelectedListener? = null)
-    : RecyclerView.Adapter<RcViewDialogSpinnerAdapter.SpViewHolder>() {
-
+class RcViewDialogSpinnerAdapter(
+    var tvSelection: TextView,
+    var popupWindow: PopupWindow?,
+    var onItemSelectedListener: OnItemSelectedListener? = null,
+) : RecyclerView.Adapter<RcViewDialogSpinnerAdapter.SpViewHolder>() {
     private val mainList = ArrayList<Pair<String, String>>()
 
     interface OnItemSelectedListener {
@@ -21,8 +23,9 @@ class RcViewDialogSpinnerAdapter(var tvSelection: TextView, var popupWindow: Pop
     class SpViewHolder(
         itemView: View,
         var tvSelection: TextView,
-        var adapter: RcViewDialogSpinnerAdapter
-    ) : RecyclerView.ViewHolder(itemView), View.OnClickListener {
+        var adapter: RcViewDialogSpinnerAdapter,
+    ) : RecyclerView.ViewHolder(itemView),
+        View.OnClickListener {
         private var itemText = ""
 
         fun setData(item: Pair<String, String>) {
@@ -45,21 +48,25 @@ class RcViewDialogSpinnerAdapter(var tvSelection: TextView, var popupWindow: Pop
 
         override fun onClick(p0: View?) {
             tvSelection.text = itemText
-            adapter.dismissDialog()  // Вызываем метод для закрытия диалога
+            adapter.dismissDialog()
             adapter.onItemSelectedListener?.onItemSelected(itemText)
         }
     }
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): SpViewHolder {
+    override fun onCreateViewHolder(
+        parent: ViewGroup,
+        viewType: Int,
+    ): SpViewHolder {
         val view = LayoutInflater.from(parent.context).inflate(R.layout.spinner_list_item, parent, false)
         return SpViewHolder(view, tvSelection, this)
     }
 
-    override fun getItemCount(): Int {
-        return mainList.size
-    }
+    override fun getItemCount(): Int = mainList.size
 
-    override fun onBindViewHolder(holder: SpViewHolder, position: Int) {
+    override fun onBindViewHolder(
+        holder: SpViewHolder,
+        position: Int,
+    ) {
         holder.setData(mainList[position])
     }
 

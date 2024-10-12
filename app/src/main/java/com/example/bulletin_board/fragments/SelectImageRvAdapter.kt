@@ -3,6 +3,7 @@ package com.example.bulletin_board.fragments
 import android.graphics.Bitmap
 import android.view.LayoutInflater
 import android.view.ViewGroup
+import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.load.resource.bitmap.CenterCrop
 import com.bumptech.glide.load.resource.bitmap.FitCenter
@@ -10,72 +11,52 @@ import com.bumptech.glide.load.resource.bitmap.RoundedCorners
 import com.bumptech.glide.request.RequestOptions
 import com.example.bulletin_board.databinding.SelectImageFragItemBinding
 import com.example.bulletin_board.domain.ImageLoader
-import com.example.bulletin_board.utils.AdapterCallback
 import com.example.bulletin_board.utils.ItemTouchMoveCallback
-import timber.log.Timber
+import java.util.Collections
 
-interface GetSingleImagesHandler {
+interface ImageAdapterHandler {
     fun getSingleImages(editImagePos: Int)
-}
 
-interface TitleProvider {
     fun getTitle(position: Int): String
-}
 
-interface ChooseScaleTypeHandler {
     fun chooseScaleType(bitmap: Bitmap): Boolean
 }
 
 class SelectImageRvAdapter(
-    val adapterCallback: AdapterCallback,
-    private val getSingleImagesHandler: GetSingleImagesHandler,
-    private val titleProvider: TitleProvider,
-    private val chooseScaleTypeHandler: ChooseScaleTypeHandler,
+    private val onItemDelete: () -> Unit,
+    private val imageAdapterHandler: ImageAdapterHandler,
     private val imageLoader: ImageLoader,
 ) : RecyclerView.Adapter<SelectImageRvAdapter.ImageHolder>(),
     ItemTouchMoveCallback.ItemTouchAdapter {
-    init {
-        Timber.d("SelectImageRvAdapter init")
-    }
-
     val mainArray = ArrayList<Bitmap>()
 
     class ImageHolder(
         private val binding: SelectImageFragItemBinding,
         val adapter: SelectImageRvAdapter,
-        private val getSingleImagesHandler: GetSingleImagesHandler,
-        private val titleProvider: TitleProvider,
-        private val chooseScaleTypeHandler: ChooseScaleTypeHandler,
+        private val imageAdapterHandler: ImageAdapterHandler,
         private val imageLoader: ImageLoader,
+        private val onItemDelete: () -> Unit,
     ) : RecyclerView.ViewHolder(binding.root) {
         fun setData(bitMap: Bitmap) {
             binding.imageButtonEditImage.setOnClickListener {
-                getSingleImagesHandler.getSingleImages(adapterPosition)
+                imageAdapterHandler.getSingleImages(absoluteAdapterPosition)
             }
 
             binding.imageButtonDelete.setOnClickListener {
-                adapter.mainArray.removeAt(adapterPosition)
-                adapter.notifyItemRemoved(adapterPosition)
-                for (n in 0 until adapter.mainArray.size) adapter.notifyItemChanged(n)
-                adapter.adapterCallback.onItemDelete()
+                adapter.mainArray.removeAt(absoluteAdapterPosition)
+                adapter.notifyItemRemoved(absoluteAdapterPosition)
+                adapter.notifyItemRangeChanged(absoluteAdapterPosition, adapter.mainArray.size - absoluteAdapterPosition)
+                onItemDelete()
             }
 
-            binding.textViewTitle.text = titleProvider.getTitle(adapterPosition)
+            binding.textViewTitle.text = imageAdapterHandler.getTitle(absoluteAdapterPosition)
 
-            val cropBool = chooseScaleTypeHandler.chooseScaleType(bitMap)
-
-            if (cropBool) {
-                val roundedCorners = RoundedCorners(20)
-                val centerCrop = CenterCrop()
-                val requestOptions = RequestOptions().transform(centerCrop, roundedCorners)
-
-                imageLoader.loadImage(binding.imageViewContent, bitMap, requestOptions)
-            } else {
-                val roundedCorners = RoundedCorners(20)
-                val fitCenter = FitCenter()
-                val requestOptions = RequestOptions().transform(fitCenter, roundedCorners)
-                imageLoader.loadImage(binding.imageViewContent, bitMap, requestOptions)
-            }
+            val requestOptions =
+                RequestOptions().transform(
+                    if (imageAdapterHandler.chooseScaleType(bitMap)) CenterCrop() else FitCenter(),
+                    RoundedCorners(20),
+                )
+            imageLoader.loadImage(binding.imageViewContent, bitMap, requestOptions)
         }
     }
 
@@ -85,7 +66,7 @@ class SelectImageRvAdapter(
     ): ImageHolder {
         val binding =
             SelectImageFragItemBinding.inflate(LayoutInflater.from(parent.context), parent, false)
-        return ImageHolder(binding, this, getSingleImagesHandler, titleProvider, chooseScaleTypeHandler, imageLoader)
+        return ImageHolder(binding, this, imageAdapterHandler, imageLoader, onItemDelete)
     }
 
     override fun getItemCount(): Int = mainArray.size
@@ -101,22 +82,42 @@ class SelectImageRvAdapter(
         newList: List<Bitmap>,
         needClear: Boolean,
     ) {
+        val oldList = mainArray.toList()
         if (needClear) mainArray.clear()
         mainArray.addAll(newList)
-        notifyDataSetChanged()
+
+        val diffResult = DiffUtil.calculateDiff(BitmapDiffCallback(oldList, mainArray))
+        diffResult.dispatchUpdatesTo(this)
     }
 
     override fun onMove(
         startPos: Int,
         targetPos: Int,
     ) {
-        val targetItem = mainArray[targetPos]
-        mainArray[targetPos] = mainArray[startPos]
-        mainArray[startPos] = targetItem
+        Collections.swap(mainArray, startPos, targetPos)
         notifyItemMoved(startPos, targetPos)
     }
 
     override fun onClear() {
-        notifyDataSetChanged()
+        notifyItemRangeChanged(0, mainArray.size)
     }
+}
+
+class BitmapDiffCallback(
+    private val oldList: List<Bitmap>,
+    private val newList: List<Bitmap>,
+) : DiffUtil.Callback() {
+    override fun getOldListSize(): Int = oldList.size
+
+    override fun getNewListSize(): Int = newList.size
+
+    override fun areItemsTheSame(
+        oldItemPosition: Int,
+        newItemPosition: Int,
+    ): Boolean = oldList[oldItemPosition] == newList[newItemPosition]
+
+    override fun areContentsTheSame(
+        oldItemPosition: Int,
+        newItemPosition: Int,
+    ): Boolean = oldList[oldItemPosition] == newList[newItemPosition]
 }

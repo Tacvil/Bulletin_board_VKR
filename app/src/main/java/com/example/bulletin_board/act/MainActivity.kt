@@ -26,6 +26,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.airbnb.lottie.LottieAnimationView
 import com.example.bulletin_board.R
 import com.example.bulletin_board.adapterFirestore.AdsAdapter
+import com.example.bulletin_board.adapterFirestore.AppStateListener
 import com.example.bulletin_board.adapterFirestore.FavoriteAdsAdapter
 import com.example.bulletin_board.adapterFirestore.MyAdsAdapter
 import com.example.bulletin_board.databinding.ActivityMainBinding
@@ -59,6 +60,7 @@ import com.example.bulletin_board.domain.VoiceRecognitionHandler
 import com.example.bulletin_board.domain.VoiceRecognitionListener
 import com.example.bulletin_board.model.Ad
 import com.example.bulletin_board.model.AdItemClickListener
+import com.example.bulletin_board.model.AdUpdateEvent
 import com.example.bulletin_board.model.FavData
 import com.example.bulletin_board.model.ViewData
 import com.example.bulletin_board.packroom.RemoteAdDataSource.Companion.CATEGORY_FIELD
@@ -73,6 +75,7 @@ import com.google.firebase.auth.FirebaseUser
 import dagger.hilt.android.AndroidEntryPoint
 import jakarta.inject.Inject
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
 import timber.log.Timber
 
@@ -92,7 +95,8 @@ class MainActivity :
     SearchQueryHandler,
     AccountUiViewsProvider,
     AdapterView,
-    OrderByFilterDialog {
+    OrderByFilterDialog,
+    AppStateListener {
     private val viewModel: FirebaseViewModel by viewModels()
     private lateinit var binding: ActivityMainBinding
 
@@ -111,9 +115,9 @@ class MainActivity :
     private val scrollStateMap = mutableMapOf<Int, Parcelable?>()
     private var currentTabPosition: Int = 0
 
-    private val favAdsAdapter by lazy { FavoriteAdsAdapter(viewModel) }
-    private val adsAdapter by lazy { AdsAdapter(viewModel) }
-    private val myAdsAdapter by lazy { MyAdsAdapter(viewModel) }
+    private val favAdsAdapter by lazy { FavoriteAdsAdapter(this) }
+    private val adsAdapter by lazy { AdsAdapter(this) }
+    private val myAdsAdapter by lazy { MyAdsAdapter(this) }
 
     private val filterFragment by lazy { FilterFragment() }
 
@@ -539,5 +543,15 @@ class MainActivity :
             onItemSelectedListener,
             isSearchable,
         )
+    }
+
+    override fun onAppStateEvent(adEvent: (AdUpdateEvent) -> Unit) {
+        viewModel.viewModelScope.launch {
+            viewModel.appState.drop(1).collectLatest { event ->
+                event.adEvent?.let { adEvent ->
+                    adEvent(adEvent)
+                }
+            }
+        }
     }
 }

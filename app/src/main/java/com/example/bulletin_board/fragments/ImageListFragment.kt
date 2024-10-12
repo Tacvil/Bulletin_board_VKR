@@ -19,18 +19,16 @@ import com.example.bulletin_board.dialoghelper.ProgressDialog
 import com.example.bulletin_board.domain.image.GlideImageLoader
 import com.example.bulletin_board.domain.image.ImageManager
 import com.example.bulletin_board.domain.image.PixImagePicker.Companion.MAX_IMAGE_COUNT
-import com.example.bulletin_board.utils.AdapterCallback
 import com.example.bulletin_board.utils.ItemTouchMoveCallback
 import dagger.hilt.android.AndroidEntryPoint
 import jakarta.inject.Inject
-import timber.log.Timber
 
 interface EditImagePosListener {
     fun updateEditImagePos(pos: Int)
 }
 
 @AndroidEntryPoint
-class ImageListFrag
+class ImageListFragment
     @Inject
     constructor(
         private val fragCloseInterface: FragmentCloseInterface,
@@ -38,25 +36,20 @@ class ImageListFrag
         private val imageManager: ImageManager,
         private val glideImageLoader: GlideImageLoader,
     ) : BaseAdsFrag(),
-        AdapterCallback,
-        TitleProvider,
-        GetSingleImagesHandler,
-        ChooseScaleTypeHandler {
+        ImageAdapterHandler {
         private val adapter: SelectImageRvAdapter by lazy {
             SelectImageRvAdapter(
-                this,
-                this,
-                this,
+                { addItem?.isVisible = true },
                 this,
                 glideImageLoader,
             )
         }
         private lateinit var dragCallback: ItemTouchMoveCallback
         private lateinit var touchHelper: ItemTouchHelper
-
         private var addItem: MenuItem? = null
-        lateinit var binding: ListImageFragBinding
+        private lateinit var binding: ListImageFragBinding
 
+        // Lifecycle methods
         override fun onCreateView(
             inflater: LayoutInflater,
             container: ViewGroup?,
@@ -72,84 +65,71 @@ class ImageListFrag
             savedInstanceState: Bundle?,
         ) {
             super.onViewCreated(view, savedInstanceState)
-
-            dragCallback = ItemTouchMoveCallback(adapter)
-            touchHelper = ItemTouchHelper(dragCallback)
-
+            setupRecyclerView()
             setUpToolbar()
-
-            touchHelper.attachToRecyclerView(binding.recyclerViewSelectImage)
-            binding.recyclerViewSelectImage.layoutManager = LinearLayoutManager(activity)
-            binding.recyclerViewSelectImage.adapter = adapter
         }
 
-        fun updateAdapterFromEdit(bitmapList: List<Bitmap>) {
-            adapter.updateAdapter(bitmapList, true)
-        }
-
-        fun resizeSelectedImages(
-            newList: ArrayList<Uri>,
-            needClear: Boolean, // Флаг, указывающий на добавление или замену
-            activity: Activity,
-        ) {
-            val dialog = ProgressDialog.createProgressDialog(activity)
-            imageManager.imageResize(newList) { bitmapList ->
-                Timber.d("needClear $needClear")
-                Timber.d("adapter ${adapter.mainArray}")
-                if (needClear) {
-                    adapter.updateAdapter(bitmapList, true) // Заменяем, если пусто
-                } else {
-                    adapter.updateAdapter(bitmapList, false)
+        private fun setupRecyclerView() {
+            dragCallback = ItemTouchMoveCallback(adapter)
+            touchHelper =
+                ItemTouchHelper(dragCallback).apply {
+                    attachToRecyclerView(binding.recyclerViewSelectImage)
                 }
-                dialog.dismiss()
-                if (adapter.mainArray.size > 2) addItem?.isVisible = false
+            binding.recyclerViewSelectImage.apply {
+                layoutManager = LinearLayoutManager(activity)
+                adapter = this@ImageListFragment.adapter
             }
         }
 
         private fun setUpToolbar() {
-            binding.toolbar.inflateMenu(R.menu.menu_choose_image)
-            val deleteItem = binding.toolbar.menu.findItem(R.id.id_delete_image)
-            addItem = binding.toolbar.menu.findItem(R.id.id_add_image)
-            if (adapter.mainArray.size > 2) addItem?.isVisible = false
+            binding.toolbar.apply {
+                inflateMenu(R.menu.menu_choose_image)
+                setNavigationOnClickListener {
+                    activity
+                        ?.supportFragmentManager
+                        ?.beginTransaction()
+                        ?.remove(this@ImageListFragment)
+                        ?.commit()
+                    fragCloseInterface.onFragClose(adapter.mainArray)
+                }
 
-            binding.toolbar.setNavigationOnClickListener {
-                activity
-                    ?.supportFragmentManager
-                    ?.beginTransaction()
-                    ?.remove(this)
-                    ?.commit()
-                fragCloseInterface.onFragClose(adapter.mainArray)
+                menu.apply {
+                    addItem = findItem(R.id.id_add_image).apply { isVisible = adapter.mainArray.size <= 2 }
+                    findItem(R.id.id_delete_image).setOnMenuItemClickListener {
+                        adapter.updateAdapter(emptyList(), true)
+                        addItem?.isVisible = true
+                        true
+                    }
+                    addItem?.setOnMenuItemClickListener {
+                        imageManager.addImages(MAX_IMAGE_COUNT - adapter.mainArray.size)
+                        true
+                    }
+                }
             }
+        }
 
-            deleteItem.setOnMenuItemClickListener {
-                adapter.updateAdapter(ArrayList(), true)
-                addItem?.isVisible = true
-                true
-            }
-
-            addItem?.setOnMenuItemClickListener {
-                val imageCount = MAX_IMAGE_COUNT - adapter.mainArray.size
-                imageManager.addImages(imageCount)
-                true
-            }
+        // Adapter update methods
+        fun updateAdapterFromEdit(bitmapList: List<Bitmap>) {
+            adapter.updateAdapter(bitmapList, true)
         }
 
         fun updateAdapter(
             newList: ArrayList<Uri>,
             activity: Activity,
         ) {
-            // Проверяем, нужно ли добавлять или заменять
-            val needClear = adapter.mainArray.isEmpty()
-            resizeSelectedImages(newList, needClear, activity)
+            newList.takeIf { it.isNotEmpty() }?.let {
+                resizeSelectedImages(it, adapter.mainArray.isEmpty(), activity)
+            }
         }
 
         fun setSingleImage(
             uri: Uri,
             pos: Int,
         ) {
-            val pBar = binding.recyclerViewSelectImage[pos].findViewById<ProgressBar>(R.id.progress_bar)
-
-            pBar.visibility = View.VISIBLE
+            val pBar =
+                binding.recyclerViewSelectImage[pos].findViewById<ProgressBar>(R.id.progress_bar).apply {
+                    visibility = View.VISIBLE
+                }
             imageManager.imageResize(arrayListOf(uri)) { bitmapList ->
                 adapter.mainArray[pos] = bitmapList[0]
                 pBar.visibility = View.GONE
@@ -157,10 +137,24 @@ class ImageListFrag
             }
         }
 
-        override fun onItemDelete() {
-            addItem?.isVisible = true
+        fun resizeSelectedImages(
+            newList: ArrayList<Uri>,
+            needClear: Boolean,
+            activity: Activity,
+        ) {
+            val dialog = ProgressDialog.createProgressDialog(activity)
+            imageManager.imageResize(newList) { bitmapList ->
+                adapter.updateAdapter(bitmapList, needClear)
+                dialog.dismiss()
+                updateAddItemVisibility()
+            }
         }
 
+        private fun updateAddItemVisibility() {
+            addItem?.isVisible = adapter.mainArray.size <= 2
+        }
+
+        // ImageAdapterHandler implementation
         override fun getTitle(position: Int): String = resources.getStringArray(R.array.title_array)[position]
 
         override fun getSingleImages(editImagePos: Int) {
