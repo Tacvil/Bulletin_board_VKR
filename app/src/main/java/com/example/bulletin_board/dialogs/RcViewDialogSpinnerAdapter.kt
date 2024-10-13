@@ -6,77 +6,98 @@ import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.PopupWindow
 import android.widget.TextView
+import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 import com.example.bulletin_board.R
 
 class RcViewDialogSpinnerAdapter(
-    var tvSelection: TextView,
+    private var targetTextView: TextView,
     var popupWindow: PopupWindow?,
     var onItemSelectedListener: OnItemSelectedListener? = null,
-) : RecyclerView.Adapter<RcViewDialogSpinnerAdapter.SpViewHolder>() {
-    private val mainList = ArrayList<Pair<String, String>>()
+) : RecyclerView.Adapter<RcViewDialogSpinnerAdapter.SpinnerViewHolder>() {
+    private val spinnerItems = ArrayList<Pair<String, String>>()
 
     interface OnItemSelectedListener {
         fun onItemSelected(item: String)
     }
 
-    class SpViewHolder(
+    class SpinnerViewHolder(
         itemView: View,
         var tvSelection: TextView,
         var adapter: RcViewDialogSpinnerAdapter,
     ) : RecyclerView.ViewHolder(itemView),
         View.OnClickListener {
-        private var itemText = ""
+        private var itemTitle = ""
 
-        fun setData(item: Pair<String, String>) {
-            val tvSpItem = itemView.findViewById<TextView>(R.id.text_view_spinner)
-            val imView1 = itemView.findViewById<ImageView>(R.id.image_view1)
-            val imView2 = itemView.findViewById<ImageView>(R.id.image_view2)
-            tvSpItem.text = item.first
-            itemText = item.first
+        fun bind(item: Pair<String, String>) {
+            val spinnerTextView = itemView.findViewById<TextView>(R.id.text_view_spinner)
+            val searchIcon = itemView.findViewById<ImageView>(R.id.image_view_search_icon)
+            val linkIcon = itemView.findViewById<ImageView>(R.id.image_view_link_icon)
+            spinnerTextView.text = item.first
+            itemTitle = item.first
 
             if ("single".equals(item.second, ignoreCase = true)) {
-                // Ваш код для выполнения действий, если условие соответствует
-                imView2.visibility = View.GONE
+                searchIcon.visibility = View.GONE
             } else {
-                imView2.visibility = View.GONE
-                imView1.visibility = View.GONE
+                searchIcon.visibility = View.GONE
+                linkIcon.visibility = View.GONE
             }
 
             itemView.setOnClickListener(this)
         }
 
-        override fun onClick(p0: View?) {
-            tvSelection.text = itemText
-            adapter.dismissDialog()
-            adapter.onItemSelectedListener?.onItemSelected(itemText)
+        override fun onClick(view: View?) {
+            tvSelection.text = itemTitle
+            adapter.dismissPopupWindow()
+            adapter.onItemSelectedListener?.onItemSelected(itemTitle)
         }
     }
 
     override fun onCreateViewHolder(
         parent: ViewGroup,
         viewType: Int,
-    ): SpViewHolder {
+    ): SpinnerViewHolder {
         val view = LayoutInflater.from(parent.context).inflate(R.layout.spinner_list_item, parent, false)
-        return SpViewHolder(view, tvSelection, this)
+        return SpinnerViewHolder(view, targetTextView, this)
     }
 
-    override fun getItemCount(): Int = mainList.size
+    override fun getItemCount(): Int = spinnerItems.size
 
     override fun onBindViewHolder(
-        holder: SpViewHolder,
+        holder: SpinnerViewHolder,
         position: Int,
     ) {
-        holder.setData(mainList[position])
+        holder.bind(spinnerItems[position])
     }
 
-    fun updateAdapter(list: ArrayList<Pair<String, String>>) {
-        mainList.clear()
-        mainList.addAll(list)
-        notifyDataSetChanged()
+    fun updateItems(newList: ArrayList<Pair<String, String>>) {
+        val diffCallback = SpinnerDiffUtilCallback(spinnerItems, newList)
+        val diffResult = DiffUtil.calculateDiff(diffCallback)
+        spinnerItems.clear()
+        spinnerItems.addAll(newList)
+        diffResult.dispatchUpdatesTo(this)
     }
 
-    fun dismissDialog() {
+    fun dismissPopupWindow() {
         popupWindow?.dismiss()
     }
+}
+
+class SpinnerDiffUtilCallback(
+    private val oldList: List<Pair<String, String>>,
+    private val newList: List<Pair<String, String>>,
+) : DiffUtil.Callback() {
+    override fun getOldListSize(): Int = oldList.size
+
+    override fun getNewListSize(): Int = newList.size
+
+    override fun areItemsTheSame(
+        oldItemPosition: Int,
+        newItemPosition: Int,
+    ): Boolean = oldList[oldItemPosition].first == newList[newItemPosition].first
+
+    override fun areContentsTheSame(
+        oldItemPosition: Int,
+        newItemPosition: Int,
+    ): Boolean = oldList[oldItemPosition] == newList[newItemPosition]
 }

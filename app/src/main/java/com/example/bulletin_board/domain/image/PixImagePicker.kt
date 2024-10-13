@@ -88,13 +88,14 @@ class PixImagePicker
                     count = imageCounter
                     isFrontFacing = false
                     mode = Mode.Picture
-                    path = "/pix/images"
+                    path = PATH
                     ratio = Ratio.RATIO_AUTO
                 }
             return options
         }
 
         companion object {
+            const val PATH = "/pix/images"
             const val MAX_IMAGE_COUNT = 3
         }
     }

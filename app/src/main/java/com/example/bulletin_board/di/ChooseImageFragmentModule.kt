@@ -1,8 +1,9 @@
 package com.example.bulletin_board.di
 
 import androidx.fragment.app.FragmentActivity
-import com.example.bulletin_board.fragments.EditImagePosListener
 import com.example.bulletin_board.fragments.FragmentCloseInterface
+import com.example.bulletin_board.fragments.ImageAdapterHandler
+import com.example.bulletin_board.fragments.OnItemDeleteListener
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -15,5 +16,8 @@ object ChooseImageFragmentModule {
     fun provideFragmentCloseInterface(activity: FragmentActivity): FragmentCloseInterface = activity as FragmentCloseInterface
 
     @Provides
-    fun provideEditImagePosListener(activity: FragmentActivity): EditImagePosListener = activity as EditImagePosListener
+    fun provideOnItemDeleteListener(activity: FragmentActivity): OnItemDeleteListener = activity as OnItemDeleteListener
+
+    @Provides
+    fun provideImageAdapterHandler(activity: FragmentActivity): ImageAdapterHandler = activity as ImageAdapterHandler
 }

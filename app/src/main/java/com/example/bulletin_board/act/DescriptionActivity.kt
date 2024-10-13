@@ -2,41 +2,38 @@ package com.example.bulletin_board.act
 
 import android.content.ActivityNotFoundException
 import android.content.Intent
-import android.content.SharedPreferences
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
-import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.net.toUri
 import androidx.preference.PreferenceManager
 import androidx.viewpager2.widget.ViewPager2
 import com.example.bulletin_board.R
+import com.example.bulletin_board.act.MainActivity.Companion.INTENT_AD_DETAILS
 import com.example.bulletin_board.adapters.ImageAdapter
 import com.example.bulletin_board.databinding.ActivityDescriptionBinding
+import com.example.bulletin_board.domain.ThemeManager
 import com.example.bulletin_board.domain.image.ImageManager
 import com.example.bulletin_board.model.Ad
-import com.example.bulletin_board.settings.SettingsActivity
 import dagger.hilt.android.AndroidEntryPoint
 import jakarta.inject.Inject
-import java.io.Serializable
 
 @AndroidEntryPoint
 class DescriptionActivity : AppCompatActivity() {
     lateinit var binding: ActivityDescriptionBinding
-    lateinit var adapter: ImageAdapter
-    private var ad: Ad? = null
-    private lateinit var defPreferences: SharedPreferences
 
-    @Inject
-    lateinit var imageManager: ImageManager
+    @Inject lateinit var imageManager: ImageManager
+
+    @Inject lateinit var adapter: ImageAdapter
+
+    private var ad: Ad? = null
 
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     override fun onCreate(savedInstanceState: Bundle?) {
-        defPreferences = PreferenceManager.getDefaultSharedPreferences(this)
-        setTheme(getSelectedTheme())
+        setTheme(ThemeManager.getSelectedTheme(PreferenceManager.getDefaultSharedPreferences(this)))
         super.onCreate(savedInstanceState)
         binding = ActivityDescriptionBinding.inflate(layoutInflater)
         setContentView(binding.root)
@@ -48,40 +45,25 @@ class DescriptionActivity : AppCompatActivity() {
 
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     private fun init() {
-        adapter = ImageAdapter()
-        binding.apply {
-            viewPagerDescription.adapter = adapter
-        }
-        getIntentFromMainAct()
-        imageChangeCounter()
+        binding.viewPagerDescription.adapter = ImageAdapter()
+        getAdFromIntent()
+        setupImageCounter()
     }
 
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
-    private fun getIntentFromMainAct() {
-        ad = intent.getParcelableExtra("AD", Ad::class.java)
-        if (ad != null) updateUI(ad!!)
-    }
-
-    private fun updateUI(ad: Ad) {
-        imageManager.fillImageArray(ad, adapter)
-        fillTextViews(ad)
-    }
-
-    private inline fun <reified T : Serializable> Intent.serializable(key: String): T? =
-        when {
-            Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU ->
-                getSerializableExtra(
-                    key,
-                    T::class.java,
-                )
-
-            else ->
-                @Suppress("DEPRECATION")
-                getSerializableExtra(key)
-                    as? T
+    private fun getAdFromIntent() {
+        intent.getParcelableExtra(INTENT_AD_DETAILS, Ad::class.java)?.let { ad ->
+            this.ad = ad
+            displayAdDetails(ad)
         }
+    }
 
-    private fun fillTextViews(ad: Ad) =
+    private fun displayAdDetails(ad: Ad) {
+        imageManager.fillImageArray(ad, adapter)
+        populateAdDetails(ad)
+    }
+
+    private fun populateAdDetails(ad: Ad) =
         with(binding) {
             textViewTitleD.setText(ad.title)
             textViewDescription.setText(ad.description)
@@ -91,35 +73,40 @@ class DescriptionActivity : AppCompatActivity() {
             textViewCountryDescription.setText(ad.country)
             textViewCityDescription.setText(ad.city)
             textViewIndexDescription.setText(ad.index)
-            textViewWithSendDescription.setText(isWithSent(ad.withSend.toBoolean()))
+            textViewWithSendDescription.setText(
+                if (ad.withSend.toBoolean()) {
+                    getString(R.string.with_send_yes)
+                } else {
+                    getString(R.string.with_send_no)
+                },
+            )
         }
 
-    private fun isWithSent(withSent: Boolean): String = if (withSent) "Да" else "Нет"
-
     private fun startPhoneCall() {
-        val callUri = "tel:${ad?.tel}"
-        val iCall = Intent(Intent.ACTION_DIAL)
-        iCall.data = callUri.toUri()
-        startActivity(iCall)
+        ad?.tel?.takeIf { it.isNotBlank() }?.let { tel ->
+            val callUri = "tel:$tel"
+            val dialIntent = Intent(Intent.ACTION_DIAL)
+            dialIntent.data = callUri.toUri()
+            startActivity(dialIntent)
+        }
     }
 
     private fun sendEmail() {
-        val iSendEmail = Intent(Intent.ACTION_SENDTO)
-        iSendEmail.data = Uri.parse("mailto:") // Устанавливаем схему "mailto:"
-        // iSendEmail.type = "message/rfc822"
-        iSendEmail.apply {
-            putExtra(Intent.EXTRA_EMAIL, arrayOf(ad?.email))
-            putExtra(Intent.EXTRA_SUBJECT, "Объявления")
-            putExtra(Intent.EXTRA_TEXT, "Меня интересует ваше объявление!")
-        }
+        val emailIntent =
+            Intent(Intent.ACTION_SENDTO).also {
+                it.data = Uri.parse("mailto:")
+                it.putExtra(Intent.EXTRA_EMAIL, arrayOf(ad?.email))
+                it.putExtra(Intent.EXTRA_SUBJECT, getString(R.string.ad_subject))
+                it.putExtra(Intent.EXTRA_TEXT, getString(R.string.ad_text))
+            }
         try {
-            startActivity(Intent.createChooser(iSendEmail, "Открыть с помощью"))
+            startActivity(Intent.createChooser(emailIntent, getString(R.string.open_with)))
         } catch (e: ActivityNotFoundException) {
-            Toast.makeText(this, "Отсутствует приложение для отправки", Toast.LENGTH_LONG).show()
+            Toast.makeText(this, getString(R.string.no_app_for_sending), Toast.LENGTH_LONG).show()
         }
     }
 
-    private fun imageChangeCounter() {
+    private fun setupImageCounter() {
         binding.viewPagerDescription.registerOnPageChangeCallback(
             object :
                 ViewPager2.OnPageChangeCallback() {
@@ -131,16 +118,4 @@ class DescriptionActivity : AppCompatActivity() {
             },
         )
     }
-
-    private fun getSelectedTheme(): Int =
-        when (defPreferences.getString(SettingsActivity.THEME_KEY, SettingsActivity.DEFAULT_THEME)) {
-            SettingsActivity.DEFAULT_THEME -> {
-                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
-                R.style.Base_Theme_Bulletin_board_light
-            }
-            else -> {
-                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
-                R.style.Base_Theme_Bulletin_board_dark
-            }
-        }
 }

@@ -7,7 +7,7 @@
     android:background="?attr/colorSurfaceVariant">
 
     <ImageView
-        android:id="@+id/image_view1"
+        android:id="@+id/image_view_search_icon"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="5dp"
@@ -24,16 +24,16 @@
         android:layout_marginEnd="5dp"
         android:maxLines="1"
         android:padding="16dp"
-        android:text="TextViewsadsadasdasdasdasdadasdasd"
+        android:text="@tools:sample/lorem/random"
         android:textAppearance="?attr/textAppearanceSubtitle1"
         android:textSize="12sp"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toStartOf="@+id/image_view2"
-        app:layout_constraintStart_toEndOf="@+id/image_view1"
+        app:layout_constraintEnd_toStartOf="@+id/image_view_link_icon"
+        app:layout_constraintStart_toEndOf="@+id/image_view_search_icon"
         app:layout_constraintTop_toTopOf="parent" />
 
     <ImageView
-        android:id="@+id/image_view2"
+        android:id="@+id/image_view_link_icon"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginEnd="5dp"

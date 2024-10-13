@@ -24,11 +24,13 @@ import com.example.bulletin_board.domain.ThemeManager
 import com.example.bulletin_board.domain.ToastHelper
 import com.example.bulletin_board.domain.image.ContentResolverProvider
 import com.example.bulletin_board.domain.image.ImageManager
+import com.example.bulletin_board.domain.image.PixImagePicker.Companion.MAX_IMAGE_COUNT
 import com.example.bulletin_board.domain.image.PixImagePickerActions
 import com.example.bulletin_board.domain.image.ViewModelHandler
-import com.example.bulletin_board.fragments.EditImagePosListener
 import com.example.bulletin_board.fragments.FragmentCloseInterface
+import com.example.bulletin_board.fragments.ImageAdapterHandler
 import com.example.bulletin_board.fragments.ImageListFragment
+import com.example.bulletin_board.fragments.OnItemDeleteListener
 import com.example.bulletin_board.model.Ad
 import com.example.bulletin_board.pix.models.Options
 import com.example.bulletin_board.utils.CityHelper
@@ -48,19 +50,18 @@ class EditAdsActivity :
     ViewModelHandler,
     ContentResolverProvider,
     PixImagePickerActions,
-    EditImagePosListener {
-    @Inject
-    lateinit var imageListFragment: ImageListFragment
-
-    @Inject
-    lateinit var accountManager: AccountManager
-
-    @Inject
-    lateinit var imageManager: ImageManager
-
-    private lateinit var binding: ActivityEditAdsBinding
-    private lateinit var imageAdapter: ImageAdapter
+    OnItemDeleteListener,
+    ImageAdapterHandler {
     private val viewModel: FirebaseViewModel by viewModels()
+    private lateinit var binding: ActivityEditAdsBinding
+
+    @Inject lateinit var imageListFragment: ImageListFragment
+
+    @Inject lateinit var accountManager: AccountManager
+
+    @Inject lateinit var imageManager: ImageManager
+
+    @Inject lateinit var imageAdapter: ImageAdapter
 
     private var selectedImagePosition = 0
     private var isInEditMode = false
@@ -83,7 +84,6 @@ class EditAdsActivity :
     }
 
     private fun initializeComponents() {
-        imageAdapter = ImageAdapter()
         binding.viewPagerImages.adapter = imageAdapter
     }
 
@@ -105,16 +105,16 @@ class EditAdsActivity :
                         textViewSelectCity.setText(item)
                     }
                 } else {
-                    showToast("No country selected", Toast.LENGTH_LONG)
+                    showToast(getString(R.string.no_country_selected), Toast.LENGTH_LONG)
                 }
             }
 
             textViewSelectWithSend.setOnClickListener {
                 val deliveryOptionsList =
                     arrayListOf(
-                        Pair(getString(R.string.no_matter), ""),
-                        Pair(getString(R.string.with_sending), ""),
-                        Pair(getString(R.string.without_sending), ""),
+                        Pair(getString(R.string.no_matter), EMPTY_STRING),
+                        Pair(getString(R.string.with_sending), EMPTY_STRING),
+                        Pair(getString(R.string.without_sending), EMPTY_STRING),
                     )
                 showSelectDialog(textViewSelectWithSend, deliveryOptionsList, false) { item ->
                     textViewSelectWithSend.setText(item)
@@ -125,11 +125,11 @@ class EditAdsActivity :
 
     private fun handleImageSelection() {
         binding.addImageButton.setOnClickListener {
-            if (imageAdapter.mainArray.size == 0) {
-                imageManager.getMultiImages(3)
+            if (imageAdapter.imageBitmapList.size == 0) {
+                imageManager.getMultiImages(MAX_IMAGE_COUNT)
             } else {
                 showImageListFrag(null)
-                imageListFragment.updateAdapterFromEdit(imageAdapter.mainArray)
+                imageListFragment.updateSelectedImagesFromEdit(imageAdapter.imageBitmapList)
             }
         }
     }
@@ -160,7 +160,7 @@ class EditAdsActivity :
         isCountryCity: Boolean,
         onItemSelected: (String) -> Unit,
     ) {
-        DialogSpinnerHelper.showSpinnerPopup(
+        DialogSpinnerHelper.showDialogSpinner(
             this,
             textView,
             items,
@@ -178,15 +178,14 @@ class EditAdsActivity :
     private fun setupPublishButton() {
         binding.buttonPublish.setOnClickListener {
             if (areRequiredFieldsEmpty()) {
-                showToast("Внимание! Все поля должны быть заполнены!", Toast.LENGTH_SHORT)
+                showToast(getString(R.string.required_fields_empty), Toast.LENGTH_SHORT)
                 return@setOnClickListener
             }
             binding.progressLayout.visibility = View.VISIBLE
             currentAd = createAdFromForm()
             viewModel.viewModelScope.launch {
-                imageManager.uploadImages(currentAd, imageAdapter, 0) {
+                imageManager.uploadImages(currentAd, imageAdapter, IMAGE_UPLOAD_START_INDEX) {
                     binding.progressLayout.visibility = View.GONE
-                    // showToast("Объявление отправлено на модерацию!", Toast.LENGTH_SHORT)
                     finish()
                 }
             }
@@ -223,9 +222,9 @@ class EditAdsActivity :
                 textViewPrice.text.toString().toInt(),
                 textViewDescription.text.toString(),
                 textViewSelectEmail.text.toString(),
-                currentAd?.mainImage ?: "",
-                currentAd?.image2 ?: "",
-                currentAd?.image3 ?: "",
+                currentAd?.mainImage ?: DEFAULT_IMAGE_URL,
+                currentAd?.image2 ?: DEFAULT_IMAGE_URL,
+                currentAd?.image3 ?: DEFAULT_IMAGE_URL,
                 accountManager.auth.uid,
                 currentAd?.time ?: System.currentTimeMillis().toString(),
             )
@@ -235,14 +234,14 @@ class EditAdsActivity :
     private fun handleEditMode() {
         if (isInEditMode()) {
             isInEditMode = true
-            intent.getParcelableExtra(MainActivity.ADS_DATA, Ad::class.java)?.let {
+            intent.getParcelableExtra(MainActivity.EXTRA_AD_ITEM, Ad::class.java)?.let {
                 currentAd = it
                 populateFields(it)
             }
         }
     }
 
-    private fun isInEditMode(): Boolean = intent.getBooleanExtra(MainActivity.EDIT_STATE, false)
+    private fun isInEditMode(): Boolean = intent.getBooleanExtra(MainActivity.IS_EDIT_MODE, false)
 
     private fun populateFields(ad: Ad) =
         with(binding) {
@@ -296,7 +295,7 @@ class EditAdsActivity :
         binding.textViewSelectCategory.setOnClickListener {
             val listCategory = resources.getStringArray(R.array.category)
             val pairsCategory =
-                ArrayList<Pair<String, String>>(listCategory.map { Pair(it, "") })
+                ArrayList<Pair<String, String>>(listCategory.map { Pair(it, EMPTY_STRING) })
             showSelectDialog(binding.textViewSelectCategory, pairsCategory, false) { item ->
                 binding.textViewSelectCategory.setText(item)
             }
@@ -309,10 +308,16 @@ class EditAdsActivity :
         updateImageCounter(binding.viewPagerImages.currentItem)
     }
 
+    companion object {
+        const val IMAGE_UPLOAD_START_INDEX = 0
+        const val DEFAULT_IMAGE_URL = ""
+        const val EMPTY_STRING = ""
+    }
+
     override fun showImageListFrag(uris: ArrayList<Uri>?) {
         uris
             ?.takeIf { it.isNotEmpty() }
-            ?.let { imageListFragment.resizeSelectedImages(it, true, this) }
+            ?.let { imageListFragment.resizeAndDisplaySelectedImages(it, true, this) }
         binding.scrollViewMain.visibility = View.GONE
         val fm = supportFragmentManager.beginTransaction()
         fm.replace(R.id.place_holder, imageListFragment)
@@ -361,7 +366,7 @@ class EditAdsActivity :
         }
     }
 
-    override fun getContentResolverAct(): ContentResolver = this.contentResolver
+    override fun getContentResolverAct(): ContentResolver = contentResolver
 
     override fun addPixToActivityImpl(
         placeholderId: Int,
@@ -376,9 +381,9 @@ class EditAdsActivity :
     }
 
     override fun openChooseImageFrag() {
-        this.supportFragmentManager
+        supportFragmentManager
             .beginTransaction()
-            .replace(R.id.place_holder, this.imageListFragment)
+            .replace(R.id.place_holder, imageListFragment)
             .commit()
     }
 
@@ -387,10 +392,19 @@ class EditAdsActivity :
     }
 
     override fun setSingleImage(uri: Uri) {
-        this.imageListFragment.setSingleImage(uri, this.selectedImagePosition)
+        imageListFragment.setSingleImage(uri, selectedImagePosition)
     }
 
-    override fun updateEditImagePos(pos: Int) {
-        selectedImagePosition = pos
+    override fun getTitle(position: Int): String = resources.getStringArray(R.array.title_array)[position]
+
+    override fun getSingleImages(editImagePos: Int) {
+        selectedImagePosition = editImagePos
+        imageManager.getSingleImages()
+    }
+
+    override fun chooseScaleType(bitmap: Bitmap): Boolean = imageManager.chooseScaleType(bitmap)
+
+    override fun onItemDelete() {
+        imageListFragment.addImageMenuItem?.isVisible = true
     }
 }

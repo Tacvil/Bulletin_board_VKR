@@ -1,6 +1,7 @@
 <resources>
     <string name="app_name">Bulletin board</string>
     <string name="ad_id">ca-app-pub-3940256099942544/6300978111</string>
+
     <!-- Menu Drawer Strings -->
     <string name="ad_cat1"><font color="?attr/colorPrimary">Объявления</font></string>
     <string name="ad_car">Машины</string>
@@ -9,16 +10,14 @@
     <string name="ad_dm">Бытовая техника</string>
     <string name="def">Разное</string>
     <string name="favs">Избранное</string>
-
     <string name="ad_cat2"><font color="?attr/colorPrimary">Аккаунт</font></string>
     <string name="ac_sign_up">Регистрация</string>
     <string name="ac_sign_in">Вход</string>
     <string name="ac_sign_out">Выход</string>
-
     <string name="open">Open</string>
     <string name="close">Close</string>
-
     <string name="not_reg">Войдите или зарегистрируйтесь!</string>
+
     <!-- Sign dialog -->
     <string name="email_hint">Email</string>
     <string name="email_reset">Reset Email was sent!</string>
@@ -31,9 +30,11 @@
     <string name="sign_in_error">Не удалось войти в аккаунт</string>
     <string name="send_verification_email_error">Не удалось отправить email для подтверждения!</string>
     <string name="send_verification_email_done">На вашу почту была отправлена ссылка для подтверждения вашего аккаунта!</string>
+
     <!-- Sign dialog -->
     <string name="link_done">Email подключен к Google</string>
     <string name="enter_to_google">У Вас уже есть аккаунт с этим Email адресом, войдите по нему.</string>
+
     <!-- Edit Activity -->
     <string name="select_country">*Выберите страну</string>
     <string name="select_city">*Выберите город</string>
@@ -45,6 +46,8 @@
     <string name="with_send">С отправкой</string>
     <string name="publish">Опубликовать</string>
     <string name="title">*Название объявления</string>
+    <string name="no_country_selected">Страна не выбрана</string>
+    <string name="required_fields_empty">Все обязательные поля должны быть заполнены!</string>
 
     <!-- Filter Activity -->
     <string name="hint_from">от</string>
@@ -92,6 +95,7 @@
     <string name="pix_last_month">Last Month</string>
     <string name="pix_last_week">Last Week</string>
     <string name="pix_counter_number">0:00</string>
+
     <!-- content descriptions -->
     <string name="click_button">click button</string>
     <string name="camera_flash_button">camera flash button</string>
@@ -100,4 +104,12 @@
 
     <!-- Account -->
     <string name="guest">Гость</string>
+
+    <!-- Ad info -->
+    <string name="with_send_yes">Да</string>
+    <string name="with_send_no">Нет</string>
+    <string name="ad_subject">Объявления</string>
+    <string name="ad_text">Меня интересует ваше объявление!</string>
+    <string name="open_with">Открыть с помощью</string>
+    <string name="no_app_for_sending">Отсутствует приложение для отправки</string>
 </resources>

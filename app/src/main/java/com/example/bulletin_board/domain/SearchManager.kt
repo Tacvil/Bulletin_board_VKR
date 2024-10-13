@@ -50,7 +50,7 @@ class SearchManager
     ) {
         private lateinit var adapterSearch: RcViewSearchSpinnerAdapter
 
-        fun initializeSearchFunctionality()  {
+        fun initializeSearchFunctionality() {
             initSearchAdapter()
             initRecyclerView()
             setupSearchListeners()
@@ -78,7 +78,7 @@ class SearchManager
                 object : SearchQueryHandlerCallback {
                     override fun onSearchResultsUpdated(results: List<Pair<String, String>>) {
                         Timber.d("onSearchResultsUpdated() called with: results = $results")
-                        adapterSearch.updateAdapter(results)
+                        adapterSearch.updateItems(results)
                     }
                 },
             )
@@ -97,6 +97,6 @@ class SearchManager
         }
 
         fun clearSearchResultsAdapter() {
-            adapterSearch.clearAdapter()
+            adapterSearch.clearItems()
         }
     }

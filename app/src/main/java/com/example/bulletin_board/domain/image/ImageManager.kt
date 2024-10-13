@@ -113,8 +113,8 @@ class ImageManager
             }
 
             val oldUrl = getUrlFromAd(ad, imageIndex)
-            if (imageAdapter.mainArray.size > imageIndex) {
-                val byteArray = prepareImageByteArray(imageAdapter.mainArray[imageIndex])
+            if (imageAdapter.imageBitmapList.size > imageIndex) {
+                val byteArray = prepareImageByteArray(imageAdapter.imageBitmapList[imageIndex])
                 if (oldUrl.startsWith("http")) {
                     viewModelHandler.updateImage(byteArray, oldUrl) { uri ->
                         nextImage(ad, uri.toString(), imageIndex, imageAdapter, onUploadComplete)

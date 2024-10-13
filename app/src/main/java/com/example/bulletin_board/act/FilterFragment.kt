@@ -1,6 +1,5 @@
 package com.example.bulletin_board.act
 
-import android.content.SharedPreferences
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -9,7 +8,6 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
-import androidx.preference.PreferenceManager
 import com.example.bulletin_board.R
 import com.example.bulletin_board.databinding.ActivityFilterBinding
 import com.example.bulletin_board.dialogs.DialogSpinnerHelper
@@ -28,203 +26,198 @@ import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import com.google.android.material.textfield.TextInputLayout
 import dagger.hilt.android.AndroidEntryPoint
+import jakarta.inject.Inject
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
-import timber.log.Timber
 
 @AndroidEntryPoint
-class FilterFragment : BottomSheetDialogFragment() {
-    private var _binding: ActivityFilterBinding? = null
-    val binding get() = _binding!!
-    private lateinit var defPreferences: SharedPreferences
-    private val viewModel: FirebaseViewModel by activityViewModels()
+class FilterFragment
+    @Inject
+    constructor() : BottomSheetDialogFragment() {
+        private val viewModel: FirebaseViewModel by activityViewModels()
+        private var _binding: ActivityFilterBinding? = null
+        val binding get() = _binding!!
 
-    // override fun getTheme(): Int = R.style.BottomSheetDialogTheme
+        // override fun getTheme(): Int = R.style.BottomSheetDialogTheme
 
-    init {
-        Timber.d("FilterFragment init")
-    }
-
-    override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
-        savedInstanceState: Bundle?,
-    ): View {
-        _binding = ActivityFilterBinding.inflate(inflater, container, false)
-        return binding.root // Возвращаем root из binding
-    }
-
-    companion object {
-        const val TAG = "ModalBottomSheet"
-    }
-
-    override fun onViewCreated(
-        view: View,
-        savedInstanceState: Bundle?,
-    ) {
-        super.onViewCreated(view, savedInstanceState)
-        defPreferences = PreferenceManager.getDefaultSharedPreferences(requireContext())
-
-        lifecycleScope.launch {
-            viewModel.getMinMaxPrice()
-            viewModel.appState.collectLatest { appState ->
-                val minMaxPrice = appState.minMaxPrice
-
-                if (minMaxPrice != null) {
-                    Timber.d("minMaxPrice: $minMaxPrice")
-                    binding.textViewPriceFromLayout.hint = "от ${minMaxPrice.first}"
-                    binding.textViewPriceToLayout.hint = "до ${minMaxPrice.second}"
-                    focusChangeListener(minMaxPrice.first, minMaxPrice.second)
-                }
-            }
+        override fun onCreateView(
+            inflater: LayoutInflater,
+            container: ViewGroup?,
+            savedInstanceState: Bundle?,
+        ): View {
+            _binding = ActivityFilterBinding.inflate(inflater, container, false)
+            return binding.root
         }
 
-        val bottomSheetBehavior = BottomSheetBehavior.from(view.parent as View)
-        bottomSheetBehavior.state = BottomSheetBehavior.STATE_EXPANDED
+        override fun onViewCreated(
+            view: View,
+            savedInstanceState: Bundle?,
+        ) {
+            super.onViewCreated(view, savedInstanceState)
 
-        getFilter()
-        onClickSelectCountryCity()
-        onClickDone()
-        onClickClear()
-    }
-
-    override fun onDestroyView() {
-        super.onDestroyView()
-        _binding = null
-    }
-
-    private fun focusChangeListener(
-        minPrice: Int?,
-        maxPrice: Int?,
-    ) = with(binding) {
-        val fromHint = getString(R.string.hint_from)
-        val toHint = getString(R.string.hint_to)
-
-        setHintOnFocusChange(textViewPriceFromLayout, minPrice, fromHint)
-        setHintOnFocusChange(textViewPriceToLayout, maxPrice, toHint)
-    }
-
-    private fun setHintOnFocusChange(
-        textInputLayout: TextInputLayout,
-        price: Int?,
-        hint: String,
-    ) {
-        textInputLayout.editText?.onFocusChangeListener =
-            View.OnFocusChangeListener { _, hasFocus ->
-                textInputLayout.hint = if (hasFocus) hint else "$hint ${price ?: ""}"
-            }
-    }
-
-    private fun getFilter() =
-        with(binding) {
-            viewModel.getFilterValue(COUNTRY_FIELD)?.let { textViewSelectCountry.setText(it) }
-            viewModel.getFilterValue(CITY_FIELD)?.let { textViewSelectCity.setText(it) }
-            viewModel.getFilterValue(INDEX_FIELD)?.let { textViewIndex.setText(it) }
-            viewModel.getFilterValue(PRICE_FROM_FIELD)?.let { textViewPriceFrom.setText(it) }
-            viewModel.getFilterValue(PRICE_TO_FIELD)?.let { textViewPriceTo.setText(it) }
-            viewModel.getFilterValue(WITH_SEND_FIELD)?.let { textViewSelectWithSend.setText(it) }
-        }
-
-    private fun onClickSelectCountryCity() =
-        with(binding) {
-            textViewSelectCountry.setOnClickListener {
-                if (textViewSelectCity.text.toString() != "") {
-                    textViewSelectCity.setText("")
-                }
-                showSpinnerPopup(textViewSelectCountry, CityHelper.getAllCountries(requireContext())) {
-                    textViewSelectCountry.setText(it)
-                }
-            }
-
-            textViewSelectCity.setOnClickListener {
-                val selectedCountry = textViewSelectCountry.text.toString()
-                if (selectedCountry != getString(R.string.select_country)) {
-                    showSpinnerPopup(textViewSelectCity, CityHelper.getAllCities(selectedCountry, requireContext())) {
-                        textViewSelectCity.setText(it)
+            lifecycleScope.launch {
+                viewModel.getMinMaxPrice()
+                viewModel.appState.collectLatest { appState ->
+                    appState.minMaxPrice?.let { (min, max) ->
+                        binding.textViewPriceFromLayout.hint = "${getString(R.string.hint_from)} $min"
+                        binding.textViewPriceToLayout.hint = "${getString(R.string.hint_to)} $max"
+                        focusChangeListener(min, max)
                     }
-                } else {
-                    Toast.makeText(requireContext(), "No country selected", Toast.LENGTH_LONG).show()
                 }
             }
 
-            textViewSelectWithSend.setOnClickListener {
-                val listVariant =
-                    arrayListOf(
-                        Pair(getString(R.string.no_matter), ""),
-                        Pair(getString(R.string.with_sending), ""),
-                        Pair(getString(R.string.without_sending), ""),
-                    )
-                showSpinnerPopup(textViewSelectWithSend, listVariant, false) {
-                    textViewSelectWithSend.setText(it)
+            val bottomSheetBehavior = BottomSheetBehavior.from(view.parent as View)
+            bottomSheetBehavior.state = BottomSheetBehavior.STATE_EXPANDED
+
+            getFilter()
+            setupSelectors()
+            onClickDone()
+            onClickClear()
+        }
+
+        override fun onDestroyView() {
+            super.onDestroyView()
+            _binding = null
+        }
+
+        private fun focusChangeListener(
+            minPrice: Int?,
+            maxPrice: Int?,
+        ) = with(binding) {
+            setHintOnFocusChange(textViewPriceFromLayout, minPrice, getString(R.string.hint_from))
+            setHintOnFocusChange(textViewPriceToLayout, maxPrice, getString(R.string.hint_to))
+        }
+
+        private fun setHintOnFocusChange(
+            textInputLayout: TextInputLayout,
+            price: Int?,
+            hint: String,
+        ) {
+            textInputLayout.editText?.onFocusChangeListener =
+                View.OnFocusChangeListener { _, hasFocus ->
+                    textInputLayout.hint =
+                        if (hasFocus) {
+                            hint
+                        } else {
+                            "$hint ${price ?: 0}"
+                        }
                 }
-            }
         }
 
-    private fun showSpinnerPopup(
-        textView: TextView,
-        items: ArrayList<Pair<String, String>>,
-        isCountry: Boolean = true,
-        onItemSelected: (String) -> Unit,
-    ) {
-        DialogSpinnerHelper.showSpinnerPopup(
-            requireContext(),
-            textView,
-            items,
-            textView,
-            object : RcViewDialogSpinnerAdapter.OnItemSelectedListener {
-                override fun onItemSelected(item: String) {
-                    onItemSelected(item)
-                }
-            },
-            isCountry,
-        )
-    }
-
-    private fun onClickDone() =
-        with(binding) {
-            buttonDone.setOnClickListener {
-                createFilter()
-                Timber.d("Filter: " + viewModel.appState.value.filter)
-                dismiss() // Закрыть Bottom Sheet
+        private fun getFilter() =
+            with(binding) {
+                viewModel.getFilterValue(COUNTRY_FIELD)?.let { textViewSelectCountry.setText(it) }
+                viewModel.getFilterValue(CITY_FIELD)?.let { textViewSelectCity.setText(it) }
+                viewModel.getFilterValue(INDEX_FIELD)?.let { textViewIndex.setText(it) }
+                viewModel.getFilterValue(PRICE_FROM_FIELD)?.let { textViewPriceFrom.setText(it) }
+                viewModel.getFilterValue(PRICE_TO_FIELD)?.let { textViewPriceTo.setText(it) }
+                viewModel.getFilterValue(WITH_SEND_FIELD)?.let { textViewSelectWithSend.setText(it) }
             }
-        }
 
-    private fun onClickClear() =
-        with(binding) {
-            buttonClearFilter.setOnClickListener {
-                textViewSelectCountry.setText("")
-                textViewSelectCity.setText("")
-                textViewSelectCountryLayout.hint = getString(R.string.select_country)
-                textViewSelectCityLayout.hint = getString(R.string.select_city)
-                textViewIndex.setText("")
-                textViewSelectWithSend.setText(getString(R.string.no_matter))
-                textViewPriceFrom.setText("")
-                textViewPriceTo.setText("")
-            }
-        }
-
-    private fun createFilter() {
-        with(binding) {
-            val filters = mutableMapOf<String, String>()
-            filters[COUNTRY_FIELD] = textViewSelectCountry.text.toString()
-            filters[CITY_FIELD] = textViewSelectCity.text.toString()
-            filters[INDEX_FIELD] = textViewIndex.text.toString()
-            if (textViewSelectWithSend.text.toString() != getString(R.string.no_matter)) {
-                filters[WITH_SEND_FIELD] =
-                    when (textViewSelectWithSend.text.toString()) {
-                        getString(R.string.with_sending) -> SortOption.WITH_SEND.id
-                        getString(R.string.without_sending) -> SortOption.WITHOUT_SEND.id
-                        else -> ""
+        private fun setupSelectors() =
+            with(binding) {
+                textViewSelectCountry.setOnClickListener {
+                    if (textViewSelectCity.text.toString() != EMPTY_STRING) {
+                        textViewSelectCity.setText(EMPTY_STRING)
                     }
-            }
-            filters[PRICE_FROM_FIELD] = textViewPriceFrom.text.toString()
-            filters[PRICE_TO_FIELD] = textViewPriceTo.text.toString()
+                    showSpinnerPopup(textViewSelectCountry, CityHelper.getAllCountries(requireContext())) {
+                        textViewSelectCountry.setText(it)
+                    }
+                }
 
-            if (filters[PRICE_FROM_FIELD]?.isNotEmpty() == true || filters[PRICE_TO_FIELD]?.isNotEmpty() == true) {
-                filters[ORDER_BY_FIELD] = SortOption.BY_PRICE_ASC.id
+                textViewSelectCity.setOnClickListener {
+                    val selectedCountry = textViewSelectCountry.text.toString()
+                    if (selectedCountry != getString(R.string.select_country)) {
+                        showSpinnerPopup(textViewSelectCity, CityHelper.getAllCities(selectedCountry, requireContext())) {
+                            textViewSelectCity.setText(it)
+                        }
+                    } else {
+                        Toast.makeText(requireContext(), getString(R.string.no_country_selected), Toast.LENGTH_LONG).show()
+                    }
+                }
+
+                textViewSelectWithSend.setOnClickListener {
+                    val listVariant =
+                        arrayListOf(
+                            Pair(getString(R.string.no_matter), EMPTY_STRING),
+                            Pair(getString(R.string.with_sending), EMPTY_STRING),
+                            Pair(getString(R.string.without_sending), EMPTY_STRING),
+                        )
+                    showSpinnerPopup(textViewSelectWithSend, listVariant, false) {
+                        textViewSelectWithSend.setText(it)
+                    }
+                }
             }
 
-            viewModel.updateFilters(filters)
+        private fun showSpinnerPopup(
+            textView: TextView,
+            items: ArrayList<Pair<String, String>>,
+            isCountry: Boolean = true,
+            onItemSelected: (String) -> Unit,
+        ) {
+            DialogSpinnerHelper.showDialogSpinner(
+                requireContext(),
+                textView,
+                items,
+                textView,
+                object : RcViewDialogSpinnerAdapter.OnItemSelectedListener {
+                    override fun onItemSelected(item: String) {
+                        onItemSelected(item)
+                    }
+                },
+                isCountry,
+            )
+        }
+
+        private fun onClickDone() =
+            with(binding) {
+                buttonDone.setOnClickListener {
+                    createFilter()
+                    dismiss()
+                }
+            }
+
+        private fun onClickClear() =
+            with(binding) {
+                buttonClearFilter.setOnClickListener {
+                    textViewSelectCountry.setText(EMPTY_STRING)
+                    textViewSelectCity.setText(EMPTY_STRING)
+                    textViewSelectCountryLayout.hint = getString(R.string.select_country)
+                    textViewSelectCityLayout.hint = getString(R.string.select_city)
+                    textViewIndex.setText(EMPTY_STRING)
+                    textViewSelectWithSend.setText(getString(R.string.no_matter))
+                    textViewPriceFrom.setText(EMPTY_STRING)
+                    textViewPriceTo.setText(EMPTY_STRING)
+                }
+            }
+
+        private fun createFilter() {
+            with(binding) {
+                val filters = mutableMapOf<String, String>()
+                filters[COUNTRY_FIELD] = textViewSelectCountry.text.toString()
+                filters[CITY_FIELD] = textViewSelectCity.text.toString()
+                filters[INDEX_FIELD] = textViewIndex.text.toString()
+                if (textViewSelectWithSend.text.toString() != getString(R.string.no_matter)) {
+                    filters[WITH_SEND_FIELD] =
+                        when (textViewSelectWithSend.text.toString()) {
+                            getString(R.string.with_sending) -> SortOption.WITH_SEND.id
+                            getString(R.string.without_sending) -> SortOption.WITHOUT_SEND.id
+                            else -> EMPTY_STRING
+                        }
+                }
+                filters[PRICE_FROM_FIELD] = textViewPriceFrom.text.toString()
+                filters[PRICE_TO_FIELD] = textViewPriceTo.text.toString()
+
+                if (filters[PRICE_FROM_FIELD]?.isNotEmpty() == true || filters[PRICE_TO_FIELD]?.isNotEmpty() == true) {
+                    filters[ORDER_BY_FIELD] = SortOption.BY_PRICE_ASC.id
+                }
+
+                viewModel.updateFilters(filters)
+            }
+        }
+
+        companion object {
+            const val FILTER_FRAGMENT_TAG = "FilterFragment"
+            const val EMPTY_STRING = ""
         }
     }
-}

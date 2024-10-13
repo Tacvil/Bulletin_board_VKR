@@ -77,7 +77,6 @@ import jakarta.inject.Inject
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
-import timber.log.Timber
 
 @AndroidEntryPoint
 class MainActivity :
@@ -110,16 +109,18 @@ class MainActivity :
 
     @Inject lateinit var accountManager: AccountManager
 
+    @Inject lateinit var favAdsAdapter: FavoriteAdsAdapter
+
+    @Inject lateinit var adsAdapter: AdsAdapter
+
+    @Inject lateinit var myAdsAdapter: MyAdsAdapter
+
+    @Inject lateinit var filterFragment: FilterFragment
+
     private var lastClickTime: Long = 0
-    private val doubleClickThreshold = 300
+    private val doubleClickThreshold = DOUBLE_CLICK_THRESHOLD
     private val scrollStateMap = mutableMapOf<Int, Parcelable?>()
     private var currentTabPosition: Int = 0
-
-    private val favAdsAdapter by lazy { FavoriteAdsAdapter(this) }
-    private val adsAdapter by lazy { AdsAdapter(this) }
-    private val myAdsAdapter by lazy { MyAdsAdapter(this) }
-
-    private val filterFragment by lazy { FilterFragment() }
 
     private val voiceRecognitionLauncher =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
@@ -215,7 +216,7 @@ class MainActivity :
 
     private fun showFilterFragment() {
         if (!filterFragment.isAdded) {
-            filterFragment.show(supportFragmentManager, FilterFragment.TAG)
+            filterFragment.show(supportFragmentManager, FilterFragment.FILTER_FRAGMENT_TAG)
         }
     }
 
@@ -282,7 +283,7 @@ class MainActivity :
 
     private fun handleDrawerNavigation(item: MenuItem) {
         when (item.itemId) {
-            R.id.id_my_ads -> Toast.makeText(this, "pressed my ads", Toast.LENGTH_SHORT).show()
+            R.id.id_my_ads -> switchAdapter(MY_ADAPTER)
             R.id.id_car, R.id.id_pc, R.id.id_smartphone, R.id.id_dm -> {
                 getAdsFromCat(sortUtils.getCategoryFromItem(item.itemId))
             }
@@ -299,7 +300,7 @@ class MainActivity :
             accountManager,
             accountManager,
             this,
-        ).show(supportFragmentManager, "SignInDialog")
+        ).show(supportFragmentManager, SIGN_IN_DIALOG)
     }
 
     private fun handleSignOut() {
@@ -318,7 +319,6 @@ class MainActivity :
                 CATEGORY_FIELD to category,
                 ORDER_BY_FIELD to viewModel.getFilterValue(ORDER_BY_FIELD)!!,
             )
-        Timber.d("New filters applied in getAdsFromCat")
         viewModel.updateFilters(newFilters)
     }
 
@@ -379,8 +379,11 @@ class MainActivity :
     }
 
     companion object {
-        const val EDIT_STATE = "edit_state"
-        const val ADS_DATA = "ads_data"
+        const val IS_EDIT_MODE = "is_edit_mode"
+        const val EXTRA_AD_ITEM = "extra_ad_item"
+        const val INTENT_AD_DETAILS = "intent_ad_details"
+        const val SIGN_IN_DIALOG = "signInDialog"
+        const val DOUBLE_CLICK_THRESHOLD = 300L
         const val ADS_ADAPTER = 0
         const val FAV_ADAPTER = 1
         const val MY_ADAPTER = 2
@@ -388,7 +391,7 @@ class MainActivity :
 
     override fun onAdClick(ad: Ad) {
         Intent(this, DescriptionActivity::class.java).also {
-            it.putExtra("AD", ad)
+            it.putExtra(INTENT_AD_DETAILS, ad)
             startActivity(it)
         }
         viewModel.viewModelScope.launch {
@@ -410,8 +413,8 @@ class MainActivity :
 
     override fun onEditClick(ad: Ad) {
         Intent(this, EditAdsActivity::class.java).also {
-            it.putExtra(EDIT_STATE, true)
-            it.putExtra(ADS_DATA, ad)
+            it.putExtra(IS_EDIT_MODE, true)
+            it.putExtra(EXTRA_AD_ITEM, ad)
             startActivity(it)
         }
     }
@@ -535,7 +538,7 @@ class MainActivity :
         onItemSelectedListener: RcViewDialogSpinnerAdapter.OnItemSelectedListener?,
         isSearchable: Boolean,
     ) {
-        DialogSpinnerHelper.showSpinnerPopup(
+        DialogSpinnerHelper.showDialogSpinner(
             this,
             anchorView,
             list,
