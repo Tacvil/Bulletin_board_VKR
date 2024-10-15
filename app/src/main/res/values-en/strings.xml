@@ -48,6 +48,7 @@
     <string name="title">*Ad Title</string>
     <string name="no_country_selected">No country selected</string>
     <string name="required_fields_empty">All required fields must be filled in!</string>
+    <string name="need_auth_to_create_ad">You need to be authorized to create ads</string>
 
     <!-- Filter Activity -->
     <string name="hint_from">from</string>

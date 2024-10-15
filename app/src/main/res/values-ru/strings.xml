@@ -48,6 +48,7 @@
     <string name="title">*Название объявления</string>
     <string name="no_country_selected">Страна не выбрана</string>
     <string name="required_fields_empty">Все обязательные поля должны быть заполнены!</string>
+    <string name="need_auth_to_create_ad">Чтобы создавать объявления, нужно авторизоваться</string>
 
     <!-- Filter Activity -->
     <string name="hint_from">от</string>
