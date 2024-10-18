@@ -1,4 +1,4 @@
-package com.example.bulletin_board.data.di
+package com.example.bulletin_board.di
 
 import com.example.bulletin_board.data.location.CityDataSource
 import com.example.bulletin_board.domain.location.CityDataSourceProvider

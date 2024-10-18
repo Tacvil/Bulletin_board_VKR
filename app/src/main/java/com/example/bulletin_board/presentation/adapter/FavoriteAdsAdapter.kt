@@ -21,7 +21,6 @@ import com.example.bulletin_board.domain.model.AdUpdateEvent
 import com.example.bulletin_board.domain.model.FavData
 import com.example.bulletin_board.domain.model.ViewData
 import com.example.bulletin_board.domain.ui.ad.AdItemClickListener
-import com.example.bulletin_board.domain.ui.adapters.Adapter
 import com.example.bulletin_board.domain.ui.adapters.AppStateListener
 import jakarta.inject.Inject
 import timber.log.Timber
@@ -31,8 +30,7 @@ class FavoriteAdsAdapter
     @Inject
     constructor(
         appStateListener: AppStateListener,
-    ) : PagingDataAdapter<Ad, FavoriteAdsAdapter.AdHolder>(FavoriteAdDiffCallback()),
-        Adapter {
+    ) : PagingDataAdapter<Ad, FavoriteAdsAdapter.AdHolder>(FavoriteAdDiffCallback()) {
         init {
             appStateListener.onAppStateEvent { adEvent ->
                 when (adEvent) {
@@ -173,13 +171,6 @@ class FavoriteAdsAdapter
                 holder.bind(ad)
             }
         }
-
-        override fun refreshAdapter() {
-            refresh()
-        }
-
-        override val itemCountAdapter: Int
-            get() = itemCount
     }
 
 class FavoriteAdDiffCallback : DiffUtil.ItemCallback<Ad>() {

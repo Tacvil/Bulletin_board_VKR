@@ -45,9 +45,8 @@ import kotlinx.coroutines.launch
 @AndroidEntryPoint
 class EditAdsActivity
     @Inject
-    constructor(
-        private val cityDataSourceProvider: CityDataSourceProvider,
-    ) : AppCompatActivity(),
+    constructor() :
+    AppCompatActivity(),
         FragmentCloseInterface,
         ToastHelper,
         ViewModelHandler,
@@ -69,6 +68,12 @@ class EditAdsActivity
 
         @Inject
         lateinit var imageAdapter: ImageAdapter
+
+        @Inject
+        lateinit var cityDataSourceProvider: CityDataSourceProvider
+
+        @Inject
+        lateinit var dialogSpinnerHelper: DialogSpinnerHelper
 
         private var selectedImagePosition = 0
         private var isInEditMode = false
@@ -167,7 +172,7 @@ class EditAdsActivity
             isCountryCity: Boolean,
             onItemSelected: (String) -> Unit,
         ) {
-            DialogSpinnerHelper.showDialogSpinner(
+            dialogSpinnerHelper.showDialogSpinner(
                 this,
                 textView,
                 items,
@@ -191,7 +196,19 @@ class EditAdsActivity
                 binding.progressLayout.visibility = View.VISIBLE
                 currentAd = createAdFromForm()
                 viewModel.viewModelScope.launch {
-                    imageManager.uploadImages(currentAd, imageAdapter, IMAGE_UPLOAD_START_INDEX) {
+                    imageManager.uploadImages(
+                        currentAd,
+                        imageAdapter,
+                        IMAGE_UPLOAD_START_INDEX,
+                    ) { result ->
+                        if (result == true) {
+                            showToast(
+                                getString(R.string.ad_submitted_for_moderation),
+                                Toast.LENGTH_SHORT,
+                            )
+                        } else {
+                            showToast(getString(R.string.ad_submission_error), Toast.LENGTH_SHORT)
+                        }
                         binding.progressLayout.visibility = View.GONE
                         finish()
                     }
@@ -219,7 +236,6 @@ class EditAdsActivity
                     currentAd?.key ?: accountManager.generateAdId(),
                     textViewTitle.text.toString(),
                     textViewTitle.text.toString().lowercase(),
-                    createKeyWords(textViewTitle.text.toString()),
                     textViewSelectCountry.text.toString(),
                     textViewSelectCity.text.toString(),
                     textViewIndex.text.toString(),
@@ -265,38 +281,6 @@ class EditAdsActivity
                 updateImageCounter(0)
                 imageManager.fillImageArray(ad, imageAdapter)
             }
-
-        private fun createKeyWords(title: String): ArrayList<String> {
-            val words = title.split(" ")
-            val combinations = generateCombinations(words)
-            return combinations as ArrayList<String>
-        }
-
-        private fun generateCombinations(
-            words: List<String>,
-            memo: MutableMap<List<String>, List<String>> = mutableMapOf(),
-        ): List<String> {
-            if (words.isEmpty()) {
-                return emptyList()
-            }
-
-            if (memo.containsKey(words)) {
-                return memo[words]!!
-            }
-
-            val result = mutableListOf<String>()
-
-            for ((index, currentWord) in words.withIndex()) {
-                val remainingWords = words.toMutableList().apply { removeAt(index) }
-                val subCombinations = generateCombinations(remainingWords, memo)
-
-                result.add(currentWord)
-                result.addAll(subCombinations.map { "$currentWord-$it" })
-            }
-
-            memo[words] = result
-            return result
-        }
 
         private fun onClickSelectCategory() {
             binding.textViewSelectCategory.setOnClickListener {

@@ -49,6 +49,10 @@
     <string name="no_country_selected">Страна не выбрана</string>
     <string name="required_fields_empty">Все обязательные поля должны быть заполнены!</string>
     <string name="need_auth_to_create_ad">Чтобы создавать объявления, нужно авторизоваться</string>
+    <string name="ad_submitted_for_moderation">Объявление отправлено на модерацию!</string>
+    <string name="ad_submission_error">Ошибка отправки объявления!</string>
+    <string name="no_result">Нет результата</string>
+
 
     <!-- Filter Activity -->
     <string name="hint_from">от</string>
@@ -105,6 +109,10 @@
 
     <!-- Account -->
     <string name="guest">Гость</string>
+    <string name="sign_in_done">Вход выполнен</string>
+    <string name="google_sign_in_exception">Ошибка входа через Google</string>
+    <string name="sign_in_as_guest_done">Вы вошли как Гость</string>
+    <string name="sign_in_as_guest_error">Не удалось войти как Гость</string>
 
     <!-- Ad info -->
     <string name="with_send_yes">Да</string>
@@ -113,4 +121,13 @@
     <string name="ad_text">Меня интересует ваше объявление!</string>
     <string name="open_with">Открыть с помощью</string>
     <string name="no_app_for_sending">Отсутствует приложение для отправки</string>
+
+    <!-- Permissions -->
+    <string name="permission_denied_notification">Разрешение отклонено, уведомления не могут быть отправлены</string>
+
+    <!-- VoiceRecognition -->
+    <string name="speak_something">Говорите что-нибудь</string>
+    <string name="voice_recognition_not_supported">Голосовое распознавание не поддерживается на вашем устройстве</string>
+    <string name="voice_recognition_no_results">Распознавание речи не дало результатов</string>
+    <string name="voice_recognition_canceled">Распознавание речи отменено</string>
 </resources>

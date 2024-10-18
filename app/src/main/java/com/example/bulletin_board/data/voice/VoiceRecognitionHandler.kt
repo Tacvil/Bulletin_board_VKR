@@ -7,7 +7,10 @@ import android.speech.RecognizerIntent
 import android.widget.Toast
 import androidx.activity.result.ActivityResult
 import androidx.activity.result.ActivityResultLauncher
+import com.example.bulletin_board.R
+import com.example.bulletin_board.domain.utils.ResourceStringProvider
 import com.example.bulletin_board.domain.utils.ToastHelper
+import com.example.bulletin_board.domain.voice.VoiceRecognitionListener
 import jakarta.inject.Inject
 import timber.log.Timber
 
@@ -16,37 +19,48 @@ class VoiceRecognitionHandler
     constructor(
         private val listener: VoiceRecognitionListener,
         private val toastHelper: ToastHelper,
+        private val stringProvider: ResourceStringProvider,
     ) {
         fun startVoiceRecognition(launcher: ActivityResultLauncher<Intent>) {
-            val intent =
-                Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+            Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
+                .apply {
                     putExtra(
                         RecognizerIntent.EXTRA_LANGUAGE_MODEL,
                         RecognizerIntent.LANGUAGE_MODEL_FREE_FORM,
                     )
-                    putExtra(RecognizerIntent.EXTRA_PROMPT, "Speak something")
+                    putExtra(
+                        RecognizerIntent.EXTRA_PROMPT,
+                        stringProvider.getStringImpl(R.string.speak_something),
+                    )
+                }.also { intent ->
+                    try {
+                        launcher.launch(intent)
+                    } catch (e: ActivityNotFoundException) {
+                        toastHelper.showToast(
+                            stringProvider.getStringImpl(R.string.voice_recognition_not_supported),
+                            Toast.LENGTH_SHORT,
+                        )
+                    }
                 }
-            try {
-                launcher.launch(intent)
-            } catch (e: ActivityNotFoundException) {
-                toastHelper.showToast("Голосовое распознавание не поддерживается на вашем устройстве", Toast.LENGTH_SHORT)
-            }
         }
 
         fun handleRecognitionResult(result: ActivityResult) {
-            if (result.resultCode == Activity.RESULT_OK) {
-                val spokenText = result.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)?.get(0)
-                if (!spokenText.isNullOrEmpty()) {
-                    listener.onVoiceRecognitionResult(spokenText)
-                } else {
-                    Timber.d("Распознавание речи не дало результатов.")
+            when (result.resultCode) {
+                Activity.RESULT_OK -> {
+                    result.data
+                        ?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)
+                        ?.firstOrNull()
+                        ?.let { spokenText ->
+                            listener.onVoiceRecognitionResult(spokenText)
+                        }
+                        ?: Timber.d(stringProvider.getStringImpl(R.string.voice_recognition_no_results))
                 }
-            } else if (result.resultCode == Activity.RESULT_CANCELED) {
-                toastHelper.showToast("Распознавание речи отменено.", Toast.LENGTH_SHORT)
+
+                Activity.RESULT_CANCELED ->
+                    toastHelper.showToast(
+                        stringProvider.getStringImpl(R.string.voice_recognition_canceled),
+                        Toast.LENGTH_SHORT,
+                    )
             }
         }
     }
-
-interface VoiceRecognitionListener {
-    fun onVoiceRecognitionResult(spokenText: String)
-}

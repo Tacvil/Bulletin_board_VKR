@@ -16,14 +16,12 @@ import com.example.bulletin_board.domain.useCases.imageManagement.DeleteUserImag
 import com.example.bulletin_board.domain.useCases.imageManagement.UpdateUserImageUseCase
 import com.example.bulletin_board.domain.useCases.imageManagement.UploadUserImageUseCase
 import com.example.bulletin_board.domain.useCases.priceFilters.GetMinMaxPriceUseCase
-import com.example.bulletin_board.domain.useCases.search.FormatSearchResultsUseCase
 import com.example.bulletin_board.domain.useCases.search.GetSearchResultsUseCase
 import com.example.bulletin_board.domain.useCases.tokenManagement.SaveTokenUseCase
 
 sealed class UseCases {
     data class Search(
         val getSearchResultsUseCase: GetSearchResultsUseCase,
-        val formatSearchResultsUseCase: FormatSearchResultsUseCase,
     ) : UseCases()
 
     data class DataRetrieval(

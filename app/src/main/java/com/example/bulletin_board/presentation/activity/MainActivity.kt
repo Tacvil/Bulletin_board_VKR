@@ -1,6 +1,5 @@
 package com.example.bulletin_board.presentation.activity
 
-import android.annotation.SuppressLint
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
@@ -25,7 +24,6 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.airbnb.lottie.LottieAnimationView
 import com.example.bulletin_board.R
-import com.example.bulletin_board.adapterFirestore.AppStateListener
 import com.example.bulletin_board.data.datasource.RemoteAdDataSource.Companion.CATEGORY_FIELD
 import com.example.bulletin_board.data.datasource.RemoteAdDataSource.Companion.KEYWORDS_FIELD
 import com.example.bulletin_board.data.datasource.RemoteAdDataSource.Companion.ORDER_BY_FIELD
@@ -33,27 +31,28 @@ import com.example.bulletin_board.data.permissions.PermissionManager
 import com.example.bulletin_board.data.utils.SortOption
 import com.example.bulletin_board.data.utils.SortUtils
 import com.example.bulletin_board.data.voice.VoiceRecognitionHandler
-import com.example.bulletin_board.data.voice.VoiceRecognitionListener
 import com.example.bulletin_board.databinding.ActivityMainBinding
-import com.example.bulletin_board.domain.AccountUiViewsProvider
-import com.example.bulletin_board.domain.AdapterView
-import com.example.bulletin_board.domain.AuthCallback
-import com.example.bulletin_board.domain.FilterReader
-import com.example.bulletin_board.domain.FilterUpdater
-import com.example.bulletin_board.domain.OrderByFilterDialog
-import com.example.bulletin_board.domain.ResourceStringProvider
-import com.example.bulletin_board.domain.SearchQueryHandler
-import com.example.bulletin_board.domain.SearchQueryHandlerCallback
-import com.example.bulletin_board.domain.SearchUi
-import com.example.bulletin_board.domain.SearchUiInitializer
-import com.example.bulletin_board.domain.ToastHelper
-import com.example.bulletin_board.domain.TokenSaveHandler
+import com.example.bulletin_board.domain.auth.AuthCallback
+import com.example.bulletin_board.domain.auth.TokenSaveHandler
 import com.example.bulletin_board.domain.auth.impl.AccountManager
+import com.example.bulletin_board.domain.dialog.OrderByFilterDialog
+import com.example.bulletin_board.domain.filter.FilterReader
 import com.example.bulletin_board.domain.model.Ad
 import com.example.bulletin_board.domain.model.AdUpdateEvent
 import com.example.bulletin_board.domain.model.FavData
 import com.example.bulletin_board.domain.model.ViewData
+import com.example.bulletin_board.domain.search.FilterUpdater
+import com.example.bulletin_board.domain.search.SearchQueryHandler
+import com.example.bulletin_board.domain.search.SearchQueryHandlerCallback
+import com.example.bulletin_board.domain.search.SearchUiInitializer
+import com.example.bulletin_board.domain.ui.account.AccountUiViewsProvider
 import com.example.bulletin_board.domain.ui.ad.AdItemClickListener
+import com.example.bulletin_board.domain.ui.adapters.AdapterView
+import com.example.bulletin_board.domain.ui.adapters.AppStateListener
+import com.example.bulletin_board.domain.ui.search.SearchUi
+import com.example.bulletin_board.domain.utils.ResourceStringProvider
+import com.example.bulletin_board.domain.utils.ToastHelper
+import com.example.bulletin_board.domain.voice.VoiceRecognitionListener
 import com.example.bulletin_board.presentation.adapter.AdapterManager
 import com.example.bulletin_board.presentation.adapter.AdsAdapter
 import com.example.bulletin_board.presentation.adapter.FavoriteAdsAdapter
@@ -66,6 +65,7 @@ import com.example.bulletin_board.presentation.dialogs.DialogSpinnerHelper
 import com.example.bulletin_board.presentation.dialogs.OrderByFilterDialogManager
 import com.example.bulletin_board.presentation.fragment.FilterFragment
 import com.example.bulletin_board.presentation.fragment.SignInDialogFragment
+import com.example.bulletin_board.presentation.search.FormatSearchResults
 import com.example.bulletin_board.presentation.search.SearchManager
 import com.example.bulletin_board.presentation.theme.ThemeManager
 import com.example.bulletin_board.presentation.utils.NavigationMenuStyler
@@ -99,23 +99,35 @@ class MainActivity :
     private val viewModel: MainViewModel by viewModels()
     private lateinit var binding: ActivityMainBinding
 
-    @Inject lateinit var orderByFilterDialogManager: OrderByFilterDialogManager
+    @Inject
+    lateinit var orderByFilterDialogManager: OrderByFilterDialogManager
 
-    @Inject lateinit var sortUtils: SortUtils
+    @Inject
+    lateinit var sortUtils: SortUtils
 
-    @Inject lateinit var voiceRecognitionHandler: VoiceRecognitionHandler
+    @Inject
+    lateinit var voiceRecognitionHandler: VoiceRecognitionHandler
 
-    @Inject lateinit var searchManager: SearchManager
+    @Inject
+    lateinit var searchManager: SearchManager
 
-    @Inject lateinit var accountManager: AccountManager
+    @Inject
+    lateinit var accountManager: AccountManager
 
-    @Inject lateinit var favAdsAdapter: FavoriteAdsAdapter
+    @Inject
+    lateinit var favAdsAdapter: FavoriteAdsAdapter
 
-    @Inject lateinit var adsAdapter: AdsAdapter
+    @Inject
+    lateinit var adsAdapter: AdsAdapter
 
-    @Inject lateinit var myAdsAdapter: MyAdsAdapter
+    @Inject
+    lateinit var myAdsAdapter: MyAdsAdapter
 
-    @Inject lateinit var filterFragment: FilterFragment
+    @Inject
+    lateinit var filterFragment: FilterFragment
+
+    @Inject
+    lateinit var dialogSpinnerHelper: DialogSpinnerHelper
 
     private var lastClickTime: Long = 0
     private val doubleClickThreshold = DOUBLE_CLICK_THRESHOLD
@@ -167,7 +179,7 @@ class MainActivity :
         )
     }
 
-    @SuppressLint("NewApi")
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     private fun requestNotificationPermission() {
         PermissionManager.checkAndRequestNotificationPermission(this)
     }
@@ -191,9 +203,27 @@ class MainActivity :
 
     private fun initAdapterData() {
         lifecycleScope.launch {
-            launch { PagingDataAdapterController.handleAdapterData(viewModel.favoriteAds, favAdsAdapter, this@MainActivity) }
-            launch { PagingDataAdapterController.handleAdapterData(viewModel.homeAdsData, adsAdapter, this@MainActivity) }
-            launch { PagingDataAdapterController.handleAdapterData(viewModel.myAds, myAdsAdapter, this@MainActivity) }
+            launch {
+                PagingDataAdapterController.handleAdapterData(
+                    viewModel.favoriteAds,
+                    favAdsAdapter,
+                    this@MainActivity,
+                )
+            }
+            launch {
+                PagingDataAdapterController.handleAdapterData(
+                    viewModel.homeAdsData,
+                    adsAdapter,
+                    this@MainActivity,
+                )
+            }
+            launch {
+                PagingDataAdapterController.handleAdapterData(
+                    viewModel.myAds,
+                    myAdsAdapter,
+                    this@MainActivity,
+                )
+            }
         }
     }
 
@@ -203,19 +233,21 @@ class MainActivity :
         supportActionBar?.setDisplayShowHomeEnabled(true)
 
         binding.navigationView.setNavigationItemSelectedListener(this)
-        binding.mainContent.filterButtonMain.setOnClickListener { showFilterFragment() }
-        binding.mainContent.swipeRefreshLayout.setOnRefreshListener { refreshCurrentAdapter() }
 
-        binding.mainContent.floatingActButton.setOnClickListener {
-            if (accountManager.isSignedIn() && !accountManager.isAnonymous()) {
-                val intent = Intent(this, EditAdsActivity::class.java)
-                startActivity(intent)
-            } else {
-                showToast(getString(R.string.need_auth_to_create_ad), Toast.LENGTH_SHORT)
-            }
-        }
+        binding.mainContent.filterButtonMain.setOnClickListener { showFilterFragment() }
+        binding.mainContent.swipeRefreshLayout.setOnRefreshListener { refreshAdapters() }
+        binding.mainContent.floatingActButton.setOnClickListener { onCreateNewAdClick() }
 
         navViewSetting()
+    }
+
+    private fun onCreateNewAdClick() {
+        if (accountManager.isSignedIn() && !accountManager.isAnonymous()) {
+            val intent = Intent(this, EditAdsActivity::class.java)
+            startActivity(intent)
+        } else {
+            showToast(getString(R.string.need_auth_to_create_ad), Toast.LENGTH_SHORT)
+        }
     }
 
     private fun showFilterFragment() {
@@ -224,8 +256,8 @@ class MainActivity :
         }
     }
 
-    private fun refreshCurrentAdapter() {
-        AdapterManager.refreshAdapter(binding.mainContent.bottomNavView.selectedItemId)
+    private fun refreshAdapters() {
+        AdapterManager.refreshAdapters()
         binding.mainContent.swipeRefreshLayout.isRefreshing = false
     }
 
@@ -262,7 +294,7 @@ class MainActivity :
         val currentTime = System.currentTimeMillis()
 
         if (currentTime - lastClickTime <= doubleClickThreshold) {
-            AdapterManager.refreshAdapter(item.itemId)
+            AdapterManager.refreshAdapters()
         }
         lastClickTime = currentTime
 
@@ -275,7 +307,7 @@ class MainActivity :
     }
 
     private fun switchAdapter(tabPosition: Int) {
-        AdapterManager.switchAdapter(this, tabPosition, scrollStateMap, currentTabPosition)
+        AdapterManager.switchAdapter(this, scrollStateMap, currentTabPosition, tabPosition)
         currentTabPosition = tabPosition
     }
 
@@ -291,7 +323,14 @@ class MainActivity :
                 switchAdapter(MY_ADAPTER)
                 binding.mainContent.bottomNavView.selectedItemId = R.id.id_my_ads
             }
-            R.id.id_car, R.id.id_pc, R.id.id_smartphone, R.id.id_dm -> getAdsFromCat(sortUtils.getCategoryFromItem(item.itemId))
+
+            R.id.id_car, R.id.id_pc, R.id.id_smartphone, R.id.id_dm ->
+                getAdsFromCat(
+                    sortUtils.getCategoryFromItem(
+                        item.itemId,
+                    ),
+                )
+
             R.id.id_sign_up -> showSignInDialog(DialogConst.SIGN_UP_STATE)
             R.id.id_sign_in -> showSignInDialog(DialogConst.SIGN_IN_STATE)
             R.id.id_sign_out -> handleSignOut()
@@ -345,6 +384,7 @@ class MainActivity :
             android.R.id.home -> {
                 binding.drawerLayout.openDrawer(GravityCompat.START)
             }
+
             R.id.id_search -> handleSearchIconClick(item)
             R.id.id_voice -> {
                 voiceRecognitionHandler.startVoiceRecognition(voiceRecognitionLauncher)
@@ -500,7 +540,10 @@ class MainActivity :
             viewModel.appState.collectLatest { appState ->
                 if (appState.searchResults.isNotEmpty()) {
                     val formattedResults =
-                        viewModel.formatSearchResults(appState.searchResults, inputSearchQuery)
+                        FormatSearchResults.formatResult(
+                            appState.searchResults,
+                            inputSearchQuery,
+                        )
                     callback.onSearchResultsUpdated(formattedResults)
                 }
             }
@@ -543,7 +586,7 @@ class MainActivity :
         onItemSelectedListener: RcViewDialogSpinnerAdapter.OnItemSelectedListener?,
         isSearchable: Boolean,
     ) {
-        DialogSpinnerHelper.showDialogSpinner(
+        dialogSpinnerHelper.showDialogSpinner(
             this,
             anchorView,
             list,

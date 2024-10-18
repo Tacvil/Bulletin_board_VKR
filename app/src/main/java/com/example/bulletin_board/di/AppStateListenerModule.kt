@@ -1,7 +1,7 @@
-package com.example.bulletin_board.data.di
+package com.example.bulletin_board.di
 
 import androidx.fragment.app.FragmentActivity
-import com.example.bulletin_board.adapterFirestore.AppStateListener
+import com.example.bulletin_board.domain.ui.adapters.AppStateListener
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn

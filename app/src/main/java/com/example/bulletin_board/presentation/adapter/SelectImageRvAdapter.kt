@@ -82,7 +82,7 @@ class SelectImageRvAdapter
             if (needClear) selectedImages.clear()
             selectedImages.addAll(newList)
 
-            val diffResult = DiffUtil.calculateDiff(BitmapDiffCallback(oldList, selectedImages))
+            val diffResult = DiffUtil.calculateDiff(ImageDiffCallback(oldList, selectedImages))
             diffResult.dispatchUpdatesTo(this)
         }
 
@@ -99,7 +99,7 @@ class SelectImageRvAdapter
         }
     }
 
-class BitmapDiffCallback(
+class ImageDiffCallback(
     private val oldList: List<Bitmap>,
     private val newList: List<Bitmap>,
 ) : DiffUtil.Callback() {

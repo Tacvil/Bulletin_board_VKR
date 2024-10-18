@@ -1,4 +1,4 @@
-package com.example.bulletin_board.data.di
+package com.example.bulletin_board.di
 
 import android.app.Activity
 import android.widget.ImageView
@@ -7,15 +7,15 @@ import android.widget.Toast
 import androidx.fragment.app.FragmentActivity
 import com.example.bulletin_board.R
 import com.example.bulletin_board.data.auth.AuthRepository
-import com.example.bulletin_board.domain.AccountHelperProvider
-import com.example.bulletin_board.domain.AccountUiHandler
-import com.example.bulletin_board.domain.AccountUiViewsProvider
-import com.example.bulletin_board.domain.ResourceStringProvider
-import com.example.bulletin_board.domain.SignInAnonymouslyProvider
-import com.example.bulletin_board.domain.ToastHelper
-import com.example.bulletin_board.domain.TokenHandler
+import com.example.bulletin_board.domain.auth.AccountHelperProvider
+import com.example.bulletin_board.domain.auth.AccountUiHandler
+import com.example.bulletin_board.domain.auth.SignInAnonymouslyProvider
+import com.example.bulletin_board.domain.auth.TokenHandler
 import com.example.bulletin_board.domain.auth.impl.AccountManager
 import com.example.bulletin_board.domain.auth.impl.TokenManager
+import com.example.bulletin_board.domain.ui.account.AccountUiViewsProvider
+import com.example.bulletin_board.domain.utils.ResourceStringProvider
+import com.example.bulletin_board.domain.utils.ToastHelper
 import com.example.bulletin_board.presentation.account.AccountView
 import com.google.android.material.navigation.NavigationView
 import com.google.firebase.auth.FirebaseAuth

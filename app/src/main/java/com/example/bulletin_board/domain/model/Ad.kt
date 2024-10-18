@@ -11,7 +11,6 @@ data class Ad
         val key: String = "",
         val title: String? = null,
         val titleLowercase: String? = null,
-        val keyWords: List<String>? = null,
         val country: String? = null,
         val city: String? = null,
         val index: String? = null,
@@ -43,7 +42,6 @@ data class Ad
             parcel.writeString(key)
             parcel.writeString(title)
             parcel.writeString(titleLowercase)
-            parcel.writeStringList(keyWords)
             parcel.writeString(country)
             parcel.writeString(city)
             parcel.writeString(index)
@@ -73,7 +71,6 @@ data class Ad
                     key = parcel.readString()!!,
                     title = parcel.readString(),
                     titleLowercase = parcel.readString(),
-                    keyWords = parcel.createStringArrayList(),
                     country = parcel.readString(),
                     city = parcel.readString(),
                     index = parcel.readString(),

@@ -1,7 +1,7 @@
-package com.example.bulletin_board.data.di
+package com.example.bulletin_board.di
 
 import com.example.bulletin_board.data.utils.SortUtils
-import com.example.bulletin_board.domain.ResourceStringProvider
+import com.example.bulletin_board.domain.utils.ResourceStringProvider
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn

@@ -1,7 +1,7 @@
-package com.example.bulletin_board.data.di
+package com.example.bulletin_board.di
 
 import android.app.Activity
-import com.example.bulletin_board.domain.TokenSaveHandler
+import com.example.bulletin_board.domain.auth.TokenSaveHandler
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn

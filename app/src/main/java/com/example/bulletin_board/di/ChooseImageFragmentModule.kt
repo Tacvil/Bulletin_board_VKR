@@ -1,8 +1,8 @@
-package com.example.bulletin_board.data.di
+package com.example.bulletin_board.di
 
 import androidx.fragment.app.FragmentActivity
-import com.example.bulletin_board.fragments.ImageAdapterHandler
-import com.example.bulletin_board.fragments.OnItemDeleteListener
+import com.example.bulletin_board.domain.ui.adapters.ImageAdapterHandler
+import com.example.bulletin_board.domain.ui.adapters.OnItemDeleteListener
 import com.example.bulletin_board.presentation.common.FragmentCloseInterface
 import dagger.Module
 import dagger.Provides

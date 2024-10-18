@@ -48,9 +48,7 @@ class AdRepositoryImpl
 
         override suspend fun insertAd(ad: Ad): Result<Boolean> = remoteAdDataSource.insertAd(ad)
 
-        override suspend fun saveToken(token: String) {
-            remoteAdDataSource.saveToken(token)
-        }
+        override suspend fun saveToken(token: String): Result<Boolean> = remoteAdDataSource.saveToken(token)
 
         override suspend fun getMinMaxPrice(category: String?): Result<Pair<Int?, Int?>> = remoteAdDataSource.getMinMaxPrice(category)
 

@@ -86,11 +86,22 @@ class MainViewModel
             }
         }
 
-        suspend fun insertAd(ad: Ad): Boolean = useCasesDataUpdate.insertAdUseCase(ad)
+        suspend fun insertAd(ad: Ad): Boolean =
+            when (val result = useCasesDataUpdate.insertAdUseCase(ad)) {
+                is Result.Success -> result.data
+                is Result.Error -> {
+                    Timber.e(result.exception, "Error inserting announcement: $ad")
+                    false
+                }
+            }
 
         suspend fun deleteAd(adKey: String) {
-            useCasesDataUpdate.deleteAdUseCase(adKey)
-            _appState.value = _appState.value.copy(adEvent = AdUpdateEvent.AdDeleted)
+            when (val result = useCasesDataUpdate.deleteAdUseCase(adKey)) {
+                is Result.Success -> _appState.value = _appState.value.copy(adEvent = AdUpdateEvent.AdDeleted)
+                is Result.Error -> {
+                    Timber.e(result.exception, "Error deleting ad: $adKey")
+                }
+            }
         }
 
         suspend fun getMinMaxPrice() {
@@ -120,13 +131,16 @@ class MainViewModel
         }
 
         suspend fun saveTokenFCM(token: String) {
-            useCasesTokenManagement.saveTokenUseCase(token)
-        }
+            when (val result = useCasesTokenManagement.saveTokenUseCase(token)) {
+                is Result.Success -> {
+                    Timber.d("Token successful saved")
+                }
 
-        fun formatSearchResults(
-            results: List<String>,
-            inputSearchQuery: String,
-        ): List<Pair<String, String>> = useCasesSearch.formatSearchResultsUseCase(results, inputSearchQuery)
+                is Result.Error -> {
+                    Timber.e(result.exception, "Error saving token")
+                }
+            }
+        }
 
         suspend fun uploadImage(byteArray: ByteArray): Uri? {
             when (val result = useCasesImageManagement.uploadUserImageUseCase(byteArray)) {
@@ -173,13 +187,11 @@ class MainViewModel
         fun getFilterValue(key: String): String? = useCasesFilters.getFilterValueUseCase(appState.value.filter, key)
 
         fun updateFilters(newFilters: Map<String, String>) {
-            Timber.d("Filter updated VIEWMODEL  DO: ${_appState.value.filter}")
             _appState.update { currentState ->
                 currentState.copy(
                     filter = useCasesFilters.updateFiltersUseCase(currentState.filter, newFilters),
                 )
             }
-            Timber.d("Filter updated VIEWMODEL  AFTER: ${_appState.value.filter}")
         }
 
         fun removeFromFilter(key: String) {

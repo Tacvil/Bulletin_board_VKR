@@ -1,25 +1,24 @@
-package com.example.bulletin_board.data.di
+package com.example.bulletin_board.di
 
 import com.example.bulletin_board.domain.model.UseCases
-import com.example.bulletin_board.useCase.dataRetrieval.GetFavoriteAdsUseCase
-import com.example.bulletin_board.useCase.dataRetrieval.GetHomeAdsUseCase
-import com.example.bulletin_board.useCase.dataRetrieval.GetMyAdsUseCase
-import com.example.bulletin_board.useCase.dataUpdate.AdViewedUseCase
-import com.example.bulletin_board.useCase.dataUpdate.DeleteAdUseCase
-import com.example.bulletin_board.useCase.dataUpdate.InsertAdUseCase
-import com.example.bulletin_board.useCase.dataUpdate.UpdateFavoriteAdUseCase
-import com.example.bulletin_board.useCase.filters.AddToFilterUseCase
-import com.example.bulletin_board.useCase.filters.ClearFiltersUseCase
-import com.example.bulletin_board.useCase.filters.GetFilterValueUseCase
-import com.example.bulletin_board.useCase.filters.RemoveFromFilterUseCase
-import com.example.bulletin_board.useCase.filters.UpdateFiltersUseCase
-import com.example.bulletin_board.useCase.imageManagement.DeleteUserImageUseCase
-import com.example.bulletin_board.useCase.imageManagement.UpdateUserImageUseCase
-import com.example.bulletin_board.useCase.imageManagement.UploadUserImageUseCase
-import com.example.bulletin_board.useCase.priceFilters.GetMinMaxPriceUseCase
-import com.example.bulletin_board.useCase.search.FormatSearchResultsUseCase
-import com.example.bulletin_board.useCase.search.GetSearchResultsUseCase
-import com.example.bulletin_board.useCase.tokenManagement.SaveTokenUseCase
+import com.example.bulletin_board.domain.useCases.dataRetrieval.GetFavoriteAdsUseCase
+import com.example.bulletin_board.domain.useCases.dataRetrieval.GetHomeAdsUseCase
+import com.example.bulletin_board.domain.useCases.dataRetrieval.GetMyAdsUseCase
+import com.example.bulletin_board.domain.useCases.dataUpdate.AdViewedUseCase
+import com.example.bulletin_board.domain.useCases.dataUpdate.DeleteAdUseCase
+import com.example.bulletin_board.domain.useCases.dataUpdate.InsertAdUseCase
+import com.example.bulletin_board.domain.useCases.dataUpdate.UpdateFavoriteAdUseCase
+import com.example.bulletin_board.domain.useCases.filters.AddToFilterUseCase
+import com.example.bulletin_board.domain.useCases.filters.ClearFiltersUseCase
+import com.example.bulletin_board.domain.useCases.filters.GetFilterValueUseCase
+import com.example.bulletin_board.domain.useCases.filters.RemoveFromFilterUseCase
+import com.example.bulletin_board.domain.useCases.filters.UpdateFiltersUseCase
+import com.example.bulletin_board.domain.useCases.imageManagement.DeleteUserImageUseCase
+import com.example.bulletin_board.domain.useCases.imageManagement.UpdateUserImageUseCase
+import com.example.bulletin_board.domain.useCases.imageManagement.UploadUserImageUseCase
+import com.example.bulletin_board.domain.useCases.priceFilters.GetMinMaxPriceUseCase
+import com.example.bulletin_board.domain.useCases.search.GetSearchResultsUseCase
+import com.example.bulletin_board.domain.useCases.tokenManagement.SaveTokenUseCase
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -29,10 +28,7 @@ import dagger.hilt.components.SingletonComponent
 @InstallIn(SingletonComponent::class)
 object UseCasesModule {
     @Provides
-    fun provideSearchUseCases(
-        getSearchResultsUseCase: GetSearchResultsUseCase,
-        formatSearchResultsUseCase: FormatSearchResultsUseCase,
-    ): UseCases.Search = UseCases.Search(getSearchResultsUseCase, formatSearchResultsUseCase)
+    fun provideSearchUseCases(getSearchResultsUseCase: GetSearchResultsUseCase): UseCases.Search = UseCases.Search(getSearchResultsUseCase)
 
     @Provides
     fun provideDataRetrievalUseCases(

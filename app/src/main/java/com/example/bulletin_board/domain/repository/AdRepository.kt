@@ -33,7 +33,7 @@ interface AdRepository {
 
     suspend fun insertAd(ad: Ad): Result<Boolean>
 
-    suspend fun saveToken(token: String)
+    suspend fun saveToken(token: String): Result<Boolean>
 
     suspend fun getMinMaxPrice(category: String?): Result<Pair<Int?, Int?>>
 

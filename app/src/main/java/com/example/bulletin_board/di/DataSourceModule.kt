@@ -1,4 +1,4 @@
-package com.example.bulletin_board.data.di
+package com.example.bulletin_board.di
 
 import com.example.bulletin_board.data.datasource.RemoteAdDataSource
 import com.google.firebase.auth.FirebaseAuth

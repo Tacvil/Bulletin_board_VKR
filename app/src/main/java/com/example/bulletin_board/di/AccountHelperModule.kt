@@ -1,12 +1,12 @@
-package com.example.bulletin_board.data.di
+package com.example.bulletin_board.di
 
 import android.app.Activity
 import android.content.Context
 import androidx.appcompat.app.AppCompatActivity
 import com.example.bulletin_board.R
 import com.example.bulletin_board.data.auth.AuthRepository
-import com.example.bulletin_board.domain.ResourceStringProvider
-import com.example.bulletin_board.domain.ToastHelper
+import com.example.bulletin_board.domain.utils.ResourceStringProvider
+import com.example.bulletin_board.domain.utils.ToastHelper
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInClient
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions

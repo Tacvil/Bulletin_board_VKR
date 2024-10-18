@@ -35,6 +35,7 @@ class FilterFragment
     @Inject
     constructor(
         private val cityDataSourceProvider: CityDataSourceProvider,
+        private val dialogSpinnerHelper: DialogSpinnerHelper,
     ) : BottomSheetDialogFragment() {
         private val viewModel: MainViewModel by activityViewModels()
         private var _binding: ActivityFilterBinding? = null
@@ -157,7 +158,7 @@ class FilterFragment
             isCountry: Boolean = true,
             onItemSelected: (String) -> Unit,
         ) {
-            DialogSpinnerHelper.showDialogSpinner(
+            dialogSpinnerHelper.showDialogSpinner(
                 requireContext(),
                 textView,
                 items,

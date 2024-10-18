@@ -8,7 +8,7 @@ import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import timber.log.Timber
+import com.example.bulletin_board.R
 
 object PermissionManager {
     private const val PERMISSION_REQUEST_CODE = 100
@@ -25,8 +25,6 @@ object PermissionManager {
                 arrayOf(Manifest.permission.POST_NOTIFICATIONS),
                 PERMISSION_REQUEST_CODE,
             )
-        } else {
-            Timber.tag("POST_NOTIFICATIONS_PER_TRUE").d("POST_NOTIFICATIONS_PER_TRUE")
         }
     }
 
@@ -35,21 +33,15 @@ object PermissionManager {
         grantResults: IntArray,
         activity: Activity,
     ) {
-        when (requestCode) {
-            PERMISSION_REQUEST_CODE -> {
-                if ((grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED)) {
-                    Timber.tag("POST_NOTIFICATIONS_PER_TRUE").d("POST_NOTIFICATIONS_PER_TRUE")
-                } else {
-                    Timber.tag("POST_NOTIFICATIONS_PER_FALSE").d("POST_NOTIFICATIONS_PER_FALSE")
-                    Toast
-                        .makeText(
-                            activity,
-                            "Permission denied, notifications cannot be sent",
-                            Toast.LENGTH_SHORT,
-                        ).show()
-                }
-                return
-            }
+        if (requestCode == PERMISSION_REQUEST_CODE &&
+            grantResults.firstOrNull() != PackageManager.PERMISSION_GRANTED
+        ) {
+            Toast
+                .makeText(
+                    activity,
+                    activity.getString(R.string.permission_denied_notification),
+                    Toast.LENGTH_SHORT,
+                ).show()
         }
     }
 }

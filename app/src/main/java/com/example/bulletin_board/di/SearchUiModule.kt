@@ -1,7 +1,7 @@
-package com.example.bulletin_board.data.di
+package com.example.bulletin_board.di
 
 import androidx.fragment.app.FragmentActivity
-import com.example.bulletin_board.domain.FilterUpdater
+import com.example.bulletin_board.domain.ui.search.SearchUi
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -9,7 +9,7 @@ import dagger.hilt.android.components.ActivityComponent
 
 @Module
 @InstallIn(ActivityComponent::class)
-object FilterUpdaterModule {
+object SearchUiModule {
     @Provides
-    fun provideFilterUpdater(activity: FragmentActivity): FilterUpdater = activity as FilterUpdater
+    fun provideSearchUi(activity: FragmentActivity): SearchUi = activity as SearchUi
 }

@@ -49,6 +49,9 @@
     <string name="no_country_selected">No country selected</string>
     <string name="required_fields_empty">All required fields must be filled in!</string>
     <string name="need_auth_to_create_ad">You need to be authorized to create ads</string>
+    <string name="ad_submitted_for_moderation">Ad submitted for moderation!</string>
+    <string name="ad_submission_error">Ad submission error!</string>
+    <string name="no_result">No result</string>
 
     <!-- Filter Activity -->
     <string name="hint_from">from</string>
@@ -105,6 +108,10 @@
 
     <!-- Account -->
     <string name="guest">Guest</string>
+    <string name="sign_in_done">Sign in successful</string>
+    <string name="google_sign_in_exception">Google Sign In Error: %1$s</string>
+    <string name="sign_in_as_guest_done">Signed in as Guest</string>
+    <string name="sign_in_as_guest_error">Failed to sign in as Guest</string>
 
     <!-- Ad info -->
     <string name="with_send_yes">Yes</string>
@@ -113,4 +120,13 @@
     <string name="ad_text">I am interested in your ad!</string>
     <string name="open_with">Open with</string>
     <string name="no_app_for_sending">There is no app for sending</string>
+
+    <!-- Permissions -->
+    <string name="permission_denied_notification">Permission denied, notifications cannot be sent</string>
+
+    <!-- VoiceRecognition -->
+    <string name="speak_something">Speak something</string>
+    <string name="voice_recognition_not_supported">Voice recognition is not supported on your device</string>
+    <string name="voice_recognition_no_results">Voice recognition did not produce any results</string>
+    <string name="voice_recognition_canceled">Voice recognition canceled</string>
 </resources>

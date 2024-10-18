@@ -1,12 +1,12 @@
-package com.example.bulletin_board.data.di
+package com.example.bulletin_board.di
 
-import com.example.bulletin_board.data.image.GlideImageLoader
-import com.example.bulletin_board.domain.FilterUpdater
-import com.example.bulletin_board.domain.ImageLoader
-import com.example.bulletin_board.domain.InitSearchActionHelper
-import com.example.bulletin_board.domain.InitSearchBarClickListenerHelper
-import com.example.bulletin_board.domain.InitTextWatcher
-import com.example.bulletin_board.domain.SearchUi
+import com.example.bulletin_board.domain.images.ImageLoader
+import com.example.bulletin_board.domain.images.impl.GlideImageLoader
+import com.example.bulletin_board.domain.search.FilterUpdater
+import com.example.bulletin_board.domain.search.InitSearchActionHelper
+import com.example.bulletin_board.domain.search.InitSearchBarClickListenerHelper
+import com.example.bulletin_board.domain.search.InitTextWatcher
+import com.example.bulletin_board.domain.ui.search.SearchUi
 import com.example.bulletin_board.presentation.search.SearchActionHandler
 import com.example.bulletin_board.presentation.search.SearchBarClickHandler
 import com.example.bulletin_board.presentation.search.SearchTextWatcher

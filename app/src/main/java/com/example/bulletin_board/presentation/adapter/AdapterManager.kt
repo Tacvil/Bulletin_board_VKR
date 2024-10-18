@@ -2,23 +2,19 @@ package com.example.bulletin_board.presentation.adapter
 
 import android.content.Context
 import android.os.Parcelable
+import androidx.paging.PagingDataAdapter
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.example.bulletin_board.domain.ui.adapters.Adapter
 import com.example.bulletin_board.domain.ui.adapters.AdapterView
 import com.example.bulletin_board.presentation.utils.EmptyStateView
 
 object AdapterManager {
-    private val adapters = mutableMapOf<Int, Adapter>()
+    private val adapters: MutableMap<Int, PagingDataAdapter<*, *>> = mutableMapOf()
 
-    fun registerAdapters(vararg adapters: Pair<Int, Adapter>) {
-        adapters.forEach { (tabPosition, adapter) ->
-            AdapterManager.adapters[tabPosition] = adapter
+    fun registerAdapters(vararg adapterPairs: Pair<Int, PagingDataAdapter<*, *>>) {
+        for (adapterPair in adapterPairs) {
+            adapters[adapterPair.first] = adapterPair.second
         }
-    }
-
-    fun refreshAdapter(tabPosition: Int) {
-        adapters[tabPosition]?.refreshAdapter()
     }
 
     fun initRecyclerView(
@@ -30,19 +26,26 @@ object AdapterManager {
         recyclerView.adapter = adapter
     }
 
+    fun refreshAdapters() {
+        for (adapter in adapters.values) {
+            adapter.refresh()
+        }
+    }
+
     fun switchAdapter(
         adapterView: AdapterView,
-        tabPosition: Int,
         scrollStateMap: MutableMap<Int, Parcelable?>,
         currentTabPosition: Int,
+        tabPosition: Int,
     ) {
-        val adapter = adapters[tabPosition] ?: return
-        EmptyStateView.updateAnimationVisibility(adapter.itemCountAdapter, adapterView)
+        val adapter = adapters[tabPosition]
+        val itemCount = adapter?.itemCount ?: 0
 
-        scrollStateMap[currentTabPosition] =
-            adapterView.recyclerViewMainContent.layoutManager?.onSaveInstanceState()
+        EmptyStateView.updateAnimationVisibility(itemCount, adapterView)
 
-        adapterView.recyclerViewMainContent.adapter = adapter as RecyclerView.Adapter<*>
+        scrollStateMap[currentTabPosition] = adapterView.recyclerViewMainContent.layoutManager?.onSaveInstanceState()
+
+        adapterView.recyclerViewMainContent.adapter = adapter
 
         adapterView.recyclerViewMainContent.layoutManager?.onRestoreInstanceState(scrollStateMap[tabPosition])
     }

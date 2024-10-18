@@ -1,18 +1,18 @@
-package com.example.bulletin_board.data.di
+package com.example.bulletin_board.di
 
 import android.content.ContentResolver
 import android.net.Uri
 import androidx.fragment.app.FragmentActivity
-import com.example.bulletin_board.data.image.AddImageHandler
-import com.example.bulletin_board.data.image.ChooseScaleTypeHandler
-import com.example.bulletin_board.data.image.ContentResolverProvider
-import com.example.bulletin_board.data.image.GetMultiImagesProvider
-import com.example.bulletin_board.data.image.GetSingleImagesHandler
 import com.example.bulletin_board.data.image.ImageResizer
-import com.example.bulletin_board.data.image.ImageResizerHandler
 import com.example.bulletin_board.data.image.PixImagePicker
-import com.example.bulletin_board.data.image.PixImagePickerActions
-import com.example.bulletin_board.data.image.ViewModelHandler
+import com.example.bulletin_board.domain.images.AddImageHandler
+import com.example.bulletin_board.domain.images.ChooseScaleTypeHandler
+import com.example.bulletin_board.domain.images.ContentResolverProvider
+import com.example.bulletin_board.domain.images.GetMultiImagesProvider
+import com.example.bulletin_board.domain.images.GetSingleImagesHandler
+import com.example.bulletin_board.domain.images.ImageResizerHandler
+import com.example.bulletin_board.domain.images.PixImagePickerActions
+import com.example.bulletin_board.domain.images.ViewModelHandler
 import com.example.bulletin_board.domain.model.Ad
 import com.example.bulletin_board.pix.models.Options
 import dagger.Module

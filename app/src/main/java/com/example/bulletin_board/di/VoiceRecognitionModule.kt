@@ -1,9 +1,10 @@
-package com.example.bulletin_board.data.di
+package com.example.bulletin_board.di
 
 import android.app.Activity
 import com.example.bulletin_board.data.voice.VoiceRecognitionHandler
-import com.example.bulletin_board.data.voice.VoiceRecognitionListener
-import com.example.bulletin_board.domain.ToastHelper
+import com.example.bulletin_board.domain.utils.ResourceStringProvider
+import com.example.bulletin_board.domain.utils.ToastHelper
+import com.example.bulletin_board.domain.voice.VoiceRecognitionListener
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -25,5 +26,6 @@ object VoiceRecognitionModule {
     fun provideVoiceRecognitionHandler(
         listener: VoiceRecognitionListener,
         toastHelper: ToastHelper,
-    ): VoiceRecognitionHandler = VoiceRecognitionHandler(listener, toastHelper)
+        resourceStringProvider: ResourceStringProvider,
+    ): VoiceRecognitionHandler = VoiceRecognitionHandler(listener, toastHelper, resourceStringProvider)
 }

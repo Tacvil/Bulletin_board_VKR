@@ -1,4 +1,4 @@
-package com.example.bulletin_board.data.image
+package com.example.bulletin_board.domain.images.impl
 
 import android.graphics.Bitmap
 import android.net.Uri

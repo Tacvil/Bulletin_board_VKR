@@ -5,100 +5,88 @@ import android.app.NotificationManager
 import android.content.Context
 import android.media.RingtoneManager
 import android.os.Build
-import android.util.Log
+import androidx.activity.result.launch
+import androidx.annotation.RequiresApi
 import androidx.core.app.NotificationCompat
-import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.viewModelScope
 import com.example.bulletin_board.R
-import com.example.bulletin_board.presentation.viewModel.MainViewModel
+import com.example.bulletin_board.application.MyApplication
+import com.example.bulletin_board.domain.useCases.tokenManagement.SaveTokenUseCase
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
+import dagger.hilt.EntryPoint
+import dagger.hilt.InstallIn
+import dagger.hilt.android.EntryPointAccessors
+import dagger.hilt.components.SingletonComponent
 import kotlinx.coroutines.launch
 
+@EntryPoint
+@InstallIn(SingletonComponent::class)
+interface PushNotificationEntryPoint {
+    fun getSaveTokenUseCase(): SaveTokenUseCase
+}
+
 class PushNotificationServices : FirebaseMessagingService() {
-    private lateinit var mainViewModel: MainViewModel
-
-    override fun onCreate() {
-        super.onCreate()
-        mainViewModel =
-            ViewModelProvider.AndroidViewModelFactory.getInstance(application).create(
-                MainViewModel::class.java,
-            )
-    }
-
     override fun onNewToken(token: String) {
         super.onNewToken(token)
-        mainViewModel.viewModelScope.launch {
-            mainViewModel.saveTokenFCM(token)
+
+        val entryPoint =
+            EntryPointAccessors.fromApplication(
+                applicationContext,
+                PushNotificationEntryPoint::class.java,
+            )
+        val saveTokenUseCase = entryPoint.getSaveTokenUseCase()
+
+        (applicationContext as MyApplication).applicationScope.launch {
+            saveTokenUseCase(token)
         }
-        Log.d("NEW TOKEN", token)
     }
 
     override fun onMessageReceived(message: RemoteMessage) {
         super.onMessageReceived(message)
-        // TODO(developer): Handle FCM messages here.
-        // Not getting messages here? See why this may be: https://goo.gl/39bRNJ
-        Log.d("FROM SERVIS", "From: ${message.from}")
-
-        // Check if message contains a data payload.
-        if (message.data.isNotEmpty()) {
-            Log.d("Message data payload SERVIS", "Message data payload: ${message.data}")
-
-/*            // Check if data needs to be processed by long running job
-            if (needsToBeScheduled()) {
-                // For long-running tasks (10 seconds or more) use WorkManager.
-                scheduleJob()
-            } else {
-                // Handle message within 10 seconds
-                handleNow()
-            }*/
-        }
-
-        // Check if message contains a notification payload.
         message.notification?.let {
-            Log.d("NOTIFICATION SERVICE", "Message Notification Body: ${it.body}")
-            Log.d("NOTIFICATION SERVICE2", "Message Notification title: ${it.title}")
             sendNotification(it.title ?: "", it.body ?: "")
         }
-
-        // Also if you intend on generating your own notifications as a result of a received FCM
-        // message, here is where that should be initiated. See sendNotification method below.
     }
 
     private fun sendNotification(
         title: String,
         body: String,
     ) {
-        val channelId = "Default"
-
-        val defaultSoundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
-
-        val notificationBuilder =
-            NotificationCompat
-                .Builder(this, channelId)
-                .setSmallIcon(R.drawable.ic_favorite_pressed)
-                .setContentTitle(title)
-                .setContentText(body)
-                .setAutoCancel(true)
-                .setSound(defaultSoundUri)
-
         val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
-        // Since android Oreo notification channel is needed.
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel =
-                NotificationChannel(
-                    channelId,
-                    "Channel human readable title",
-                    NotificationManager.IMPORTANCE_DEFAULT,
-                )
-            notificationManager.createNotificationChannel(channel)
+            createNotificationChannelIfNeeded(notificationManager)
         }
 
-        notificationManager.notify(0 /* ID of notification */, notificationBuilder.build())
+        val notification =
+            NotificationCompat
+                .Builder(this, CHANNEL_ID)
+                .apply {
+                    setSmallIcon(R.drawable.ic_favorite_pressed)
+                    setContentTitle(title)
+                    setContentText(body)
+                    setAutoCancel(true)
+                    setSound(RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION))
+                    setStyle(NotificationCompat.BigTextStyle().bigText(body))
+                }.build()
+
+        notificationManager.notify(NOTIFICATION_ID, notification)
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    private fun createNotificationChannelIfNeeded(notificationManager: NotificationManager) {
+        val channel =
+            NotificationChannel(
+                CHANNEL_ID,
+                CHANNEL_NAME,
+                NotificationManager.IMPORTANCE_DEFAULT,
+            )
+        notificationManager.createNotificationChannel(channel)
     }
 
     companion object {
-        private const val TAG = "PushNotificationService"
+        private const val CHANNEL_ID = "BulletinBoardChannel"
+        private const val CHANNEL_NAME = "New Ads"
+        private const val NOTIFICATION_ID = 0
     }
 }

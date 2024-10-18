@@ -12,7 +12,6 @@ import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.FirebaseFirestoreException
 import com.google.firebase.firestore.Query
-import com.google.firebase.firestore.SetOptions
 import com.google.firebase.firestore.getField
 import com.google.firebase.storage.StorageReference
 import jakarta.inject.Inject
@@ -29,6 +28,7 @@ class RemoteAdDataSource
         companion object {
             const val MAIN_COLLECTION = "main"
             const val USERS_COLLECTION = "users"
+            const val TOKEN_FIELD = "token"
             const val FAV_UIDS_FIELD = "favUids"
             const val VIEWS_COUNTER_FIELD = "viewsCounter"
             const val TIME_FIELD = "time"
@@ -50,11 +50,6 @@ class RemoteAdDataSource
             const val ADS_LIMIT = 2
         }
 
-        /**
-         * Вставляет новое объявление в Firestore.
-         *
-         * @param ad Объявление для вставки.
-         */
         suspend fun insertAd(ad: Ad): Result<Boolean> =
             try {
                 firestore
@@ -64,17 +59,9 @@ class RemoteAdDataSource
                     .await()
                 Result.Success(true)
             } catch (e: Exception) {
-                Timber.e(e, "Error insert announcement")
                 Result.Error(e)
             }
 
-        /**
-         * Удаляет объявление из Firestore.
-         *
-         * @param ad Объявление для удаления.
-         * @return Result.Success(true) если объявление было успешно удалено,
-         *         Result.Error(exception) в случае ошибки.
-         */
         suspend fun deleteAd(adKey: String): Result<Boolean> =
             try {
                 firestore
@@ -88,11 +75,6 @@ class RemoteAdDataSource
                 Result.Error(e)
             }
 
-        /**
-         * Увеличивает счетчик просмотров объявления на 1.
-         *
-         * @param ad Объявление, счетчик просмотров которого нужно увеличить.
-         */
         suspend fun adViewed(viewData: ViewData): Result<ViewData> =
             try {
                 val viewsCounter = viewData.viewsCounter + 1
@@ -104,17 +86,9 @@ class RemoteAdDataSource
                 val updatedViewData = viewData.copy(viewsCounter = viewsCounter)
                 Result.Success(updatedViewData)
             } catch (e: Exception) {
-                Timber.e(e, "Error updating views counter for ad: ${viewData.key}")
                 Result.Error(e)
             }
 
-        /**
-         * Обрабатывает нажатие на кнопку "Избранное" для объявления.
-         *
-         * @param ad Объявление, для которого нужно обработать нажатие.
-         * @return Result.Success(true) если операция была успешной,
-         *         Result.Error(exception) в случае ошибки.
-         */
         suspend fun onFavClick(favData: FavData): Result<FavData> =
             try {
                 auth.uid?.let { uid ->
@@ -143,16 +117,8 @@ class RemoteAdDataSource
                     Result.Success(updatedAd)
                 } ?: Result.Error(Exception("User not authenticated"))
             } catch (e: Exception) {
-                Timber.e(e, "Error updating favorites")
                 Result.Error(e)
             }
-
-        /**
-         * Возвращает Flow со списком объявлений текущего пользователя.
-         *
-         * @return Flow с Result.Success(list), содержащим список объявлений,
-         *         или Result.Error(exception) в случае ошибки.
-         */
 
         suspend fun getMyAds(
             key: DocumentSnapshot? = null,
@@ -181,12 +147,6 @@ class RemoteAdDataSource
                 Pair(emptyList(), null)
             }
 
-        /**
-         * Возвращает Flow со списком объявлений, добавленных в избранное текущим пользователем.
-         *
-         * @return Flow с Result.Success(list), содержащим список объявлений,
-         *         или Result.Error(exception) в случае ошибки.
-         */
         suspend fun getMyFavs(
             limit: Long = ADS_LIMIT.toLong(),
             startAfter: DocumentSnapshot? = null,
@@ -269,11 +229,6 @@ class RemoteAdDataSource
                 Result.Error(e)
             }
 
-        /**
-         * Получает все объявления из Firestore с учетом фильтров и пагинации.
-         *
-         * @param filter Фильтры для запроса.
-         */
         suspend fun getAllAds(
             filter: MutableMap<String, String>,
             key: DocumentSnapshot? = null,
@@ -302,13 +257,6 @@ class RemoteAdDataSource
                 }
             }
 
-        /**
-         * Создает запрос Firestore для получения объявлений с учетом фильтров.
-         *
-         * @param context Контекст приложения.
-         * @param filter Фильтры для запроса.
-         * @return Запрос Firestore.
-         */
         private fun buildAdsQuery(
             filter: MutableMap<String, String>,
             key: DocumentSnapshot? = null,
@@ -324,13 +272,6 @@ class RemoteAdDataSource
             return query
         }
 
-        /**
-         * Сортирует запрос по ключевым словам.
-         *
-         * @param query Исходный запрос.
-         * @param filter Фильтры для запроса.
-         * @return Отсортированный запрос.
-         */
         private fun sortByKeyWords(
             query: Query,
             filter: MutableMap<String, String>,
@@ -341,13 +282,6 @@ class RemoteAdDataSource
                 query
             }
 
-        /**
-         * Сортирует запрос по местоположению (страна, город, индекс).
-         *
-         * @param initialQuery Исходный запрос.
-         * @param filter Фильтры для запроса.
-         * @return Отсортированный запрос.
-         */
         private fun sortByLocation(
             initialQuery: Query,
             filter: MutableMap<String, String>,
@@ -365,13 +299,6 @@ class RemoteAdDataSource
             return query
         }
 
-        /**
-         * Сортирует запрос по категории.
-         *
-         * @param query Исходный запрос.
-         * @param filter Фильтры для запроса.
-         * @return Отсортированный запрос.
-         */
         private fun sortByCategory(
             query: Query,
             filter: MutableMap<String, String>,
@@ -382,13 +309,6 @@ class RemoteAdDataSource
                 query.whereEqualTo(CATEGORY_FIELD, filter[CATEGORY_FIELD])
             }
 
-        /**
-         * Сортирует запрос по наличию отправки.
-         *
-         * @param query Исходный запрос.
-         * @param filter Фильтры для запроса.
-         * @return Отсортированный запрос.
-         */
         private fun sortByWithSend(
             query: Query,
             filter: MutableMap<String, String>,
@@ -404,13 +324,6 @@ class RemoteAdDataSource
                 else -> query
             }
 
-        /**
-         * Сортирует запрос по цене.
-         *
-         * @param query Исходный запрос.
-         * @param filter Фильтры для запроса.
-         * @return Отсортированный запрос.
-         */
         private fun sortByPrice(
             query: Query,
             filter: MutableMap<String, String>,
@@ -430,13 +343,6 @@ class RemoteAdDataSource
                 query
             }
 
-        /**
-         * Сортирует запрос по порядку (дата, популярность, цена).
-         *
-         * @param initialQuery Исходный запрос.
-         * @param filter Фильтры для запроса.
-         * @return Отсортированный запрос.
-         */
         private fun sortByOrder(
             initialQuery: Query,
             filter: MutableMap<String, String>,
@@ -469,14 +375,6 @@ class RemoteAdDataSource
             return query
         }
 
-        /**
-         * Применяет пагинацию к запросу.
-         *
-         * @param initialQuery Исходный запрос.
-         * @param filter Фильтры для запроса.
-         * @param lastDocument Последний документ из предыдущей страницы.
-         * @return Запрос с пагинацией.
-         */
         private fun applyPagination(
             initialQuery: Query,
             filter: MutableMap<String, String>,
@@ -561,7 +459,6 @@ class RemoteAdDataSource
                         }.await()
                 Result.Success(downloadUri)
             } catch (e: Exception) {
-                Timber.e(e, "Error uploading image")
                 Result.Error(e)
             }
 
@@ -582,7 +479,6 @@ class RemoteAdDataSource
                         }.await()
                 Result.Success(downloadUri)
             } catch (e: Exception) {
-                Timber.e(e, "Error updating image")
                 Result.Error(e)
             }
 
@@ -592,29 +488,15 @@ class RemoteAdDataSource
                 imageRef.delete().await()
                 Result.Success(true)
             } catch (e: Exception) {
-                Timber.e(e, "Error deleting image")
                 Result.Error(e)
             }
 
-        fun saveToken(token: String) {
-            if (auth.uid != null) {
-                val userRef = firestore.collection(USERS_COLLECTION).document(auth.uid ?: "empty")
-                // Создаем HashMap с полем "token"
-                val tokenData =
-                    hashMapOf(
-                        "token" to token,
-                    )
-                // Обновляем данные пользователя в Firestore, добавляя поле "token"
-                userRef
-                    .set(
-                        tokenData,
-                        SetOptions.merge(),
-                    ) // Используем SetOptions.merge(), чтобы добавить поле без удаления существующих данных
-                    .addOnSuccessListener {
-                        println("Токен успешно сохранен для пользователя с ID: ${auth.uid}")
-                    }.addOnFailureListener { e ->
-                        println("Ошибка при сохранении токена для пользователя с ID: ${auth.uid}, ошибка: $e")
-                    }
+        suspend fun saveToken(token: String): Result<Boolean> =
+            try {
+                val userRef = firestore.collection(USERS_COLLECTION).document(auth.uid ?: "")
+                userRef.update(TOKEN_FIELD, token).await()
+                Result.Success(true)
+            } catch (e: Exception) {
+                Result.Error(e)
             }
-        }
     }

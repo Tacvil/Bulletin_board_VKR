@@ -1,8 +1,8 @@
-package com.example.bulletin_board.data.di
+package com.example.bulletin_board.di
 
 import androidx.fragment.app.FragmentActivity
-import com.example.bulletin_board.domain.SearchQueryHandler
-import com.example.bulletin_board.domain.SearchUiInitializer
+import com.example.bulletin_board.domain.search.SearchQueryHandler
+import com.example.bulletin_board.domain.search.SearchUiInitializer
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn

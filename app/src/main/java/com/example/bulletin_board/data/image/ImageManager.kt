@@ -2,7 +2,6 @@ package com.example.bulletin_board.data.image
 
 import android.graphics.Bitmap
 import android.net.Uri
-import android.widget.Toast
 import com.example.bulletin_board.data.image.ImageLoader.getBitmapFromUris
 import com.example.bulletin_board.domain.images.AddImageHandler
 import com.example.bulletin_board.domain.images.ChooseScaleTypeHandler
@@ -11,7 +10,6 @@ import com.example.bulletin_board.domain.images.GetSingleImagesHandler
 import com.example.bulletin_board.domain.images.ImageResizerHandler
 import com.example.bulletin_board.domain.images.ViewModelHandler
 import com.example.bulletin_board.domain.model.Ad
-import com.example.bulletin_board.domain.utils.ToastHelper
 import com.example.bulletin_board.presentation.adapter.ImageAdapter
 import jakarta.inject.Inject
 import java.io.ByteArrayOutputStream
@@ -19,7 +17,6 @@ import java.io.ByteArrayOutputStream
 class ImageManager
     @Inject
     constructor(
-        private val toastHelper: ToastHelper,
         private val viewModelHandler: ViewModelHandler,
         private val getMultiImagesProvider: GetMultiImagesProvider,
         private val imageResizer: ImageResizerHandler,
@@ -54,17 +51,12 @@ class ImageManager
             ad: Ad?,
             imageAdapter: ImageAdapter,
             imageIndex: Int,
-            onUploadComplete: () -> Unit,
+            onUploadComplete: (Boolean?) -> Unit,
         ) {
             if (imageIndex == 3) {
                 viewModelHandler.insertAd(ad!!) { result ->
-                    if (result) {
-                        toastHelper.showToast("Объявление отправлено на модерацию!", Toast.LENGTH_SHORT)
-                    } else {
-                        toastHelper.showToast("Ошибка отправки объявления!", Toast.LENGTH_SHORT)
-                    }
+                    onUploadComplete(result)
                 }
-                onUploadComplete()
                 return
             }
 
@@ -83,9 +75,9 @@ class ImageManager
             } else {
                 if (oldUrl.startsWith("http")) {
                     viewModelHandler.deleteImageByUrl(oldUrl)
-                    nextImage(ad, "empty", imageIndex, imageAdapter, onUploadComplete)
+                    nextImage(ad, "", imageIndex, imageAdapter, onUploadComplete)
                 } else {
-                    nextImage(ad, "empty", imageIndex, imageAdapter, onUploadComplete)
+                    nextImage(ad, "", imageIndex, imageAdapter, onUploadComplete)
                 }
             }
         }
@@ -95,7 +87,7 @@ class ImageManager
             uri: String,
             imageIndex: Int,
             imageAdapter: ImageAdapter,
-            onUploadComplete: () -> Unit,
+            onUploadComplete: (Boolean?) -> Unit,
         ) {
             setImageUriToAd(ad, uri, imageIndex)
             uploadImages(ad, imageAdapter, imageIndex + 1, onUploadComplete)
