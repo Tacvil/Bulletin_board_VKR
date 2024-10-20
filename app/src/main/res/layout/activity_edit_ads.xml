@@ -99,7 +99,7 @@
                     <com.google.android.material.textfield.TextInputLayout
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
-                        android:hint="@string/title" >
+                        android:hint="@string/edit_title" >
 
                         <com.google.android.material.textfield.TextInputEditText
                             android:id="@+id/text_view_title"
@@ -136,7 +136,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
                         android:layout_marginTop="5dp"
-                        android:hint="@string/select_country" >
+                        android:hint="@string/edit_select_country" >
 
                         <com.google.android.material.textfield.TextInputEditText
                             android:id="@+id/text_view_select_country"
@@ -150,7 +150,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
                         android:layout_marginTop="5dp"
-                        android:hint="@string/select_city" >
+                        android:hint="@string/edit_select_city" >
 
                         <com.google.android.material.textfield.TextInputEditText
                             android:id="@+id/text_view_select_city"
@@ -164,7 +164,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
                         android:layout_marginTop="5dp"
-                        android:hint="@string/index">
+                        android:hint="@string/edit_index">
 
                         <com.google.android.material.textfield.TextInputEditText
                             android:id="@+id/text_view_index"
@@ -178,7 +178,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
                         android:layout_marginTop="5dp"
-                        android:hint="@string/tel_numb">
+                        android:hint="@string/edit_phone_number">
 
                         <com.google.android.material.textfield.TextInputEditText
                             android:id="@+id/text_view_select_tel_numb"
@@ -247,7 +247,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
                         android:layout_marginBottom="5dp"
-                        android:hint="@string/select_category" >
+                        android:hint="@string/edit_select_category" >
 
                         <com.google.android.material.textfield.TextInputEditText
                             android:id="@+id/text_view_select_category"
@@ -282,7 +282,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
                         android:layout_marginTop="5dp"
-                        android:hint="@string/price">
+                        android:hint="@string/edit_price">
 
                         <com.google.android.material.textfield.TextInputEditText
                             android:id="@+id/text_view_price"
@@ -296,7 +296,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
                         android:layout_marginTop="5dp"
-                        android:hint="@string/description" >
+                        android:hint="@string/edit_description" >
 
                         <com.google.android.material.textfield.TextInputEditText
                             android:id="@+id/text_view_description"
@@ -313,7 +313,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_margin="5dp"
-                android:text="@string/publish" />
+                android:text="@string/edit_publish" />
 
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>

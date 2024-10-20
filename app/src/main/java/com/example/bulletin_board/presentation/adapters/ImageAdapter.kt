@@ -1,4 +1,4 @@
-package com.example.bulletin_board.presentation.adapter
+package com.example.bulletin_board.presentation.adapters
 
 import android.graphics.Bitmap
 import android.view.LayoutInflater
@@ -8,6 +8,7 @@ import android.widget.ImageView
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 import com.example.bulletin_board.R
+import com.example.bulletin_board.presentation.utils.ItemDiffCallback
 import jakarta.inject.Inject
 
 class ImageAdapter
@@ -44,28 +45,9 @@ class ImageAdapter
         override fun getItemCount(): Int = imageBitmapList.size
 
         fun update(newList: ArrayList<Bitmap>) {
-            val diffResult = DiffUtil.calculateDiff(BitmapDiffCallback(imageBitmapList, newList))
+            val diffResult = DiffUtil.calculateDiff(ItemDiffCallback(imageBitmapList, newList))
             imageBitmapList.clear()
             imageBitmapList.addAll(newList)
             diffResult.dispatchUpdatesTo(this)
         }
     }
-
-class BitmapDiffCallback(
-    private val oldList: List<Bitmap>,
-    private val newList: List<Bitmap>,
-) : DiffUtil.Callback() {
-    override fun getOldListSize(): Int = oldList.size
-
-    override fun getNewListSize(): Int = newList.size
-
-    override fun areItemsTheSame(
-        oldItemPosition: Int,
-        newItemPosition: Int,
-    ): Boolean = oldList[oldItemPosition] === newList[newItemPosition]
-
-    override fun areContentsTheSame(
-        oldItemPosition: Int,
-        newItemPosition: Int,
-    ): Boolean = oldList[oldItemPosition].sameAs(newList[newItemPosition])
-}

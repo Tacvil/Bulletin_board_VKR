@@ -1,7 +1,7 @@
 package com.example.bulletin_board.domain.utils
 
 import com.example.bulletin_board.R
-import com.example.bulletin_board.presentation.adapter.RcViewDialogSpinnerAdapter.Companion.SINGLE
+import com.example.bulletin_board.presentation.adapters.RcViewDialogSpinnerAdapter.Companion.SINGLE
 import jakarta.inject.Inject
 import java.util.Locale
 
@@ -18,7 +18,7 @@ class FilterCitiesHelper
             tempList.clear()
 
             if (searchText == null) {
-                tempList.add(Pair(stringProvider.getStringImpl(R.string.no_result), ""))
+                tempList.add(Pair(stringProvider.getStringImpl(R.string.edit_no_result), ""))
                 return tempList
             }
 
@@ -27,7 +27,7 @@ class FilterCitiesHelper
                     tempList.add(Pair(selection.first, SINGLE))
                 }
             }
-            if (tempList.size == 0) tempList.add(Pair(stringProvider.getStringImpl(R.string.no_result), ""))
+            if (tempList.size == 0) tempList.add(Pair(stringProvider.getStringImpl(R.string.edit_no_result), ""))
             return tempList
         }
     }

@@ -14,7 +14,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.bulletin_board.R
 import com.example.bulletin_board.domain.utils.FilterCitiesHelper
-import com.example.bulletin_board.presentation.adapter.RcViewDialogSpinnerAdapter
+import com.example.bulletin_board.presentation.adapters.RcViewDialogSpinnerAdapter
 import com.google.android.material.appbar.AppBarLayout
 import com.google.android.material.search.SearchView
 import com.google.android.material.search.SearchView.TransitionState

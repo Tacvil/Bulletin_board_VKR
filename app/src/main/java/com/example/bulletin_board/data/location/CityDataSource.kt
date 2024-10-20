@@ -2,7 +2,7 @@ package com.example.bulletin_board.data.location
 
 import android.content.Context
 import com.example.bulletin_board.domain.location.CityDataSourceProvider
-import com.example.bulletin_board.presentation.adapter.RcViewDialogSpinnerAdapter.Companion.SINGLE
+import com.example.bulletin_board.presentation.adapters.RcViewDialogSpinnerAdapter.Companion.SINGLE
 import dagger.hilt.android.qualifiers.ActivityContext
 import jakarta.inject.Inject
 import org.json.JSONObject

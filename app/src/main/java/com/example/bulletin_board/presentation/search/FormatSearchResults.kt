@@ -1,6 +1,6 @@
 package com.example.bulletin_board.presentation.search
 
-import com.example.bulletin_board.presentation.adapter.RcViewSearchSpinnerAdapter.Companion.SEARCH
+import com.example.bulletin_board.presentation.adapters.RcViewSearchSpinnerAdapter.Companion.SEARCH
 
 object FormatSearchResults {
     fun formatResult(

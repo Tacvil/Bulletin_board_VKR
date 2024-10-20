@@ -11,6 +11,7 @@ import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.viewModelScope
 import androidx.preference.PreferenceManager
 import androidx.viewpager2.widget.ViewPager2
@@ -24,13 +25,13 @@ import com.example.bulletin_board.domain.images.PixImagePickerActions
 import com.example.bulletin_board.domain.images.ViewModelHandler
 import com.example.bulletin_board.domain.location.CityDataSourceProvider
 import com.example.bulletin_board.domain.model.Ad
+import com.example.bulletin_board.domain.navigation.OnFragmentClosedListener
 import com.example.bulletin_board.domain.ui.adapters.ImageAdapterHandler
 import com.example.bulletin_board.domain.ui.adapters.OnItemDeleteListener
 import com.example.bulletin_board.domain.utils.ToastHelper
 import com.example.bulletin_board.pix.models.Options
-import com.example.bulletin_board.presentation.adapter.ImageAdapter
-import com.example.bulletin_board.presentation.adapter.RcViewDialogSpinnerAdapter
-import com.example.bulletin_board.presentation.common.FragmentCloseInterface
+import com.example.bulletin_board.presentation.adapters.ImageAdapter
+import com.example.bulletin_board.presentation.adapters.RcViewDialogSpinnerAdapter
 import com.example.bulletin_board.presentation.dialogs.DialogSpinnerHelper
 import com.example.bulletin_board.presentation.fragment.ImageListFragment
 import com.example.bulletin_board.presentation.theme.ThemeManager
@@ -47,7 +48,7 @@ class EditAdsActivity
     @Inject
     constructor() :
     AppCompatActivity(),
-        FragmentCloseInterface,
+        OnFragmentClosedListener,
         ToastHelper,
         ViewModelHandler,
         ContentResolverProvider,
@@ -111,13 +112,13 @@ class EditAdsActivity
 
                 textViewSelectCity.setOnClickListener {
                     val selectedCountry = textViewSelectCountry.text.toString()
-                    if (selectedCountry != getString(R.string.select_country)) {
+                    if (selectedCountry != getString(R.string.edit_select_country)) {
                         val cityList = cityDataSourceProvider.getAllCities(selectedCountry)
                         showSelectDialog(textViewSelectCity, cityList, true) { item ->
                             textViewSelectCity.setText(item)
                         }
                     } else {
-                        showToast(getString(R.string.no_country_selected), Toast.LENGTH_LONG)
+                        showToast(getString(R.string.edit_no_country_selected), Toast.LENGTH_LONG)
                     }
                 }
 
@@ -190,7 +191,7 @@ class EditAdsActivity
         private fun setupPublishButton() {
             binding.buttonPublish.setOnClickListener {
                 if (areRequiredFieldsEmpty()) {
-                    showToast(getString(R.string.required_fields_empty), Toast.LENGTH_SHORT)
+                    showToast(getString(R.string.edit_required_fields_empty), Toast.LENGTH_SHORT)
                     return@setOnClickListener
                 }
                 binding.progressLayout.visibility = View.VISIBLE
@@ -203,11 +204,11 @@ class EditAdsActivity
                     ) { result ->
                         if (result == true) {
                             showToast(
-                                getString(R.string.ad_submitted_for_moderation),
+                                getString(R.string.edit_submitted_for_moderation),
                                 Toast.LENGTH_SHORT,
                             )
                         } else {
-                            showToast(getString(R.string.ad_submission_error), Toast.LENGTH_SHORT)
+                            showToast(getString(R.string.edit_submission_error), Toast.LENGTH_SHORT)
                         }
                         binding.progressLayout.visibility = View.GONE
                         finish()
@@ -279,7 +280,9 @@ class EditAdsActivity
                 textViewPrice.setText(ad.price.toString())
                 textViewDescription.setText(ad.description)
                 updateImageCounter(0)
-                imageManager.fillImageArray(ad, imageAdapter)
+                lifecycleScope.launch {
+                    imageManager.fillImageArray(ad, imageAdapter)
+                }
             }
 
         private fun onClickSelectCategory() {

@@ -10,7 +10,7 @@ import com.example.bulletin_board.domain.images.GetSingleImagesHandler
 import com.example.bulletin_board.domain.images.ImageResizerHandler
 import com.example.bulletin_board.domain.images.ViewModelHandler
 import com.example.bulletin_board.domain.model.Ad
-import com.example.bulletin_board.presentation.adapter.ImageAdapter
+import com.example.bulletin_board.presentation.adapters.ImageAdapter
 import jakarta.inject.Inject
 import java.io.ByteArrayOutputStream
 

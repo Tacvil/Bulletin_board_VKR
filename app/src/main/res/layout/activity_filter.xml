@@ -49,7 +49,7 @@
                             android:layout_width="match_parent"
                             android:layout_height="match_parent"
                             android:layout_marginTop="5dp"
-                            android:hint="@string/select_country">
+                            android:hint="@string/edit_select_country">
 
                             <com.google.android.material.textfield.TextInputEditText
                                 android:id="@+id/text_view_select_country"
@@ -64,7 +64,7 @@
                             android:layout_width="match_parent"
                             android:layout_height="match_parent"
                             android:layout_marginTop="5dp"
-                            android:hint="@string/select_city">
+                            android:hint="@string/edit_select_city">
 
                             <com.google.android.material.textfield.TextInputEditText
                                 android:id="@+id/text_view_select_city"
@@ -78,7 +78,7 @@
                             android:layout_width="match_parent"
                             android:layout_height="match_parent"
                             android:layout_marginTop="5dp"
-                            android:hint="@string/index">
+                            android:hint="@string/edit_index">
 
                             <com.google.android.material.textfield.TextInputEditText
                                 android:id="@+id/text_view_index"
@@ -108,7 +108,7 @@
                         <com.google.android.material.textfield.TextInputLayout
                             android:layout_width="match_parent"
                             android:layout_height="match_parent"
-                            android:hint="@string/select_category">
+                            android:hint="@string/edit_select_category">
 
 
                         </com.google.android.material.textfield.TextInputLayout>

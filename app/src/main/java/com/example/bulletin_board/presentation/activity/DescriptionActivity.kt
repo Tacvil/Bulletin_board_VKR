@@ -16,7 +16,7 @@ import com.example.bulletin_board.data.image.ImageManager
 import com.example.bulletin_board.databinding.ActivityDescriptionBinding
 import com.example.bulletin_board.domain.model.Ad
 import com.example.bulletin_board.presentation.activity.MainActivity.Companion.INTENT_AD_DETAILS
-import com.example.bulletin_board.presentation.adapter.ImageAdapter
+import com.example.bulletin_board.presentation.adapters.ImageAdapter
 import com.example.bulletin_board.presentation.theme.ThemeManager
 import dagger.hilt.android.AndroidEntryPoint
 import jakarta.inject.Inject
@@ -39,13 +39,13 @@ class DescriptionActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         init()
-        binding.buttonTel.setOnClickListener { startPhoneCall() }
-        binding.buttonEmail.setOnClickListener { sendEmail() }
+        binding.callPhoneButton.setOnClickListener { startPhoneCall() }
+        binding.sendEmailButton.setOnClickListener { sendEmail() }
     }
 
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     private fun init() {
-        binding.viewPagerDescription.adapter = ImageAdapter()
+        binding.imageViewPager.adapter = adapter
         getAdFromIntent()
         setupImageCounter()
     }
@@ -65,15 +65,15 @@ class DescriptionActivity : AppCompatActivity() {
 
     private fun populateAdDetails(ad: Ad) =
         with(binding) {
-            textViewTitleD.setText(ad.title)
-            textViewDescription.setText(ad.description)
-            textViewEmailDescription.setText(ad.email)
-            textViewPriceDescription.setText(ad.price.toString())
-            textViewTelDescription.setText(ad.tel)
-            textViewCountryDescription.setText(ad.country)
-            textViewCityDescription.setText(ad.city)
-            textViewIndexDescription.setText(ad.index)
-            textViewWithSendDescription.setText(
+            adTitleEditText.setText(ad.title)
+            descriptionEditText.setText(ad.description)
+            emailEditText.setText(ad.email)
+            priceEditText.setText(ad.price.toString())
+            phoneEditText.setText(ad.tel)
+            countryEditText.setText(ad.country)
+            cityEditText.setText(ad.city)
+            indexEditText.setText(ad.index)
+            shippingInfoEditText.setText(
                 if (ad.withSend.toBoolean()) {
                     getString(R.string.with_send_yes)
                 } else {
@@ -107,13 +107,13 @@ class DescriptionActivity : AppCompatActivity() {
     }
 
     private fun setupImageCounter() {
-        binding.viewPagerDescription.registerOnPageChangeCallback(
+        binding.imageViewPager.registerOnPageChangeCallback(
             object :
                 ViewPager2.OnPageChangeCallback() {
                 override fun onPageSelected(position: Int) {
                     super.onPageSelected(position)
-                    val imageCounter = "${position + 1}/${binding.viewPagerDescription.adapter?.itemCount}"
-                    binding.textViewCounter.text = imageCounter
+                    val imageCounter = "${position + 1}/${binding.imageViewPager.adapter?.itemCount}"
+                    binding.imageCounterTextView.text = imageCounter
                 }
             },
         )

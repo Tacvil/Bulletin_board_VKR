@@ -7,7 +7,7 @@ import com.example.bulletin_board.domain.search.SearchQueryHandler
 import com.example.bulletin_board.domain.search.SearchQueryHandlerCallback
 import com.example.bulletin_board.domain.search.SearchUiInitializer
 import com.example.bulletin_board.domain.search.TextWatcherCallback
-import com.example.bulletin_board.presentation.adapter.RcViewSearchSpinnerAdapter
+import com.example.bulletin_board.presentation.adapters.RcViewSearchSpinnerAdapter
 import jakarta.inject.Inject
 
 class SearchManager

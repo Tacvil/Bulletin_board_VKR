@@ -9,4 +9,25 @@
     <dimen name="popup_offset_x">8dp</dimen>
     <dimen name="popup_offset_y">8dp</dimen>
     <dimen name="bottom_sheet_drag_handle_height">48dp</dimen>
+
+    <!-- Cards -->
+    <dimen name="card_margin">5dp</dimen>
+    <dimen name="card_corner_radius">5dp</dimen>
+    <dimen name="card_elevation">3dp</dimen>
+
+    <!-- ViewPager -->
+    <dimen name="viewpager_height">200dp</dimen>
+    <dimen name="viewpager_margin_top">5dp</dimen>
+
+    <!-- General padding -->
+    <dimen name="layout_padding">5dp</dimen>
+
+    <!-- LinearLayout-->
+    <dimen name="linear_layout_margin_top">3dp</dimen>
+
+    <!-- Buttons -->
+    <dimen name="button_margin_horizontal">3dp</dimen>
+    <dimen name="button_margin_top">3dp</dimen>
+    <dimen name="button_margin_end">3dp</dimen>
+    <dimen name="button_margin_start">3dp</dimen>
 </resources>

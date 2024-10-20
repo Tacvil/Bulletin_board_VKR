@@ -14,17 +14,17 @@
         <androidx.cardview.widget.CardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_margin="5dp"
-            app:cardCornerRadius="5dp"
-            app:cardElevation="3dp">
+            android:layout_margin="@dimen/card_margin"
+            app:cardCornerRadius="@dimen/card_corner_radius"
+            app:cardElevation="@dimen/card_elevation">
 
             <androidx.constraintlayout.widget.ConstraintLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:padding="5dp">
+                android:padding="@dimen/layout_padding">
 
                 <com.google.android.material.textfield.TextInputLayout
-                    android:id="@+id/textViewTitleLayout"
+                    android:id="@+id/ad_title_input_layout"
                     style="@style/Widget.MaterialComponents.TextInputLayout.FilledBox"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
@@ -33,7 +33,7 @@
                     app:layout_constraintTop_toTopOf="parent">
 
                     <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/textViewTitleD"
+                        android:id="@+id/ad_title_edit_text"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:clickable="false"
@@ -42,27 +42,28 @@
                         android:cursorVisible="false"
                         android:focusableInTouchMode="false"
                         android:gravity="center"
-                        android:hint="Название объявления"
-                        android:text="adasdadasddadasdasdadsadasdasdasdasdadsasdasdasd"/>
+                        android:hint="@string/desc_ad_title"
+                        android:text="@tools:sample/lorem/random"
+                        android:maxLines="1"/>
                 </com.google.android.material.textfield.TextInputLayout>
 
                 <androidx.viewpager2.widget.ViewPager2
-                    android:id="@+id/viewPagerDescription"
+                    android:id="@+id/image_view_pager"
                     android:layout_width="match_parent"
-                    android:layout_height="200dp"
-                    android:layout_marginTop="5dp"
+                    android:layout_height="@dimen/viewpager_height"
+                    android:layout_marginTop="@dimen/viewpager_margin_top"
                     app:layout_constraintBottom_toBottomOf="parent"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toBottomOf="@+id/textViewTitleLayout" />
+                    app:layout_constraintTop_toBottomOf="@+id/ad_title_input_layout" />
 
                 <TextView
-                    android:id="@+id/textViewCounter"
+                    android:id="@+id/image_counter_text_view"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="1/3"
-                    app:layout_constraintBottom_toBottomOf="@+id/viewPagerDescription"
-                    app:layout_constraintEnd_toEndOf="@+id/viewPagerDescription" />
+                    android:text="@string/counter_text"
+                    app:layout_constraintBottom_toBottomOf="@+id/image_view_pager"
+                    app:layout_constraintEnd_toEndOf="@+id/image_view_pager" />
 
             </androidx.constraintlayout.widget.ConstraintLayout>
 
@@ -71,22 +72,22 @@
         <androidx.cardview.widget.CardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_margin="5dp"
-            app:cardCornerRadius="5dp"
-            app:cardElevation="3dp">
+            android:layout_margin="@dimen/card_margin"
+            app:cardCornerRadius="@dimen/card_corner_radius"
+            app:cardElevation="@dimen/card_elevation">
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:orientation="vertical"
-                android:padding="5dp">
+                android:padding="@dimen/layout_padding">
 
                 <com.google.android.material.textfield.TextInputLayout
                     android:layout_width="match_parent"
                     android:layout_height="match_parent">
 
                     <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/textViewDescription"
+                        android:id="@+id/description_edit_text"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:clickable="false"
@@ -94,7 +95,7 @@
                         android:inputType="none"
                         android:cursorVisible="false"
                         android:focusableInTouchMode="false"
-                        android:hint="Описание" />
+                        android:hint="@string/desc_ad_description" />
                 </com.google.android.material.textfield.TextInputLayout>
 
                 <com.google.android.material.textfield.TextInputLayout
@@ -102,7 +103,7 @@
                     android:layout_height="match_parent">
 
                     <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/textViewPriceDescription"
+                        android:id="@+id/price_edit_text"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:clickable="false"
@@ -110,7 +111,7 @@
                         android:inputType="none"
                         android:cursorVisible="false"
                         android:focusableInTouchMode="false"
-                        android:hint="Цена" />
+                        android:hint="@string/desc_price" />
                 </com.google.android.material.textfield.TextInputLayout>
 
                 <com.google.android.material.textfield.TextInputLayout
@@ -118,7 +119,7 @@
                     android:layout_height="match_parent">
 
                     <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/textViewTelDescription"
+                        android:id="@+id/phone_edit_text"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:clickable="false"
@@ -126,7 +127,7 @@
                         android:inputType="none"
                         android:cursorVisible="false"
                         android:focusableInTouchMode="false"
-                        android:hint="Телефон" />
+                        android:hint="@string/desc_phone" />
                 </com.google.android.material.textfield.TextInputLayout>
 
                 <com.google.android.material.textfield.TextInputLayout
@@ -134,7 +135,7 @@
                     android:layout_height="match_parent">
 
                     <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/textViewEmailDescription"
+                        android:id="@+id/email_edit_text"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:clickable="false"
@@ -142,7 +143,7 @@
                         android:inputType="none"
                         android:cursorVisible="false"
                         android:focusableInTouchMode="false"
-                        android:hint="Email" />
+                        android:hint="@string/desc_email" />
                 </com.google.android.material.textfield.TextInputLayout>
 
                 <com.google.android.material.textfield.TextInputLayout
@@ -152,10 +153,10 @@
                     android:focusable="false">
 
                     <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/textViewCountryDescription"
+                        android:id="@+id/country_edit_text"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:hint="Страна" />
+                        android:hint="@string/desc_country" />
                 </com.google.android.material.textfield.TextInputLayout>
 
                 <com.google.android.material.textfield.TextInputLayout
@@ -163,7 +164,7 @@
                     android:layout_height="match_parent">
 
                     <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/textViewCityDescription"
+                        android:id="@+id/city_edit_text"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:clickable="false"
@@ -171,7 +172,7 @@
                         android:inputType="none"
                         android:cursorVisible="false"
                         android:focusableInTouchMode="false"
-                        android:hint="Город" />
+                        android:hint="@string/desc_city" />
                 </com.google.android.material.textfield.TextInputLayout>
 
                 <com.google.android.material.textfield.TextInputLayout
@@ -179,7 +180,7 @@
                     android:layout_height="match_parent">
 
                     <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/textViewIndexDescription"
+                        android:id="@+id/index_edit_text"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:clickable="false"
@@ -187,7 +188,7 @@
                         android:inputType="none"
                         android:cursorVisible="false"
                         android:focusableInTouchMode="false"
-                        android:hint="Индекс" />
+                        android:hint="@string/desc_index" />
                 </com.google.android.material.textfield.TextInputLayout>
 
                 <com.google.android.material.textfield.TextInputLayout
@@ -195,7 +196,7 @@
                     android:layout_height="match_parent">
 
                     <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/textViewWithSendDescription"
+                        android:id="@+id/shipping_info_edit_text"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:clickable="false"
@@ -203,31 +204,34 @@
                         android:inputType="none"
                         android:cursorVisible="false"
                         android:focusableInTouchMode="false"
-                        android:hint="С отправкой" />
+                        android:hint="@string/desc_with_shipping" />
                 </com.google.android.material.textfield.TextInputLayout>
 
                 <LinearLayout
+                    style="?android:attr/buttonBarStyle"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
-                    android:layout_marginTop="3dp"
+                    android:layout_marginTop="@dimen/linear_layout_margin_top"
                     android:orientation="horizontal"
                     android:weightSum="2">
 
                     <Button
-                        android:id="@+id/buttonEmail"
+                        android:id="@+id/send_email_button"
+                        style="@style/Widget.Material3.Button"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginEnd="3dp"
+                        android:layout_marginEnd="@dimen/button_margin_end"
                         android:layout_weight="1"
-                        android:text="Email" />
+                        android:text="@string/desc_email" />
 
                     <Button
-                        android:id="@+id/buttonTel"
+                        android:id="@+id/call_phone_button"
+                        style="@style/Widget.Material3.Button"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginStart="3dp"
+                        android:layout_marginStart="@dimen/button_margin_start"
                         android:layout_weight="1"
-                        android:text="Телефон" />
+                        android:text="@string/desc_phone" />
                 </LinearLayout>
 
             </LinearLayout>

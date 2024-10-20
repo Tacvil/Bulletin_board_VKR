@@ -19,7 +19,7 @@ import com.example.bulletin_board.data.datasource.RemoteAdDataSource.Companion.W
 import com.example.bulletin_board.data.utils.SortOption
 import com.example.bulletin_board.databinding.ActivityFilterBinding
 import com.example.bulletin_board.domain.location.CityDataSourceProvider
-import com.example.bulletin_board.presentation.adapter.RcViewDialogSpinnerAdapter
+import com.example.bulletin_board.presentation.adapters.RcViewDialogSpinnerAdapter
 import com.example.bulletin_board.presentation.dialogs.DialogSpinnerHelper
 import com.example.bulletin_board.presentation.viewModel.MainViewModel
 import com.google.android.material.bottomsheet.BottomSheetBehavior
@@ -130,12 +130,12 @@ class FilterFragment
 
                 textViewSelectCity.setOnClickListener {
                     val selectedCountry = textViewSelectCountry.text.toString()
-                    if (selectedCountry != getString(R.string.select_country)) {
+                    if (selectedCountry != getString(R.string.edit_select_country)) {
                         showSpinnerPopup(textViewSelectCity, cityDataSourceProvider.getAllCities(selectedCountry)) {
                             textViewSelectCity.setText(it)
                         }
                     } else {
-                        Toast.makeText(requireContext(), getString(R.string.no_country_selected), Toast.LENGTH_LONG).show()
+                        Toast.makeText(requireContext(), getString(R.string.edit_no_country_selected), Toast.LENGTH_LONG).show()
                     }
                 }
 
@@ -185,8 +185,8 @@ class FilterFragment
                 buttonClearFilter.setOnClickListener {
                     textViewSelectCountry.setText(EMPTY_STRING)
                     textViewSelectCity.setText(EMPTY_STRING)
-                    textViewSelectCountryLayout.hint = getString(R.string.select_country)
-                    textViewSelectCityLayout.hint = getString(R.string.select_city)
+                    textViewSelectCountryLayout.hint = getString(R.string.edit_select_country)
+                    textViewSelectCityLayout.hint = getString(R.string.edit_select_city)
                     textViewIndex.setText(EMPTY_STRING)
                     textViewSelectWithSend.setText(getString(R.string.no_matter))
                     textViewPriceFrom.setText(EMPTY_STRING)

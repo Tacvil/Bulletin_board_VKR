@@ -1,4 +1,4 @@
-package com.example.bulletin_board.presentation.adapter
+package com.example.bulletin_board.presentation.adapters
 
 import android.graphics.Bitmap
 import android.view.LayoutInflater
@@ -12,7 +12,10 @@ import com.bumptech.glide.request.RequestOptions
 import com.example.bulletin_board.databinding.SelectImageFragItemBinding
 import com.example.bulletin_board.domain.images.ImageLoader
 import com.example.bulletin_board.domain.ui.adapters.ImageAdapterHandler
+import com.example.bulletin_board.domain.ui.adapters.ItemTouchAdapter
 import com.example.bulletin_board.domain.ui.adapters.OnItemDeleteListener
+import com.example.bulletin_board.presentation.account.AccountView.Companion.CORNER_RADIUS
+import com.example.bulletin_board.presentation.utils.ItemDiffCallback
 import jakarta.inject.Inject
 import java.util.Collections
 
@@ -23,7 +26,7 @@ class SelectImageRvAdapter
         private val imageAdapterHandler: ImageAdapterHandler,
         private val imageLoader: ImageLoader,
     ) : RecyclerView.Adapter<SelectImageRvAdapter.ImageHolder>(),
-        ItemTouchMoveCallback.ItemTouchAdapter {
+        ItemTouchAdapter {
         val selectedImages = ArrayList<Bitmap>()
 
         class ImageHolder(
@@ -50,7 +53,7 @@ class SelectImageRvAdapter
                 val requestOptions =
                     RequestOptions().transform(
                         if (imageAdapterHandler.chooseScaleType(bitMap)) CenterCrop() else FitCenter(),
-                        RoundedCorners(20),
+                        RoundedCorners(CORNER_RADIUS),
                     )
                 imageLoader.loadImage(binding.imageViewContent, bitMap, requestOptions)
             }
@@ -82,7 +85,7 @@ class SelectImageRvAdapter
             if (needClear) selectedImages.clear()
             selectedImages.addAll(newList)
 
-            val diffResult = DiffUtil.calculateDiff(ImageDiffCallback(oldList, selectedImages))
+            val diffResult = DiffUtil.calculateDiff(ItemDiffCallback(oldList, selectedImages))
             diffResult.dispatchUpdatesTo(this)
         }
 
@@ -98,22 +101,3 @@ class SelectImageRvAdapter
             notifyItemRangeChanged(0, selectedImages.size)
         }
     }
-
-class ImageDiffCallback(
-    private val oldList: List<Bitmap>,
-    private val newList: List<Bitmap>,
-) : DiffUtil.Callback() {
-    override fun getOldListSize(): Int = oldList.size
-
-    override fun getNewListSize(): Int = newList.size
-
-    override fun areItemsTheSame(
-        oldItemPosition: Int,
-        newItemPosition: Int,
-    ): Boolean = oldList[oldItemPosition] == newList[newItemPosition]
-
-    override fun areContentsTheSame(
-        oldItemPosition: Int,
-        newItemPosition: Int,
-    ): Boolean = oldList[oldItemPosition] == newList[newItemPosition]
-}

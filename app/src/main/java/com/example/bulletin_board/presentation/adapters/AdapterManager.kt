@@ -1,4 +1,4 @@
-package com.example.bulletin_board.presentation.adapter
+package com.example.bulletin_board.presentation.adapters
 
 import android.content.Context
 import android.os.Parcelable

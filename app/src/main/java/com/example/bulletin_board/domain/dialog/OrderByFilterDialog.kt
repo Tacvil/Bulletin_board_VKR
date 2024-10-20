@@ -2,7 +2,7 @@ package com.example.bulletin_board.domain.dialog
 
 import android.view.View
 import android.widget.TextView
-import com.example.bulletin_board.presentation.adapter.RcViewDialogSpinnerAdapter
+import com.example.bulletin_board.presentation.adapters.RcViewDialogSpinnerAdapter
 
 interface OrderByFilterDialog {
     fun showSpinnerPopup(

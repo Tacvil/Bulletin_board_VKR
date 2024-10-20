@@ -9,8 +9,8 @@ import com.example.bulletin_board.domain.dialog.OrderByFilterDialog
 import com.example.bulletin_board.domain.filter.FilterReader
 import com.example.bulletin_board.domain.search.FilterUpdater
 import com.example.bulletin_board.domain.utils.ResourceStringProvider
-import com.example.bulletin_board.presentation.adapter.RcViewDialogSpinnerAdapter
-import com.example.bulletin_board.presentation.adapter.RcViewDialogSpinnerAdapter.Companion.SINGLE
+import com.example.bulletin_board.presentation.adapters.RcViewDialogSpinnerAdapter
+import com.example.bulletin_board.presentation.adapters.RcViewDialogSpinnerAdapter.Companion.SINGLE
 import com.google.android.material.textfield.TextInputEditText
 import jakarta.inject.Inject
 

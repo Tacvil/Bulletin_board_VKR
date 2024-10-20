@@ -16,9 +16,9 @@ import com.example.bulletin_board.R
 import com.example.bulletin_board.data.image.ImageManager
 import com.example.bulletin_board.data.image.PixImagePicker.Companion.MAX_IMAGE_COUNT
 import com.example.bulletin_board.databinding.ListImageFragBinding
-import com.example.bulletin_board.presentation.adapter.ItemTouchMoveCallback
-import com.example.bulletin_board.presentation.adapter.SelectImageRvAdapter
-import com.example.bulletin_board.presentation.common.FragmentCloseInterface
+import com.example.bulletin_board.domain.navigation.OnFragmentClosedListener
+import com.example.bulletin_board.presentation.adapters.ItemTouchMoveCallback
+import com.example.bulletin_board.presentation.adapters.SelectImageRvAdapter
 import com.example.bulletin_board.presentation.dialogs.ProgressDialog
 import dagger.hilt.android.AndroidEntryPoint
 import jakarta.inject.Inject
@@ -27,7 +27,7 @@ import jakarta.inject.Inject
 class ImageListFragment
     @Inject
     constructor(
-        private val onFragmentClosedListener: FragmentCloseInterface,
+        private val onFragmentClosedListener: OnFragmentClosedListener,
         private val imageManager: ImageManager,
         private val adapter: SelectImageRvAdapter,
     ) : BaseAdsFrag() {
@@ -44,7 +44,7 @@ class ImageListFragment
             savedInstanceState: Bundle?,
         ): View {
             _binding = ListImageFragBinding.inflate(inflater, container, false)
-            mBannerAdView = binding.adView
+            bannerAdView = binding.adView
             return binding.root
         }
 

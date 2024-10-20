@@ -1,6 +1,9 @@
 package com.example.bulletin_board.presentation.activity
 
+import android.app.Activity
+import android.content.Context
 import android.content.Intent
+import android.content.SharedPreferences
 import android.os.Build
 import android.os.Bundle
 import android.os.Parcelable
@@ -28,6 +31,7 @@ import com.example.bulletin_board.data.datasource.RemoteAdDataSource.Companion.C
 import com.example.bulletin_board.data.datasource.RemoteAdDataSource.Companion.KEYWORDS_FIELD
 import com.example.bulletin_board.data.datasource.RemoteAdDataSource.Companion.ORDER_BY_FIELD
 import com.example.bulletin_board.data.permissions.PermissionManager
+import com.example.bulletin_board.data.utils.LocaleManager
 import com.example.bulletin_board.data.utils.SortOption
 import com.example.bulletin_board.data.utils.SortUtils
 import com.example.bulletin_board.data.voice.VoiceRecognitionHandler
@@ -53,18 +57,20 @@ import com.example.bulletin_board.domain.ui.search.SearchUi
 import com.example.bulletin_board.domain.utils.ResourceStringProvider
 import com.example.bulletin_board.domain.utils.ToastHelper
 import com.example.bulletin_board.domain.voice.VoiceRecognitionListener
-import com.example.bulletin_board.presentation.adapter.AdapterManager
-import com.example.bulletin_board.presentation.adapter.AdsAdapter
-import com.example.bulletin_board.presentation.adapter.FavoriteAdsAdapter
-import com.example.bulletin_board.presentation.adapter.MyAdsAdapter
-import com.example.bulletin_board.presentation.adapter.PagingDataAdapterController
-import com.example.bulletin_board.presentation.adapter.RcViewDialogSpinnerAdapter
-import com.example.bulletin_board.presentation.adapter.RcViewSearchSpinnerAdapter
-import com.example.bulletin_board.presentation.dialogs.DialogConst
+import com.example.bulletin_board.presentation.activity.SettingsActivity.Companion.LANGUAGE_EN
+import com.example.bulletin_board.presentation.adapters.AdapterManager
+import com.example.bulletin_board.presentation.adapters.AdsAdapter
+import com.example.bulletin_board.presentation.adapters.FavoriteAdsAdapter
+import com.example.bulletin_board.presentation.adapters.MyAdsAdapter
+import com.example.bulletin_board.presentation.adapters.PagingDataAdapterController
+import com.example.bulletin_board.presentation.adapters.RcViewDialogSpinnerAdapter
+import com.example.bulletin_board.presentation.adapters.RcViewSearchSpinnerAdapter
 import com.example.bulletin_board.presentation.dialogs.DialogSpinnerHelper
 import com.example.bulletin_board.presentation.dialogs.OrderByFilterDialogManager
 import com.example.bulletin_board.presentation.fragment.FilterFragment
 import com.example.bulletin_board.presentation.fragment.SignInDialogFragment
+import com.example.bulletin_board.presentation.fragment.SignInDialogFragment.Companion.SIGN_IN_STATE
+import com.example.bulletin_board.presentation.fragment.SignInDialogFragment.Companion.SIGN_UP_STATE
 import com.example.bulletin_board.presentation.search.FormatSearchResults
 import com.example.bulletin_board.presentation.search.SearchManager
 import com.example.bulletin_board.presentation.theme.ThemeManager
@@ -77,6 +83,7 @@ import jakarta.inject.Inject
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
+import java.util.Locale
 
 @AndroidEntryPoint
 class MainActivity :
@@ -98,6 +105,7 @@ class MainActivity :
     AppStateListener {
     private val viewModel: MainViewModel by viewModels()
     private lateinit var binding: ActivityMainBinding
+    private lateinit var defPreferences: SharedPreferences
 
     @Inject
     lateinit var orderByFilterDialogManager: OrderByFilterDialogManager
@@ -133,6 +141,8 @@ class MainActivity :
     private val doubleClickThreshold = DOUBLE_CLICK_THRESHOLD
     private val scrollStateMap = mutableMapOf<Int, Parcelable?>()
     private var currentTabPosition: Int = 0
+    private var currentLanguage: String = Locale.getDefault().language
+    private var shouldSkipUpdateUi = false
 
     private val voiceRecognitionLauncher =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
@@ -144,9 +154,14 @@ class MainActivity :
             handleGoogleSignInResult(result)
         }
 
+    override fun attachBaseContext(newBase: Context) {
+        super.attachBaseContext(LocaleManager.setLocale(newBase))
+    }
+
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     override fun onCreate(savedInstanceState: Bundle?) {
-        setTheme(ThemeManager.getSelectedTheme(PreferenceManager.getDefaultSharedPreferences(this)))
+        defPreferences = PreferenceManager.getDefaultSharedPreferences(this)
+        setTheme(ThemeManager.getSelectedTheme(defPreferences))
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
@@ -159,6 +174,25 @@ class MainActivity :
         initUiComponents()
         setupSearchFunctionality()
         setupBottomMenu()
+    }
+
+    override fun onStart() {
+        if (!shouldSkipUpdateUi) accountManager.updateUi(accountManager.auth.currentUser)
+        super.onStart()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        binding.mainContent.bottomNavView.selectedItemId = R.id.id_home
+        binding.mainContent.filterButtonMain.setText(R.string.filters)
+        binding.mainContent.autoComplete.setText(
+            viewModel.getFilterValue(ORDER_BY_FIELD)?.let { sortUtils.getSortOptionText(it) },
+        )
+        val language = defPreferences.getString(SettingsActivity.LANGUAGE_KEY, LANGUAGE_EN)
+        language.takeIf { it != currentLanguage }?.let {
+            currentLanguage = it
+            recreate()
+        }
     }
 
     private fun initFilters() {
@@ -246,7 +280,7 @@ class MainActivity :
             val intent = Intent(this, EditAdsActivity::class.java)
             startActivity(intent)
         } else {
-            showToast(getString(R.string.need_auth_to_create_ad), Toast.LENGTH_SHORT)
+            showToast(getString(R.string.edit_need_auth), Toast.LENGTH_SHORT)
         }
     }
 
@@ -281,6 +315,15 @@ class MainActivity :
         )
     }
 
+    private val startSettingsForResult =
+        registerForActivityResult(
+            ActivityResultContracts.StartActivityForResult(),
+        ) { result ->
+            if (result.resultCode == Activity.RESULT_OK) {
+                shouldSkipUpdateUi = true
+            }
+        }
+
     private fun setupBottomMenu() {
         with(binding) {
             mainContent.bottomNavView.setOnItemSelectedListener { item ->
@@ -299,7 +342,10 @@ class MainActivity :
         lastClickTime = currentTime
 
         when (item.itemId) {
-            R.id.id_settings -> startActivity(Intent(this, SettingsActivity::class.java))
+            R.id.id_settings ->
+                startSettingsForResult.launch(
+                    Intent(this, SettingsActivity::class.java),
+                )
             R.id.id_my_ads -> switchAdapter(MY_ADAPTER)
             R.id.id_favs -> switchAdapter(FAV_ADAPTER)
             R.id.id_home -> switchAdapter(ADS_ADAPTER)
@@ -331,8 +377,8 @@ class MainActivity :
                     ),
                 )
 
-            R.id.id_sign_up -> showSignInDialog(DialogConst.SIGN_UP_STATE)
-            R.id.id_sign_in -> showSignInDialog(DialogConst.SIGN_IN_STATE)
+            R.id.id_sign_up -> showSignInDialog(SIGN_UP_STATE)
+            R.id.id_sign_in -> showSignInDialog(SIGN_IN_STATE)
             R.id.id_sign_out -> handleSignOut()
         }
     }
@@ -411,16 +457,6 @@ class MainActivity :
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         PermissionManager.handleRequestPermissionsResult(requestCode, grantResults, this)
-    }
-
-    override fun onResume() {
-        super.onResume()
-        binding.mainContent.bottomNavView.selectedItemId = R.id.id_home
-    }
-
-    override fun onStart() {
-        super.onStart()
-        accountManager.updateUi(accountManager.auth.currentUser)
     }
 
     companion object {

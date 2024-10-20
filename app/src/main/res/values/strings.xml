@@ -36,22 +36,34 @@
     <string name="enter_to_google">У Вас уже есть аккаунт с этим Email адресом, войдите по нему.</string>
 
     <!-- Edit Activity -->
-    <string name="select_country">*Выберите страну</string>
-    <string name="select_city">*Выберите город</string>
-    <string name="index">*Индекс</string>
-    <string name="tel_numb">*Номер телефона</string>
-    <string name="select_category">*Выберите категорию</string>
-    <string name="price">*Укажите цену</string>
-    <string name="description">*Описание</string>
-    <string name="with_send">С отправкой</string>
-    <string name="publish">Опубликовать</string>
-    <string name="title">*Название объявления</string>
-    <string name="no_country_selected">Страна не выбрана</string>
-    <string name="required_fields_empty">Все обязательные поля должны быть заполнены!</string>
-    <string name="need_auth_to_create_ad">Чтобы создавать объявления, нужно авторизоваться</string>
-    <string name="ad_submitted_for_moderation">Объявление отправлено на модерацию!</string>
-    <string name="ad_submission_error">Ошибка отправки объявления!</string>
-    <string name="no_result">Нет результата</string>
+    <string name="edit_select_country">*Выберите страну</string>
+    <string name="edit_select_city">*Выберите город</string>
+    <string name="edit_index">*Индекс</string>
+    <string name="edit_phone_number">*Номер телефона</string>
+    <string name="edit_select_category">*Выберите категорию</string>
+    <string name="edit_price">*Укажите цену</string>
+    <string name="edit_description">*Описание</string>
+    <string name="edit_with_shipping">С отправкой</string>
+    <string name="edit_publish">Опубликовать</string>
+    <string name="edit_title">*Название объявления</string>
+    <string name="edit_no_country_selected">Страна не выбрана</string>
+    <string name="edit_required_fields_empty">Все обязательные поля должны быть заполнены!</string>
+    <string name="edit_need_auth">Чтобы создавать объявления, нужно авторизоваться</string>
+    <string name="edit_submitted_for_moderation">Объявление отправлено на модерацию!</string>
+    <string name="edit_submission_error">Ошибка отправки объявления!</string>
+    <string name="edit_no_result">Нет результата</string>
+
+    <!-- Description Activity -->
+    <string name="desc_ad_title">Название объявления</string>
+    <string name="desc_ad_description">Описание</string>
+    <string name="desc_price">Цена</string>
+    <string name="desc_phone">Телефон</string>
+    <string name="desc_email">Email</string>
+    <string name="desc_country">Страна</string>
+    <string name="desc_city">Город</string>
+    <string name="desc_index">Индекс</string>
+    <string name="desc_with_shipping">С отправкой</string>
+    <string name="counter_text">1/3</string>
 
     <!-- Filter Activity -->
     <string name="hint_from">от</string>

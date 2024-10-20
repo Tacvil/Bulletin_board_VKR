@@ -1,7 +1,8 @@
-package com.example.bulletin_board.presentation.adapter
+package com.example.bulletin_board.presentation.adapters
 
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.RecyclerView
+import com.example.bulletin_board.domain.ui.adapters.ItemTouchAdapter
 
 class ItemTouchMoveCallback(
     val adapter: ItemTouchAdapter,
@@ -11,7 +12,7 @@ class ItemTouchMoveCallback(
         viewHolder: RecyclerView.ViewHolder,
     ): Int {
         val dragFlag = ItemTouchHelper.UP or ItemTouchHelper.DOWN
-        return makeMovementFlags(dragFlag, 0)
+        return makeMovementFlags(dragFlag, SWIPE_FLAGS)
     }
 
     override fun onMove(
@@ -33,7 +34,7 @@ class ItemTouchMoveCallback(
         viewHolder: RecyclerView.ViewHolder?,
         actionState: Int,
     ) {
-        if (actionState != ItemTouchHelper.ACTION_STATE_IDLE)viewHolder?.itemView?.alpha = 0.5f
+        if (actionState != ItemTouchHelper.ACTION_STATE_IDLE)viewHolder?.itemView?.alpha = ALPHA_SELECTED
         super.onSelectedChanged(viewHolder, actionState)
     }
 
@@ -41,17 +42,14 @@ class ItemTouchMoveCallback(
         recyclerView: RecyclerView,
         viewHolder: RecyclerView.ViewHolder,
     ) {
-        viewHolder.itemView.alpha = 1.0f
+        viewHolder.itemView.alpha = ALPHA_DEFAULT
         adapter.onClear()
         super.clearView(recyclerView, viewHolder)
     }
 
-    interface ItemTouchAdapter {
-        fun onMove(
-            startPos: Int,
-            targetPos: Int,
-        )
-
-        fun onClear()
+    companion object {
+        private const val ALPHA_SELECTED = 0.5f
+        private const val ALPHA_DEFAULT = 1.0f
+        private const val SWIPE_FLAGS = 0
     }
 }

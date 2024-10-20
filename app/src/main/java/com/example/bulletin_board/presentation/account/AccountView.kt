@@ -44,9 +44,13 @@ class AccountView
                     imageLoader.loadImage(
                         imageViewAccount,
                         user.photoUrl,
-                        RequestOptions().transform(RoundedCorners(20)),
+                        RequestOptions().transform(RoundedCorners(CORNER_RADIUS)),
                     )
                 }
             }
+        }
+
+        companion object {
+            const val CORNER_RADIUS = 20
         }
     }

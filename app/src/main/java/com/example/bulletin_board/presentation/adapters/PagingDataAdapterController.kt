@@ -1,4 +1,4 @@
-package com.example.bulletin_board.presentation.adapter
+package com.example.bulletin_board.presentation.adapters
 
 import androidx.paging.LoadState
 import androidx.paging.PagingData
@@ -27,7 +27,7 @@ object PagingDataAdapterController {
         }
         dataFlow
             .catch { e ->
-                Timber.tag("MainActivity").e(e, "Error loading ads data")
+                Timber.e(e, "Error loading ads data")
             }.collectLatest { pagingData ->
                 adapter.submitData(pagingData)
             }

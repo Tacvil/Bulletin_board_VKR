@@ -13,7 +13,6 @@ import com.example.bulletin_board.databinding.SignDialogBinding
 import com.example.bulletin_board.domain.auth.AuthProvider
 import com.example.bulletin_board.domain.auth.SignUpInHandler
 import com.example.bulletin_board.domain.utils.ToastHelper
-import com.example.bulletin_board.presentation.dialogs.DialogConst
 
 class SignInDialogFragment(
     private val googleSignInLauncher: ActivityResultLauncher<Intent>,
@@ -27,29 +26,53 @@ class SignInDialogFragment(
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
         val builder = AlertDialog.Builder(requireContext())
-
         _binding = SignDialogBinding.inflate(layoutInflater)
         builder.setView(binding.root)
 
-        setDialogState(index)
-
-        binding.buttonSignUpIn.setOnClickListener {
-            setOnClickSignUpIn(index)
-        }
-
-        binding.buttonForgetPassword.setOnClickListener {
-            setOnClickResetPassword()
-        }
-
-        binding.buttonGoogleSigIn.setOnClickListener {
-            signUpInHandler.signInWithGoogleImpl(googleSignInLauncher)
-            dismiss()
-        }
+        setupDialogState()
+        setupClickListeners()
 
         return builder.create()
     }
 
-    private fun setOnClickResetPassword() {
+    override fun onDestroyView() {
+        super.onDestroyView()
+        _binding = null
+    }
+
+    private fun setupDialogState() {
+        if (index == SIGN_UP_STATE) {
+            binding.textViewSignTitle.text = getString(R.string.ac_sign_up)
+            binding.buttonSignUpIn.text = getString(R.string.sign_up_action)
+        } else {
+            binding.textViewSignTitle.text = getString(R.string.ac_sign_in)
+            binding.buttonSignUpIn.text = getString(R.string.sign_in_action)
+            binding.buttonForgetPassword.visibility = View.VISIBLE
+        }
+    }
+
+    private fun setupClickListeners() {
+        binding.buttonSignUpIn.setOnClickListener { handleSignUpInClick() }
+        binding.buttonForgetPassword.setOnClickListener { handleResetPasswordClick() }
+        binding.buttonGoogleSigIn.setOnClickListener { handleGoogleSignInClick() }
+    }
+
+    private fun handleSignUpInClick() {
+        if (index == SIGN_UP_STATE) {
+            signUpInHandler.signUpWithEmailImpl(
+                binding.editSignEmail.text.toString(),
+                binding.editSignPassword.text.toString(),
+            )
+        } else {
+            signUpInHandler.signInWithEmailImpl(
+                binding.editSignEmail.text.toString(),
+                binding.editSignPassword.text.toString(),
+            )
+        }
+        dismiss()
+    }
+
+    private fun handleResetPasswordClick() {
         if (binding.editSignEmail.text?.isNotEmpty() == true) {
             authProvider.auth
                 .sendPasswordResetEmail(binding.editSignEmail.text.toString())
@@ -64,34 +87,13 @@ class SignInDialogFragment(
         }
     }
 
-    private fun setOnClickSignUpIn(index: Int) {
-        if (index == DialogConst.SIGN_UP_STATE) {
-            signUpInHandler.signUpWithEmailImpl(
-                binding.editSignEmail.text.toString(),
-                binding.editSignPassword.text.toString(),
-            )
-        } else {
-            signUpInHandler.signInWithEmailImpl(
-                binding.editSignEmail.text.toString(),
-                binding.editSignPassword.text.toString(),
-            )
-        }
+    private fun handleGoogleSignInClick() {
+        signUpInHandler.signInWithGoogleImpl(googleSignInLauncher)
         dismiss()
     }
 
-    private fun setDialogState(index: Int) {
-        if (index == DialogConst.SIGN_UP_STATE) {
-            binding.textViewSignTitle.text = getString(R.string.ac_sign_up)
-            binding.buttonSignUpIn.text = getString(R.string.sign_up_action)
-        } else {
-            binding.textViewSignTitle.text = getString(R.string.ac_sign_in)
-            binding.buttonSignUpIn.text = getString(R.string.sign_in_action)
-            binding.buttonForgetPassword.visibility = View.VISIBLE
-        }
-    }
-
-    override fun onDestroyView() {
-        super.onDestroyView()
-        _binding = null
+    companion object {
+        const val SIGN_UP_STATE = 0
+        const val SIGN_IN_STATE = 1
     }
 }

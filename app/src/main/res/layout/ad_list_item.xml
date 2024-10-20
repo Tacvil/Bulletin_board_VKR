@@ -34,7 +34,7 @@
                 android:padding="5dp">
 
                 <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/textViewTitleD"
+                    android:id="@+id/ad_title_edit_text"
                     android:inputType="textNoSuggestions"
                     app:errorEnabled="false"
                     android:layout_width="match_parent"

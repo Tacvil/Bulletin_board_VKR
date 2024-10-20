@@ -1,4 +1,4 @@
-package com.example.bulletin_board.presentation.adapter
+package com.example.bulletin_board.presentation.adapters
 
 import android.view.LayoutInflater
 import android.view.View
@@ -8,6 +8,7 @@ import android.widget.TextView
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 import com.example.bulletin_board.R
+import com.example.bulletin_board.presentation.utils.ItemDiffCallback
 
 class RcViewSearchSpinnerAdapter(
     var onItemSelectedListener: OnItemSelectedListener? = null,
@@ -65,7 +66,7 @@ class RcViewSearchSpinnerAdapter(
     }
 
     fun updateItems(newList: List<Pair<String, String>>) {
-        val diffCallback = SearchSpinnerDiffUtilCallback(spinnerItems, newList)
+        val diffCallback = ItemDiffCallback(spinnerItems, newList)
         val diffResult = DiffUtil.calculateDiff(diffCallback)
         spinnerItems.clear()
         spinnerItems.addAll(newList)
@@ -73,7 +74,7 @@ class RcViewSearchSpinnerAdapter(
     }
 
     fun clearItems() {
-        val diffCallback = SearchSpinnerDiffUtilCallback(spinnerItems, emptyList())
+        val diffCallback = ItemDiffCallback(spinnerItems, emptyList())
         val diffResult = DiffUtil.calculateDiff(diffCallback)
         spinnerItems.clear()
         diffResult.dispatchUpdatesTo(this)
@@ -82,23 +83,4 @@ class RcViewSearchSpinnerAdapter(
     companion object {
         const val SEARCH = "search"
     }
-}
-
-class SearchSpinnerDiffUtilCallback(
-    private val oldList: List<Pair<String, String>>,
-    private val newList: List<Pair<String, String>>,
-) : DiffUtil.Callback() {
-    override fun getOldListSize(): Int = oldList.size
-
-    override fun getNewListSize(): Int = newList.size
-
-    override fun areItemsTheSame(
-        oldItemPosition: Int,
-        newItemPosition: Int,
-    ): Boolean = oldList[oldItemPosition].first == newList[newItemPosition].first
-
-    override fun areContentsTheSame(
-        oldItemPosition: Int,
-        newItemPosition: Int,
-    ): Boolean = oldList[oldItemPosition] == newList[newItemPosition]
 }
