@@ -44,10 +44,7 @@ object PagingDataAdapterController {
                     itemCount: Int,
                 ) {
                     super.onItemRangeInserted(positionStart, itemCount)
-                    EmptyStateView.updateAnimationVisibility(
-                        adapter.itemCount,
-                        adapterView,
-                    )
+                    EmptyStateView.updateAnimationVisibility(adapterView)
                 }
 
                 override fun onItemRangeRemoved(
@@ -55,21 +52,15 @@ object PagingDataAdapterController {
                     itemCount: Int,
                 ) {
                     super.onItemRangeRemoved(positionStart, itemCount)
-                    EmptyStateView.updateAnimationVisibility(
-                        adapter.itemCount,
-                        adapterView,
-                    )
+                    EmptyStateView.updateAnimationVisibility(adapterView)
                 }
 
                 override fun onChanged() {
                     super.onChanged()
-                    EmptyStateView.updateAnimationVisibility(
-                        adapter.itemCount,
-                        adapterView,
-                    )
+                    EmptyStateView.updateAnimationVisibility(adapterView)
                 }
             },
         )
-        EmptyStateView.updateAnimationVisibility(adapter.itemCount, adapterView)
+        EmptyStateView.updateAnimationVisibility(adapterView)
     }
 }

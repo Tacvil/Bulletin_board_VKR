@@ -5,9 +5,9 @@
     android:id="@+id/spinner_card_view"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_margin="10dp"
+    android:layout_margin="@dimen/spinner_card_margin"
     app:cardBackgroundColor="?attr/colorSurfaceVariant"
-    app:cardCornerRadius="10dp"
+    app:cardCornerRadius="@dimen/spinner_card_corner_radius"
     app:cardElevation="0dp">
 
     <androidx.coordinatorlayout.widget.CoordinatorLayout
@@ -25,7 +25,7 @@
                 android:id="@+id/search_bar"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="Enter" />
+                android:hint="@string/search_hint" />
         </com.google.android.material.appbar.AppBarLayout>
 
         <LinearLayout
@@ -38,7 +38,7 @@
                 android:id="@+id/recycler_view_spinner_items"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                tools:listitem="@layout/spinner_list_item" />
+                tools:listitem="@layout/item_spinner_list" />
         </LinearLayout>
 
         <com.google.android.material.search.SearchView
@@ -53,7 +53,7 @@
                 android:id="@+id/recycler_view_spinner_search_results"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                tools:listitem="@layout/spinner_list_item" />
+                tools:listitem="@layout/item_spinner_list" />
         </com.google.android.material.search.SearchView>
 
     </androidx.coordinatorlayout.widget.CoordinatorLayout>

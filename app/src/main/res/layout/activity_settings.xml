@@ -2,14 +2,14 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/placeHolder1"
+    android:id="@+id/settings_root_layout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    tools:context=".presentation.activity.SettingsActivity">
+    tools:context=".presentation.activities.SettingsActivity">
 
     <com.google.android.material.appbar.MaterialToolbar
-        android:id="@+id/toolbar2"
+        android:id="@+id/settings_toolbar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:background="?attr/colorPrimary"
@@ -18,7 +18,7 @@
         android:minHeight="?attr/actionBarSize" />
 
     <FrameLayout
-        android:id="@+id/place_holder"
+        android:id="@+id/settings_fragment_container"
         android:layout_width="match_parent"
         android:layout_height="match_parent">
     </FrameLayout>

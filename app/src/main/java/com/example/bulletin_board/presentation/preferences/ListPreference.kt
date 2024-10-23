@@ -2,78 +2,53 @@ package com.example.bulletin_board.presentation.preferences
 
 import android.content.Context
 import android.util.AttributeSet
-import android.util.Log
 import androidx.preference.Preference
 import androidx.preference.PreferenceManager
 import com.example.bulletin_board.R
+import com.example.bulletin_board.presentation.activities.SettingsActivity.Companion.LANGUAGE_EN
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 
 class ListPreference(
-    context: Context?,
+    context: Context,
     attrs: AttributeSet?,
-) : Preference(context!!, attrs) {
-    private val sharedPreferences = context?.let { PreferenceManager.getDefaultSharedPreferences(it) }
-    private var entryValues: Array<String>? = null
-    private var entries: Array<String>? = null
+) : Preference(context, attrs) {
+    private val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context)
+    private lateinit var entryValues: Array<String>
+    private lateinit var entries: Array<String>
 
     init {
-        val typedArray = context?.obtainStyledAttributes(attrs, R.styleable.CustomListPreference)
+        context.obtainStyledAttributes(attrs, R.styleable.CustomListPreference).apply {
+            val valuesArrayResId = getResourceId(R.styleable.CustomListPreference_android_entryValues, 0)
+            val entriesArrayResId = getResourceId(R.styleable.CustomListPreference_android_entries, 0)
 
-        // Установим начальное значение в summary
-        val defaultValueFromXml = typedArray?.getString(R.styleable.CustomListPreference_android_defaultValue)
-        Log.d("LOOOOG1", "defaultValueFromXml = $defaultValueFromXml")
-
-        val selectedValue = sharedPreferences?.getString(key, defaultValueFromXml)
-        Log.d("LOOOOG2", "selectedValue = $selectedValue")
-
-        summary = selectedValue
-
-        // Получаем ресурсы для массивов
-        val valuesArrayResId = typedArray?.getResourceId(R.styleable.CustomListPreference_android_entryValues, 0)
-        val entriesArrayResId = typedArray?.getResourceId(R.styleable.CustomListPreference_android_entries, 0)
-
-// Устанавливаем значения массивов
-        if (context != null) {
-            valuesArrayResId?.let { context.resources.getStringArray(it) }?.let {
-                entriesArrayResId?.let { context.resources.getStringArray(it) }?.let { it1 ->
-                    setEntryValuesAndEntries(
-                        it,
-                        it1,
-                    )
-                }
+            if (valuesArrayResId != 0 && entriesArrayResId != 0) {
+                entryValues = context.resources.getStringArray(valuesArrayResId)
+                entries = context.resources.getStringArray(entriesArrayResId)
+            } else {
+                recycle()
+                return@apply
             }
+
+            val savedLanguage = sharedPreferences.getString(key, LANGUAGE_EN)
+            val defaultIndex = entryValues.indexOf(savedLanguage)
+            summary = entries.getOrNull(defaultIndex) ?: getString(R.styleable.CustomListPreference_android_defaultValue)
+
+            recycle()
         }
 
-        typedArray?.recycle()
-
         setOnPreferenceClickListener {
-            showCustomDialog(selectedValue)
+            showCustomDialog(summary.toString())
             true
         }
     }
 
-    fun setEntryValuesAndEntries(
-        entryValues: Array<String>,
-        entries: Array<String>,
-    ) {
-        this.entryValues = entryValues
-        this.entries = entries
-    }
-
-    private fun showCustomDialog(selectedValue: String?) {
-        Log.d("LOOOOG", "entries = ${entries?.contentToString()}")
-        Log.d("LOOOOG", "entryValues = ${entryValues?.contentToString()}")
-
-        // val selectedValue = sharedPreferences?.getString(key, "defaultValue") ?: "defaultValue"
-
-        val selectedIndex = entryValues?.indexOf(selectedValue) ?: -1
-
-        Log.d("LOOOOG", "selectedIndex = $selectedIndex")
+    private fun showCustomDialog(selectedValue: String) {
+        val selectedIndex = entries.indexOf(selectedValue)
 
         MaterialAlertDialogBuilder(context)
             .setTitle(title)
             .setSingleChoiceItems(entries, selectedIndex) { dialog, which ->
-                val newValue = entryValues?.get(which)
+                val newValue = entries[which]
                 if (callChangeListener(newValue)) {
                     setValue(newValue)
                 }
@@ -83,10 +58,10 @@ class ListPreference(
     }
 
     private fun setValue(value: String?) {
-        Log.d("LOOOOG5", "value = $value")
-        sharedPreferences?.edit()?.putString(key, value)?.apply()
+        val index = entries.indexOf(value)
+        val newValue = if (index != -1) entryValues[index] else null
 
-        // Обновляем summary при изменении значения
+        sharedPreferences.edit().putString(key, newValue).apply()
         summary = value
     }
 }

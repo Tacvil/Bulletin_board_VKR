@@ -9,7 +9,7 @@ import com.bumptech.glide.load.resource.bitmap.CenterCrop
 import com.bumptech.glide.load.resource.bitmap.FitCenter
 import com.bumptech.glide.load.resource.bitmap.RoundedCorners
 import com.bumptech.glide.request.RequestOptions
-import com.example.bulletin_board.databinding.SelectImageFragItemBinding
+import com.example.bulletin_board.databinding.ItemSelectImageBinding
 import com.example.bulletin_board.domain.images.ImageLoader
 import com.example.bulletin_board.domain.ui.adapters.ImageAdapterHandler
 import com.example.bulletin_board.domain.ui.adapters.ItemTouchAdapter
@@ -30,32 +30,32 @@ class SelectImageRvAdapter
         val selectedImages = ArrayList<Bitmap>()
 
         class ImageHolder(
-            private val binding: SelectImageFragItemBinding,
+            private val binding: ItemSelectImageBinding,
             val adapter: SelectImageRvAdapter,
             private val imageAdapterHandler: ImageAdapterHandler,
             private val imageLoader: ImageLoader,
             private val onItemDeleteListener: OnItemDeleteListener,
         ) : RecyclerView.ViewHolder(binding.root) {
             fun setData(bitMap: Bitmap) {
-                binding.imageButtonEditImage.setOnClickListener {
+                binding.imageButtonItemEdit.setOnClickListener {
                     imageAdapterHandler.getSingleImages(absoluteAdapterPosition)
                 }
 
-                binding.imageButtonDelete.setOnClickListener {
+                binding.imageButtonItemDelete.setOnClickListener {
                     adapter.selectedImages.removeAt(absoluteAdapterPosition)
                     adapter.notifyItemRemoved(absoluteAdapterPosition)
                     adapter.notifyItemRangeChanged(absoluteAdapterPosition, adapter.selectedImages.size - absoluteAdapterPosition)
                     onItemDeleteListener.onItemDelete()
                 }
 
-                binding.textViewTitle.text = imageAdapterHandler.getTitle(absoluteAdapterPosition)
+                binding.textViewItemTitle.text = imageAdapterHandler.getTitle(absoluteAdapterPosition)
 
                 val requestOptions =
                     RequestOptions().transform(
                         if (imageAdapterHandler.chooseScaleType(bitMap)) CenterCrop() else FitCenter(),
                         RoundedCorners(CORNER_RADIUS),
                     )
-                imageLoader.loadImage(binding.imageViewContent, bitMap, requestOptions)
+                imageLoader.loadImage(binding.imageViewItemImage, bitMap, requestOptions)
             }
         }
 
@@ -64,7 +64,7 @@ class SelectImageRvAdapter
             viewType: Int,
         ): ImageHolder {
             val binding =
-                SelectImageFragItemBinding.inflate(LayoutInflater.from(parent.context), parent, false)
+                ItemSelectImageBinding.inflate(LayoutInflater.from(parent.context), parent, false)
             return ImageHolder(binding, this, imageAdapterHandler, imageLoader, onItemDeleteListener)
         }
 

@@ -11,10 +11,16 @@ import com.example.bulletin_board.presentation.utils.EmptyStateView
 object AdapterManager {
     private val adapters: MutableMap<Int, PagingDataAdapter<*, *>> = mutableMapOf()
 
+    private var currentAdapterId: Int = 0 // Initialize with default value
+
     fun registerAdapters(vararg adapterPairs: Pair<Int, PagingDataAdapter<*, *>>) {
         for (adapterPair in adapterPairs) {
             adapters[adapterPair.first] = adapterPair.second
         }
+    }
+
+    fun getCurrentAdapter(): PagingDataAdapter<*, *>? {
+        return adapters[currentAdapterId]
     }
 
     fun initRecyclerView(
@@ -39,9 +45,9 @@ object AdapterManager {
         tabPosition: Int,
     ) {
         val adapter = adapters[tabPosition]
-        val itemCount = adapter?.itemCount ?: 0
+        currentAdapterId = tabPosition
 
-        EmptyStateView.updateAnimationVisibility(itemCount, adapterView)
+        EmptyStateView.updateAnimationVisibility(adapterView)
 
         scrollStateMap[currentTabPosition] = adapterView.recyclerViewMainContent.layoutManager?.onSaveInstanceState()
 

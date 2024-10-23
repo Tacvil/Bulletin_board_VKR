@@ -3,7 +3,7 @@ package com.example.bulletin_board.presentation.theme
 import android.content.SharedPreferences
 import androidx.appcompat.app.AppCompatDelegate
 import com.example.bulletin_board.R
-import com.example.bulletin_board.presentation.activity.SettingsActivity
+import com.example.bulletin_board.presentation.activities.SettingsActivity
 
 object ThemeManager {
     fun getSelectedTheme(defPreferences: SharedPreferences): Int =

@@ -5,11 +5,10 @@ import android.app.NotificationManager
 import android.content.Context
 import android.media.RingtoneManager
 import android.os.Build
-import androidx.activity.result.launch
 import androidx.annotation.RequiresApi
 import androidx.core.app.NotificationCompat
 import com.example.bulletin_board.R
-import com.example.bulletin_board.application.MyApplication
+import com.example.bulletin_board.application.AppApplication
 import com.example.bulletin_board.domain.useCases.tokenManagement.SaveTokenUseCase
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
@@ -36,7 +35,7 @@ class PushNotificationServices : FirebaseMessagingService() {
             )
         val saveTokenUseCase = entryPoint.getSaveTokenUseCase()
 
-        (applicationContext as MyApplication).applicationScope.launch {
+        (applicationContext as AppApplication).applicationScope.launch {
             saveTokenUseCase(token)
         }
     }

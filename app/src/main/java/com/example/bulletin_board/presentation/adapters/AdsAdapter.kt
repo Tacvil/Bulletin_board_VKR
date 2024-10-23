@@ -1,6 +1,6 @@
 package com.example.bulletin_board.presentation.adapters
 
-import com.example.bulletin_board.databinding.AdListItemBinding
+import com.example.bulletin_board.databinding.ItemAdListBinding
 import com.example.bulletin_board.domain.model.AdUpdateEvent
 import com.example.bulletin_board.domain.model.FavData
 import com.example.bulletin_board.domain.model.ViewData
@@ -44,12 +44,12 @@ class AdsAdapter
         }
 
         class AdViewHolder(
-            binding: AdListItemBinding,
+            binding: ItemAdListBinding,
             adItemClickListener: AdItemClickListener,
         ) : BaseAdViewHolder(binding, adItemClickListener)
 
         override fun getViewHolder(
-            binding: AdListItemBinding,
+            binding: ItemAdListBinding,
             adItemClickListener: AdItemClickListener,
         ): AdViewHolder = AdViewHolder(binding, adItemClickListener)
     }

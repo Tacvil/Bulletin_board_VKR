@@ -1,6 +1,7 @@
-package com.example.bulletin_board.presentation.activity
+package com.example.bulletin_board.presentation.activities
 
 import android.content.ActivityNotFoundException
+import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
@@ -13,9 +14,11 @@ import androidx.preference.PreferenceManager
 import androidx.viewpager2.widget.ViewPager2
 import com.example.bulletin_board.R
 import com.example.bulletin_board.data.image.ImageManager
+import com.example.bulletin_board.data.utils.LocaleManager
+import com.example.bulletin_board.data.utils.SortUtils
 import com.example.bulletin_board.databinding.ActivityDescriptionBinding
 import com.example.bulletin_board.domain.model.Ad
-import com.example.bulletin_board.presentation.activity.MainActivity.Companion.INTENT_AD_DETAILS
+import com.example.bulletin_board.presentation.activities.MainActivity.Companion.INTENT_AD_DETAILS
 import com.example.bulletin_board.presentation.adapters.ImageAdapter
 import com.example.bulletin_board.presentation.theme.ThemeManager
 import dagger.hilt.android.AndroidEntryPoint
@@ -29,7 +32,14 @@ class DescriptionActivity : AppCompatActivity() {
 
     @Inject lateinit var adapter: ImageAdapter
 
+    @Inject
+    lateinit var sortUtils: SortUtils
+
     private var ad: Ad? = null
+
+    override fun attachBaseContext(newBase: Context) {
+        super.attachBaseContext(LocaleManager.setLocale(newBase))
+    }
 
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -74,11 +84,7 @@ class DescriptionActivity : AppCompatActivity() {
             cityEditText.setText(ad.city)
             indexEditText.setText(ad.index)
             shippingInfoEditText.setText(
-                if (ad.withSend.toBoolean()) {
-                    getString(R.string.with_send_yes)
-                } else {
-                    getString(R.string.with_send_no)
-                },
+                ad.withSend?.let { sortUtils.getSendOptionFromSortOption(it) }
             )
         }
 

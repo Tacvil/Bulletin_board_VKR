@@ -5,8 +5,8 @@ import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
 import com.example.bulletin_board.R
 import com.example.bulletin_board.domain.listener.OnSettingsChangeListener
-import com.example.bulletin_board.presentation.activity.SettingsActivity.Companion.LANGUAGE_KEY
-import com.example.bulletin_board.presentation.activity.SettingsActivity.Companion.THEME_KEY
+import com.example.bulletin_board.presentation.activities.SettingsActivity.Companion.LANGUAGE_KEY
+import com.example.bulletin_board.presentation.activities.SettingsActivity.Companion.THEME_KEY
 import com.example.bulletin_board.presentation.preferences.ListPreference
 import dagger.hilt.android.AndroidEntryPoint
 import jakarta.inject.Inject

@@ -6,7 +6,6 @@ import com.example.bulletin_board.domain.search.InitTextWatcher
 import com.example.bulletin_board.domain.search.TextWatcherCallback
 import com.example.bulletin_board.domain.ui.search.SearchUi
 import jakarta.inject.Inject
-import timber.log.Timber
 import kotlin.text.isNotEmpty
 
 class SearchTextWatcher
@@ -35,8 +34,6 @@ class SearchTextWatcher
                     count: Int,
                 ) {
                     val inputSearchQuery = s.toString().trimStart().replace(Regex("\\s{2,}"), " ")
-                    Timber.tag("MActTextChanged").d("searchQuery = $inputSearchQuery, isEmpty = ${inputSearchQuery.isEmpty()}")
-
                     if (inputSearchQuery.isNotEmpty()) {
                         callback.onTextChanged(inputSearchQuery)
                     } else {

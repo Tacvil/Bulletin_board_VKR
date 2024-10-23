@@ -6,12 +6,12 @@
     android:layout_height="match_parent">
 
     <com.google.android.material.appbar.AppBarLayout
-        android:id="@+id/appBarLayout"
+        android:id="@+id/app_bar_layout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
 
         <com.google.android.material.appbar.CollapsingToolbarLayout
-            android:id="@+id/collapsingToolbarLayout"
+            android:id="@+id/collapsing_toolbar_layout"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             app:contentScrim="?attr/colorPrimary"
@@ -21,22 +21,24 @@
 
             <LinearLayout
                 android:layout_width="match_parent"
-                android:layout_height="135dp"
+                android:layout_height="@dimen/main_app_bar_height"
                 android:background="@drawable/custom_app_bar_background"
                 android:orientation="vertical">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="75dp"
+                    android:layout_marginTop="@dimen/main_linear_layout_margin_top"
+                    android:baselineAligned="false"
                     android:orientation="horizontal"
-                    android:weightSum="3">
+                    android:weightSum="3"
+                    tools:ignore="UselessParent">
 
                     <com.google.android.material.textfield.TextInputLayout
-                        android:id="@+id/textInputLayout3"
+                        android:id="@+id/text_input_layout_sort"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginStart="10dp"
+                        android:layout_marginStart="@dimen/main_text_input_layout_margin_start"
                         android:layout_weight="1"
                         android:focusable="false"
                         app:boxStrokeWidth="0dp"
@@ -45,24 +47,24 @@
                         app:startIconTint="?attr/colorSurfaceVariant">
 
                         <com.google.android.material.textfield.TextInputEditText
-                            android:id="@+id/auto_complete"
+                            android:id="@+id/edit_text_auto_complete"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_gravity="start|center_vertical"
                             android:clickable="false"
-                            android:drawablePadding="-13dp"
+                            android:drawablePadding="@dimen/main_edit_text_drawable_padding"
                             android:focusable="false"
                             android:focusableInTouchMode="false"
                             android:inputType="textNoSuggestions"
                             android:textColor="?attr/colorSurfaceVariant"
-                            android:textSize="12sp" />
+                            android:textSize="@dimen/main_edit_text_text_size" />
                     </com.google.android.material.textfield.TextInputLayout>
 
                     <com.google.android.material.textfield.TextInputLayout
-                        android:id="@+id/textInputLayout4"
+                        android:id="@+id/text_input_layout_filter"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginEnd="10dp"
+                        android:layout_marginEnd="@dimen/main_text_input_layout_margin_end"
                         android:layout_weight="2"
                         android:focusable="false"
                         app:boxStrokeWidth="0dp"
@@ -71,18 +73,18 @@
                         app:startIconTint="?attr/colorSurfaceVariant">
 
                         <com.google.android.material.textfield.TextInputEditText
-                            android:id="@+id/filter_button_main"
+                            android:id="@+id/edit_text_filter"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_gravity="center_vertical|end"
                             android:clickable="false"
-                            android:drawablePadding="-13dp"
+                            android:drawablePadding="@dimen/main_edit_text_drawable_padding"
                             android:focusable="false"
                             android:focusableInTouchMode="false"
                             android:inputType="none"
                             android:text="@string/filters"
                             android:textColor="?attr/colorSurfaceVariant"
-                            android:textSize="12sp" />
+                            android:textSize="@dimen/main_edit_text_text_size" />
                     </com.google.android.material.textfield.TextInputLayout>
 
                 </LinearLayout>
@@ -104,7 +106,7 @@
     </com.google.android.material.appbar.AppBarLayout>
 
     <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
-        android:id="@+id/swipeRefreshLayout"
+        android:id="@+id/swipe_refresh_layout"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         app:layout_behavior="@string/appbar_scrolling_view_behavior">
@@ -126,32 +128,30 @@
 
 
     <com.airbnb.lottie.LottieAnimationView
-        android:id="@+id/nothink_white_anim"
+        android:id="@+id/lottie_animation_view_empty_state"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:visibility="gone"
-        app:lottie_fileName="nothink_white.json">
+        app:lottie_fileName="empty_state_animation.json">
 
-    </com.airbnb.lottie.LottieAnimationView><!--
-        app:layout_behavior="@string/hide_bottom_view_on_scroll_behavior"
-    -->
+    </com.airbnb.lottie.LottieAnimationView>
 
     <com.google.android.material.bottomappbar.BottomAppBar
-        android:id="@+id/bottomAppBar"
+        android:id="@+id/bottom_app_bar"
         style="@style/Widget.MaterialComponents.BottomAppBar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom"
         app:addElevationShadow="true"
         app:fabAnimationMode="slide"
-        app:fabCradleMargin="10dp"
-        app:fabCradleRoundedCornerRadius="30dp">
+        app:fabCradleMargin="@dimen/main_bottom_app_bar_fab_cradle_margin"
+        app:fabCradleRoundedCornerRadius="@dimen/main_bottom_app_bar_fab_cradle_rounded_corner_radius">
 
         <com.google.android.material.bottomnavigation.BottomNavigationView
             android:id="@+id/bottom_nav_view"
             android:layout_width="wrap_content"
             android:layout_height="?attr/actionBarSize"
-            android:layout_marginEnd="20dp"
+            android:layout_marginEnd="@dimen/main_bottom_nav_view_margin_end"
             android:background="@android:color/transparent"
             app:labelVisibilityMode="unlabeled"
             app:menu="@menu/bottom_main_menu">
@@ -160,20 +160,21 @@
     </com.google.android.material.bottomappbar.BottomAppBar>
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
-        android:id="@+id/floating_act_button"
+        android:id="@+id/floating_action_button"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:elevation="0dp"
-        app:layout_anchor="@id/bottomAppBar"
-        app:maxImageSize="30dp"
-        app:srcCompat="@drawable/ic_add" />
+        app:layout_anchor="@id/bottom_app_bar"
+        app:maxImageSize="@dimen/main_floating_action_button_image_size"
+        app:srcCompat="@drawable/ic_add"
+        tools:ignore="ContentDescription" />
 
     <com.google.android.material.search.SearchView
         android:id="@+id/search_view_main_content"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:elevation="10dp"
-        android:hint="Search ads"
+        android:elevation="@dimen/main_search_view_elevation"
+        android:hint="@string/search_ads"
         app:layout_anchor="@id/search_bar">
 
         <androidx.recyclerview.widget.RecyclerView
@@ -181,7 +182,7 @@
             style="@style/Widget.Material3.SearchView"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            tools:listitem="@layout/spinner_list_item_search" />
+            tools:listitem="@layout/item_spinner_list_search" />
     </com.google.android.material.search.SearchView>
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

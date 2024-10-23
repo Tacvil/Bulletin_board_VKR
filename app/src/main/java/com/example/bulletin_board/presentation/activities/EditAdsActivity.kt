@@ -1,6 +1,7 @@
-package com.example.bulletin_board.presentation.activity
+package com.example.bulletin_board.presentation.activities
 
 import android.content.ContentResolver
+import android.content.Context
 import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Build
@@ -18,6 +19,8 @@ import androidx.viewpager2.widget.ViewPager2
 import com.example.bulletin_board.R
 import com.example.bulletin_board.data.image.ImageManager
 import com.example.bulletin_board.data.image.PixImagePicker.Companion.MAX_IMAGE_COUNT
+import com.example.bulletin_board.data.utils.LocaleManager
+import com.example.bulletin_board.data.utils.SortUtils
 import com.example.bulletin_board.databinding.ActivityEditAdsBinding
 import com.example.bulletin_board.domain.auth.impl.AccountManager
 import com.example.bulletin_board.domain.images.ContentResolverProvider
@@ -35,7 +38,9 @@ import com.example.bulletin_board.presentation.adapters.RcViewDialogSpinnerAdapt
 import com.example.bulletin_board.presentation.dialogs.DialogSpinnerHelper
 import com.example.bulletin_board.presentation.fragment.ImageListFragment
 import com.example.bulletin_board.presentation.theme.ThemeManager
+import com.example.bulletin_board.presentation.utils.KeyboardUtils
 import com.example.bulletin_board.presentation.viewModel.MainViewModel
+import com.google.android.material.textfield.TextInputEditText
 import dagger.hilt.android.AndroidEntryPoint
 import io.ak1.pix.helpers.PixEventCallback
 import io.ak1.pix.helpers.addPixToActivity
@@ -76,9 +81,17 @@ class EditAdsActivity
         @Inject
         lateinit var dialogSpinnerHelper: DialogSpinnerHelper
 
+        @Inject
+        lateinit var sortUtils: SortUtils
+
         private var selectedImagePosition = 0
         private var isInEditMode = false
         private var currentAd: Ad? = null
+        private var focusedEditText: TextInputEditText? = null
+
+        override fun attachBaseContext(newBase: Context) {
+            super.attachBaseContext(LocaleManager.setLocale(newBase))
+        }
 
         @RequiresApi(Build.VERSION_CODES.TIRAMISU)
         override fun onCreate(savedInstanceState: Bundle?) {
@@ -91,46 +104,100 @@ class EditAdsActivity
             handleEditMode()
             setupSelectors()
             handleImageSelection()
-            onClickSelectCategory()
             setupPublishButton()
             imageChangeCounter()
         }
 
         private fun initializeComponents() {
-            binding.viewPagerImages.adapter = imageAdapter
+            binding.imageViewPager.adapter = imageAdapter
+        }
+
+        @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+        private fun handleEditMode() {
+            if (isInEditMode()) {
+                isInEditMode = true
+                intent.getParcelableExtra(MainActivity.EXTRA_AD_ITEM, Ad::class.java)?.let {
+                    currentAd = it
+                    populateFields(it)
+                }
+            }
         }
 
         private fun setupSelectors() {
             with(binding) {
-                textViewSelectCountry.setOnClickListener {
-                    val countryList = cityDataSourceProvider.getAllCountries()
-                    textViewSelectCity.setText("")
-                    showSelectDialog(textViewSelectCountry, countryList, true) { item ->
-                        textViewSelectCountry.setText(item)
+                val editTexts =
+                    listOf(
+                        adTitleEditText,
+                        indexEditText,
+                        phoneEditText,
+                        emailEditText,
+                        priceEditText,
+                        descriptionEditText,
+                    )
+
+                editTexts.forEach { editText ->
+                    editText.onFocusChangeListener =
+                        View.OnFocusChangeListener { v, hasFocus ->
+                            if (hasFocus) {
+                                focusedEditText = v as? TextInputEditText
+                            }
+                        }
+                }
+
+                selectCountryEditText.setOnClickListener {
+                    focusedEditText?.clearFocus()
+                    KeyboardUtils.hideKeyboard(this@EditAdsActivity, selectCountryEditText)
+                    if (selectCityEditText.text.toString() != EMPTY_STRING) {
+                        selectCityEditText.setText(EMPTY_STRING)
+                    }
+                    showSpinnerPopup(selectCountryEditText, cityDataSourceProvider.getAllCountries()) {
+                        selectCountryEditText.setText(it)
                     }
                 }
 
-                textViewSelectCity.setOnClickListener {
-                    val selectedCountry = textViewSelectCountry.text.toString()
-                    if (selectedCountry != getString(R.string.edit_select_country)) {
-                        val cityList = cityDataSourceProvider.getAllCities(selectedCountry)
-                        showSelectDialog(textViewSelectCity, cityList, true) { item ->
-                            textViewSelectCity.setText(item)
+                selectCityEditText.setOnClickListener {
+                    focusedEditText?.clearFocus()
+                    KeyboardUtils.hideKeyboard(this@EditAdsActivity, selectCityEditText)
+                    val selectedCountry = selectCountryEditText.text.toString()
+                    if (selectedCountry.isNotBlank()) {
+                        showSpinnerPopup(
+                            selectCityEditText,
+                            cityDataSourceProvider.getAllCities(selectedCountry),
+                        ) {
+                            selectCityEditText.setText(it)
                         }
                     } else {
-                        showToast(getString(R.string.edit_no_country_selected), Toast.LENGTH_LONG)
+                        Toast
+                            .makeText(
+                                this@EditAdsActivity,
+                                getString(R.string.edit_no_country_selected),
+                                Toast.LENGTH_SHORT,
+                            ).show()
                     }
                 }
 
-                textViewSelectWithSend.setOnClickListener {
+                selectSendOptionEditText.setOnClickListener {
+                    focusedEditText?.clearFocus()
+                    KeyboardUtils.hideKeyboard(this@EditAdsActivity, selectSendOptionEditText)
                     val deliveryOptionsList =
                         arrayListOf(
                             Pair(getString(R.string.no_matter), EMPTY_STRING),
                             Pair(getString(R.string.with_sending), EMPTY_STRING),
                             Pair(getString(R.string.without_sending), EMPTY_STRING),
                         )
-                    showSelectDialog(textViewSelectWithSend, deliveryOptionsList, false) { item ->
-                        textViewSelectWithSend.setText(item)
+                    showSpinnerPopup(selectSendOptionEditText, deliveryOptionsList, false) { item ->
+                        selectSendOptionEditText.setText(item)
+                    }
+                }
+
+                selectCategoryEditText.setOnClickListener {
+                    focusedEditText?.clearFocus()
+                    KeyboardUtils.hideKeyboard(this@EditAdsActivity, selectCategoryEditText)
+                    val listCategory = resources.getStringArray(R.array.category)
+                    val pairsCategory =
+                        ArrayList<Pair<String, String>>(listCategory.map { Pair(it, EMPTY_STRING) })
+                    showSpinnerPopup(selectCategoryEditText, pairsCategory, false) { item ->
+                        selectCategoryEditText.setText(item)
                     }
                 }
             }
@@ -148,7 +215,7 @@ class EditAdsActivity
         }
 
         private fun imageChangeCounter() {
-            binding.viewPagerImages.registerOnPageChangeCallback(
+            binding.imageViewPager.registerOnPageChangeCallback(
                 object :
                     ViewPager2.OnPageChangeCallback() {
                     override fun onPageSelected(position: Int) {
@@ -161,16 +228,16 @@ class EditAdsActivity
 
         private fun updateImageCounter(counter: Int) =
             with(binding) {
-                val itemCount = viewPagerImages.adapter?.itemCount ?: 0
+                val itemCount = imageViewPager.adapter?.itemCount ?: 0
                 val index = if (itemCount == 0) 0 else 1
                 val imageCounter = "${counter + index}/$itemCount"
-                textViewImageCounter.text = imageCounter
+                imageCounterTextView.text = imageCounter
             }
 
-        private fun showSelectDialog(
+        private fun showSpinnerPopup(
             textView: TextView,
             items: ArrayList<Pair<String, String>>,
-            isCountryCity: Boolean,
+            showSearchBar: Boolean = true,
             onItemSelected: (String) -> Unit,
         ) {
             dialogSpinnerHelper.showDialogSpinner(
@@ -184,7 +251,7 @@ class EditAdsActivity
                             onItemSelected(item)
                         }
                     },
-                isCountryCity,
+                showSearchBar,
             )
         }
 
@@ -194,7 +261,7 @@ class EditAdsActivity
                     showToast(getString(R.string.edit_required_fields_empty), Toast.LENGTH_SHORT)
                     return@setOnClickListener
                 }
-                binding.progressLayout.visibility = View.VISIBLE
+                binding.linearLayoutProgress.visibility = View.VISIBLE
                 currentAd = createAdFromForm()
                 viewModel.viewModelScope.launch {
                     imageManager.uploadImages(
@@ -210,7 +277,7 @@ class EditAdsActivity
                         } else {
                             showToast(getString(R.string.edit_submission_error), Toast.LENGTH_SHORT)
                         }
-                        binding.progressLayout.visibility = View.GONE
+                        binding.linearLayoutProgress.visibility = View.GONE
                         finish()
                     }
                 }
@@ -220,14 +287,14 @@ class EditAdsActivity
         private fun areRequiredFieldsEmpty() =
             with(binding) {
                 listOf(
-                    textViewSelectCountry,
-                    textViewSelectCity,
-                    textViewSelectCategory,
-                    textViewTitle,
-                    textViewPrice,
-                    textViewIndex,
-                    textViewDescription,
-                    textViewSelectTelNumb,
+                    selectCountryEditText,
+                    selectCityEditText,
+                    selectCategoryEditText,
+                    adTitleEditText,
+                    priceEditText,
+                    indexEditText,
+                    descriptionEditText,
+                    phoneEditText,
                 ).any { it.text.isNullOrEmpty() }
             }
 
@@ -235,17 +302,23 @@ class EditAdsActivity
             binding.run {
                 Ad(
                     currentAd?.key ?: accountManager.generateAdId(),
-                    textViewTitle.text.toString(),
-                    textViewTitle.text.toString().lowercase(),
-                    textViewSelectCountry.text.toString(),
-                    textViewSelectCity.text.toString(),
-                    textViewIndex.text.toString(),
-                    textViewSelectTelNumb.text.toString(),
-                    textViewSelectWithSend.text.toString(),
-                    textViewSelectCategory.text.toString(),
-                    textViewPrice.text.toString().toInt(),
-                    textViewDescription.text.toString(),
-                    textViewSelectEmail.text.toString(),
+                    adTitleEditText.text.toString().trim(),
+                    adTitleEditText.text
+                        .toString()
+                        .lowercase()
+                        .trim(),
+                    selectCountryEditText.text.toString(),
+                    selectCityEditText.text.toString(),
+                    indexEditText.text.toString().trim(),
+                    phoneEditText.text.toString().trim(),
+                    sortUtils.getSendOption(selectSendOptionEditText.text.toString()),
+                    sortUtils.getCategory(selectCategoryEditText.text.toString()),
+                    priceEditText.text
+                        .toString()
+                        .trim()
+                        .toInt(),
+                    descriptionEditText.text.toString().trim(),
+                    emailEditText.text.toString().trim(),
                     currentAd?.mainImage ?: DEFAULT_IMAGE_URL,
                     currentAd?.image2 ?: DEFAULT_IMAGE_URL,
                     currentAd?.image3 ?: DEFAULT_IMAGE_URL,
@@ -254,52 +327,30 @@ class EditAdsActivity
                 )
             }
 
-        @RequiresApi(Build.VERSION_CODES.TIRAMISU)
-        private fun handleEditMode() {
-            if (isInEditMode()) {
-                isInEditMode = true
-                intent.getParcelableExtra(MainActivity.EXTRA_AD_ITEM, Ad::class.java)?.let {
-                    currentAd = it
-                    populateFields(it)
-                }
-            }
-        }
-
         private fun isInEditMode(): Boolean = intent.getBooleanExtra(MainActivity.IS_EDIT_MODE, false)
 
         private fun populateFields(ad: Ad) =
             with(binding) {
-                textViewTitle.setText(ad.title)
-                textViewSelectCountry.setText(ad.country)
-                textViewSelectCity.setText(ad.city)
-                textViewIndex.setText(ad.index)
-                textViewSelectTelNumb.setText(ad.tel)
-                textViewSelectEmail.setText(ad.email)
-                textViewSelectCategory.setText(ad.category)
-                textViewSelectWithSend.setText(ad.withSend)
-                textViewPrice.setText(ad.price.toString())
-                textViewDescription.setText(ad.description)
+                adTitleEditText.setText(ad.title)
+                selectCountryEditText.setText(ad.country)
+                selectCityEditText.setText(ad.city)
+                indexEditText.setText(ad.index)
+                phoneEditText.setText(ad.tel)
+                emailEditText.setText(ad.email)
+                selectCategoryEditText.setText(ad.category?.let { sortUtils.getCategoryFromSortOption(it) })
+                selectSendOptionEditText.setText(ad.withSend?.let { sortUtils.getSendOptionFromSortOption(it) })
+                priceEditText.setText(ad.price.toString())
+                descriptionEditText.setText(ad.description)
                 updateImageCounter(0)
                 lifecycleScope.launch {
                     imageManager.fillImageArray(ad, imageAdapter)
                 }
             }
 
-        private fun onClickSelectCategory() {
-            binding.textViewSelectCategory.setOnClickListener {
-                val listCategory = resources.getStringArray(R.array.category)
-                val pairsCategory =
-                    ArrayList<Pair<String, String>>(listCategory.map { Pair(it, EMPTY_STRING) })
-                showSelectDialog(binding.textViewSelectCategory, pairsCategory, false) { item ->
-                    binding.textViewSelectCategory.setText(item)
-                }
-            }
-        }
-
         override fun onFragClose(list: ArrayList<Bitmap>) {
-            binding.scrollViewMain.visibility = View.VISIBLE
+            binding.scrollView.visibility = View.VISIBLE
             imageAdapter.update(list)
-            updateImageCounter(binding.viewPagerImages.currentItem)
+            updateImageCounter(binding.imageViewPager.currentItem)
         }
 
         companion object {
@@ -309,12 +360,12 @@ class EditAdsActivity
         }
 
         override fun showImageListFrag(uris: ArrayList<Uri>?) {
+            binding.scrollView.visibility = View.GONE
             uris
                 ?.takeIf { it.isNotEmpty() }
                 ?.let { imageListFragment.resizeAndDisplaySelectedImages(it, true, this) }
-            binding.scrollViewMain.visibility = View.GONE
             val fm = supportFragmentManager.beginTransaction()
-            fm.replace(R.id.place_holder, imageListFragment)
+            fm.replace(R.id.edit_ads_fragment_container, imageListFragment)
             fm.commit()
             showStatusBar()
         }
@@ -377,16 +428,18 @@ class EditAdsActivity
         override fun openChooseImageFrag() {
             supportFragmentManager
                 .beginTransaction()
-                .replace(R.id.place_holder, imageListFragment)
+                .replace(R.id.edit_ads_fragment_container, imageListFragment)
                 .commit()
         }
 
         override fun updateAdapter(uris: ArrayList<Uri>) {
-            this.imageListFragment.updateAdapter(uris, this)
+            imageListFragment.updateAdapter(uris, this)
         }
 
         override fun setSingleImage(uri: Uri) {
-            imageListFragment.setSingleImage(uri, selectedImagePosition)
+            imageListFragment.setOnBindingReadyListener {
+                imageListFragment.setSingleImage(uri, selectedImagePosition)
+            }
         }
 
         override fun getTitle(position: Int): String = resources.getStringArray(R.array.title_array)[position]

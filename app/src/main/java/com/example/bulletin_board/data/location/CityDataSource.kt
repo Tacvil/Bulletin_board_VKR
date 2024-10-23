@@ -45,6 +45,6 @@ class CityDataSource
             }
 
         companion object {
-            private const val COUNTRIES_TO_CITIES_FILE = "countriesToCities.json"
+            private const val COUNTRIES_TO_CITIES_FILE = "countries_to_cities.json"
         }
     }

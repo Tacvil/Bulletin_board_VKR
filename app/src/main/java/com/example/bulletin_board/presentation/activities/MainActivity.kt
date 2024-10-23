@@ -1,6 +1,5 @@
-package com.example.bulletin_board.presentation.activity
+package com.example.bulletin_board.presentation.activities
 
-import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
@@ -57,7 +56,7 @@ import com.example.bulletin_board.domain.ui.search.SearchUi
 import com.example.bulletin_board.domain.utils.ResourceStringProvider
 import com.example.bulletin_board.domain.utils.ToastHelper
 import com.example.bulletin_board.domain.voice.VoiceRecognitionListener
-import com.example.bulletin_board.presentation.activity.SettingsActivity.Companion.LANGUAGE_EN
+import com.example.bulletin_board.presentation.activities.SettingsActivity.Companion.LANGUAGE_EN
 import com.example.bulletin_board.presentation.adapters.AdapterManager
 import com.example.bulletin_board.presentation.adapters.AdsAdapter
 import com.example.bulletin_board.presentation.adapters.FavoriteAdsAdapter
@@ -67,10 +66,10 @@ import com.example.bulletin_board.presentation.adapters.RcViewDialogSpinnerAdapt
 import com.example.bulletin_board.presentation.adapters.RcViewSearchSpinnerAdapter
 import com.example.bulletin_board.presentation.dialogs.DialogSpinnerHelper
 import com.example.bulletin_board.presentation.dialogs.OrderByFilterDialogManager
+import com.example.bulletin_board.presentation.dialogs.SignInDialogFragment
+import com.example.bulletin_board.presentation.dialogs.SignInDialogFragment.Companion.SIGN_IN_STATE
+import com.example.bulletin_board.presentation.dialogs.SignInDialogFragment.Companion.SIGN_UP_STATE
 import com.example.bulletin_board.presentation.fragment.FilterFragment
-import com.example.bulletin_board.presentation.fragment.SignInDialogFragment
-import com.example.bulletin_board.presentation.fragment.SignInDialogFragment.Companion.SIGN_IN_STATE
-import com.example.bulletin_board.presentation.fragment.SignInDialogFragment.Companion.SIGN_UP_STATE
 import com.example.bulletin_board.presentation.search.FormatSearchResults
 import com.example.bulletin_board.presentation.search.SearchManager
 import com.example.bulletin_board.presentation.theme.ThemeManager
@@ -83,6 +82,7 @@ import jakarta.inject.Inject
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
+import timber.log.Timber
 import java.util.Locale
 
 @AndroidEntryPoint
@@ -141,8 +141,7 @@ class MainActivity :
     private val doubleClickThreshold = DOUBLE_CLICK_THRESHOLD
     private val scrollStateMap = mutableMapOf<Int, Parcelable?>()
     private var currentTabPosition: Int = 0
-    private var currentLanguage: String = Locale.getDefault().language
-    private var shouldSkipUpdateUi = false
+    private var currentLanguage: String = ""
 
     private val voiceRecognitionLauncher =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
@@ -162,6 +161,7 @@ class MainActivity :
     override fun onCreate(savedInstanceState: Bundle?) {
         defPreferences = PreferenceManager.getDefaultSharedPreferences(this)
         setTheme(ThemeManager.getSelectedTheme(defPreferences))
+        currentLanguage = defPreferences.getString(SettingsActivity.LANGUAGE_KEY, LANGUAGE_EN).toString()
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
@@ -177,19 +177,19 @@ class MainActivity :
     }
 
     override fun onStart() {
-        if (!shouldSkipUpdateUi) accountManager.updateUi(accountManager.auth.currentUser)
+        accountManager.updateUi(accountManager.auth.currentUser)
         super.onStart()
     }
 
     override fun onResume() {
         super.onResume()
         binding.mainContent.bottomNavView.selectedItemId = R.id.id_home
-        binding.mainContent.filterButtonMain.setText(R.string.filters)
-        binding.mainContent.autoComplete.setText(
+        binding.mainContent.editTextFilter.setText(R.string.filters)
+        binding.mainContent.editTextAutoComplete.setText(
             viewModel.getFilterValue(ORDER_BY_FIELD)?.let { sortUtils.getSortOptionText(it) },
         )
-        val language = defPreferences.getString(SettingsActivity.LANGUAGE_KEY, LANGUAGE_EN)
-        language.takeIf { it != currentLanguage }?.let {
+
+        defPreferences.getString(SettingsActivity.LANGUAGE_KEY, LANGUAGE_EN).toString().takeIf { it != currentLanguage }?.let{
             currentLanguage = it
             recreate()
         }
@@ -231,7 +231,7 @@ class MainActivity :
         if (filter.isNotEmpty()) {
             val sortOptionId = filter[ORDER_BY_FIELD] ?: return
             val sortOptionText = sortUtils.getSortOptionText(sortOptionId)
-            binding.mainContent.autoComplete.setText(sortOptionText)
+            binding.mainContent.editTextAutoComplete.setText(sortOptionText)
         }
     }
 
@@ -268,9 +268,9 @@ class MainActivity :
 
         binding.navigationView.setNavigationItemSelectedListener(this)
 
-        binding.mainContent.filterButtonMain.setOnClickListener { showFilterFragment() }
+        binding.mainContent.editTextFilter.setOnClickListener { showFilterFragment() }
         binding.mainContent.swipeRefreshLayout.setOnRefreshListener { refreshAdapters() }
-        binding.mainContent.floatingActButton.setOnClickListener { onCreateNewAdClick() }
+        binding.mainContent.floatingActionButton.setOnClickListener { onCreateNewAdClick() }
 
         navViewSetting()
     }
@@ -296,7 +296,7 @@ class MainActivity :
     }
 
     private fun setupSearchFunctionality() {
-        orderByFilterDialogManager.setupOrderByFilter(binding.mainContent.autoComplete)
+        orderByFilterDialogManager.setupOrderByFilter(binding.mainContent.editTextAutoComplete)
         searchManager.initializeSearchFunctionality()
     }
 
@@ -314,15 +314,6 @@ class MainActivity :
             },
         )
     }
-
-    private val startSettingsForResult =
-        registerForActivityResult(
-            ActivityResultContracts.StartActivityForResult(),
-        ) { result ->
-            if (result.resultCode == Activity.RESULT_OK) {
-                shouldSkipUpdateUi = true
-            }
-        }
 
     private fun setupBottomMenu() {
         with(binding) {
@@ -342,13 +333,13 @@ class MainActivity :
         lastClickTime = currentTime
 
         when (item.itemId) {
-            R.id.id_settings ->
-                startSettingsForResult.launch(
-                    Intent(this, SettingsActivity::class.java),
-                )
+            R.id.id_settings -> startActivity(Intent(this, SettingsActivity::class.java))
             R.id.id_my_ads -> switchAdapter(MY_ADAPTER)
             R.id.id_favs -> switchAdapter(FAV_ADAPTER)
-            R.id.id_home -> switchAdapter(ADS_ADAPTER)
+            R.id.id_home -> {
+                switchAdapter(ADS_ADAPTER)
+                getAdsFromCat("")
+            }
         }
     }
 
@@ -592,7 +583,7 @@ class MainActivity :
             .findItem(R.id.id_search)
             .setIcon(R.drawable.ic_cancel)
 
-        val validateText = spokenText.split(" ").joinToString("-")
+        val validateText = spokenText.split(" ").joinToString("-").lowercase()
         viewModel.addToFilter(KEYWORDS_FIELD, validateText)
     }
 
@@ -610,7 +601,7 @@ class MainActivity :
     override fun getImageViewAccount(): ImageView = binding.navigationView.getHeaderView(0).findViewById(R.id.image_view_account_image)
 
     override val nothinkWhiteAnim: LottieAnimationView
-        get() = binding.mainContent.nothinkWhiteAnim
+        get() = binding.mainContent.lottieAnimationViewEmptyState
 
     override val recyclerViewMainContent: RecyclerView
         get() = binding.mainContent.recyclerViewMainContent

@@ -38,7 +38,7 @@ class RcViewDialogSpinnerAdapter(
             itemTitle = item.first
 
             if (SINGLE.equals(item.second, ignoreCase = true)) {
-                searchIcon.visibility = View.GONE
+                linkIcon.visibility = View.GONE
             } else {
                 searchIcon.visibility = View.GONE
                 linkIcon.visibility = View.GONE
@@ -58,7 +58,7 @@ class RcViewDialogSpinnerAdapter(
         parent: ViewGroup,
         viewType: Int,
     ): SpinnerViewHolder {
-        val view = LayoutInflater.from(parent.context).inflate(R.layout.spinner_list_item, parent, false)
+        val view = LayoutInflater.from(parent.context).inflate(R.layout.item_spinner_list, parent, false)
         return SpinnerViewHolder(view, targetTextView, this)
     }
 

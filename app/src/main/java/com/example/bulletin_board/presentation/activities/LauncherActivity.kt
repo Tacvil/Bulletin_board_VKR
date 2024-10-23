@@ -1,4 +1,4 @@
-package com.example.bulletin_board.presentation.activity
+package com.example.bulletin_board.presentation.activities
 
 import android.animation.Animator
 import android.content.Context
@@ -29,12 +29,12 @@ class LauncherActivity : AppCompatActivity() {
     }
 
     private fun initLauncherAnimation() {
-        binding.launcherAnim.addAnimatorListener(
+        binding.lottieAnimationView.addAnimatorListener(
             object : Animator.AnimatorListener {
                 override fun onAnimationStart(animation: Animator) {}
 
                 override fun onAnimationEnd(animation: Animator) {
-                    binding.launcherAnim.removeAnimatorListener(this)
+                    binding.lottieAnimationView.removeAnimatorListener(this)
                     initMainAct()
                 }
 
@@ -43,7 +43,7 @@ class LauncherActivity : AppCompatActivity() {
                 override fun onAnimationRepeat(animation: Animator) {}
             },
         )
-        binding.launcherAnim.playAnimation()
+        binding.lottieAnimationView.playAnimation()
     }
 
     private fun initSettings() {

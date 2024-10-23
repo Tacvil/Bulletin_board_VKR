@@ -9,6 +9,7 @@ enum class SortOption(
     BY_PRICE_DESC("byPriceDesc"),
     WITH_SEND("with_send"),
     WITHOUT_SEND("without_send"),
+    DELIVERY_UNSPECIFIED("no_matter"),
     AD_CAR("cars"),
     AD_PC("pc"),
     AD_SMARTPHONE("smartphones"),

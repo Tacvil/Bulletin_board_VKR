@@ -33,9 +33,7 @@ class RcViewSearchSpinnerAdapter(
             spinnerTextView.text = item.first
             itemTitle = item.first
 
-            if (SEARCH.equals(item.second, ignoreCase = true)) {
-                linkIcon.visibility = View.VISIBLE
-            } else {
+            if (!SEARCH.equals(item.second, ignoreCase = true)) {
                 linkIcon.visibility = View.GONE
                 searchIcon.visibility = View.GONE
             }
@@ -52,7 +50,7 @@ class RcViewSearchSpinnerAdapter(
         parent: ViewGroup,
         viewType: Int,
     ): SearchSpinnerViewHolder {
-        val view = LayoutInflater.from(parent.context).inflate(R.layout.spinner_list_item_search, parent, false)
+        val view = LayoutInflater.from(parent.context).inflate(R.layout.item_spinner_list_search, parent, false)
         return SearchSpinnerViewHolder(view, this)
     }
 

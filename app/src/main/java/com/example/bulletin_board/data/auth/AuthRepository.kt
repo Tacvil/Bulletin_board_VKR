@@ -274,15 +274,9 @@ class AuthRepository
         override fun signInAnonymously(auth: FirebaseAuth) {
             auth.signInAnonymously().addOnCompleteListener { task ->
                 if (task.isSuccessful) {
-                    toastHelper.showToast(
-                        resourceStringProvider.getStringImpl(R.string.sign_in_as_guest_done),
-                        Toast.LENGTH_SHORT,
-                    )
+                    Timber.i("Signed in as Guest")
                 } else {
-                    toastHelper.showToast(
-                        resourceStringProvider.getStringImpl(R.string.sign_in_as_guest_error),
-                        Toast.LENGTH_SHORT,
-                    )
+                    Timber.e(task.exception, "Failed to sign in as Guest")
                 }
             }
         }

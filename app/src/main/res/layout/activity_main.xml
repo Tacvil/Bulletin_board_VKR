@@ -7,11 +7,11 @@
     android:fitsSystemWindows="true"
     android:id="@+id/drawer_layout"
     tools:openDrawer="start"
-    tools:context=".presentation.activity.MainActivity">
+    tools:context=".presentation.activities.MainActivity">
 
     <include
         android:id="@+id/main_content"
-        layout="@layout/main_content"
+        layout="@layout/activity_main_content"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:visibility="visible" />

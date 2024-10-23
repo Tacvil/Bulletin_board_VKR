@@ -4,12 +4,12 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:id="@+id/place_holder"
-    tools:context=".presentation.activity.EditAdsActivity">
+    android:id="@+id/root_layout"
+    tools:context=".presentation.activities.EditAdsActivity">
 
     <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
-        android:id="@+id/scroll_view_main"
+        android:id="@+id/scroll_view"
         android:layout_height="match_parent"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
@@ -17,30 +17,30 @@
         app:layout_constraintTop_toTopOf="parent">
 
         <LinearLayout
-            android:id="@+id/placeee"
+            android:id="@+id/linear_layout_content"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical">
 
             <androidx.cardview.widget.CardView
-                android:id="@+id/card_image"
+                android:id="@+id/card_view_image"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
 
-                android:layout_margin="5dp"
-                app:cardCornerRadius="5dp"
-                app:cardElevation="5dp">
+                android:layout_margin="@dimen/edit_ads_card_margin"
+                app:cardCornerRadius="@dimen/edit_ads_card_corner_radius"
+                app:cardElevation="@dimen/edit_ads_card_elevation">
 
                 <androidx.constraintlayout.widget.ConstraintLayout
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
-                    android:layout_margin="5dp">
+                    android:layout_margin="@dimen/edit_ads_layout_margin">
 
                     <androidx.viewpager2.widget.ViewPager2
-                        android:id="@+id/view_pager_images"
+                        android:id="@+id/image_view_pager"
                         android:layout_width="match_parent"
-                        android:layout_height="200dp"
-                        android:padding="5dp"
+                        android:layout_height="@dimen/edit_ads_viewpager_height"
+                        android:padding="@dimen/edit_ads_viewpager_padding"
                         app:layout_constraintBottom_toBottomOf="parent"
                         app:layout_constraintEnd_toEndOf="parent"
                         app:layout_constraintStart_toStartOf="parent"
@@ -49,52 +49,53 @@
                     </androidx.viewpager2.widget.ViewPager2>
 
                     <TextView
-                        android:id="@+id/textViewImageCounter"
+                        android:id="@+id/image_counter_text_view"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="1/3"
-                        app:layout_constraintBottom_toBottomOf="@+id/view_pager_images"
-                        app:layout_constraintEnd_toEndOf="@+id/view_pager_images" />
+                        android:text="@string/counter_text"
+                        app:layout_constraintBottom_toBottomOf="@+id/image_view_pager"
+                        app:layout_constraintEnd_toEndOf="@+id/image_view_pager" />
 
                     <ImageButton
                         android:id="@+id/add_image_button"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="10dp"
-                        android:layout_marginEnd="10dp"
+                        android:layout_marginTop="@dimen/edit_ads_add_image_button_margin_top"
+                        android:layout_marginEnd="@dimen/edit_ads_add_image_button_margin_end"
                         android:background="@drawable/edit_image_button"
-                        android:padding="3dp"
+                        android:padding="@dimen/edit_ads_add_image_button_padding"
                         app:layout_constraintEnd_toEndOf="parent"
                         app:layout_constraintTop_toTopOf="parent"
-                        app:srcCompat="@drawable/ic_edit" />
+                        app:srcCompat="@drawable/ic_edit"
+                        tools:ignore="ContentDescription" />
 
                     <ProgressBar
-                        android:id="@+id/progress_bar_load"
+                        android:id="@+id/progress_bar_image_loading"
                         style="?android:attr/progressBarStyle"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:visibility="gone"
                         app:layout_constraintBottom_toBottomOf="parent"
-                        app:layout_constraintEnd_toEndOf="@+id/view_pager_images"
-                        app:layout_constraintStart_toStartOf="@+id/view_pager_images"
-                        app:layout_constraintTop_toTopOf="@+id/view_pager_images" />
+                        app:layout_constraintEnd_toEndOf="@+id/image_view_pager"
+                        app:layout_constraintStart_toStartOf="@+id/image_view_pager"
+                        app:layout_constraintTop_toTopOf="@+id/image_view_pager" />
                 </androidx.constraintlayout.widget.ConstraintLayout>
             </androidx.cardview.widget.CardView>
 
             <androidx.cardview.widget.CardView
-                android:id="@+id/card_address"
+                android:id="@+id/card_view_address"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
 
-                android:layout_margin="5dp"
-                app:cardCornerRadius="5dp"
-                app:cardElevation="5dp">
+                android:layout_margin="@dimen/edit_ads_card_margin"
+                app:cardCornerRadius="@dimen/edit_ads_card_corner_radius"
+                app:cardElevation="@dimen/edit_ads_card_elevation">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:orientation="vertical"
-                    android:padding="5dp">
+                    android:padding="@dimen/edit_ads_layout_margin">
 
                     <com.google.android.material.textfield.TextInputLayout
                         android:layout_width="match_parent"
@@ -102,72 +103,46 @@
                         android:hint="@string/edit_title" >
 
                         <com.google.android.material.textfield.TextInputEditText
-                            android:id="@+id/text_view_title"
+                            android:id="@+id/ad_title_edit_text"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:focusable="true" />
                     </com.google.android.material.textfield.TextInputLayout>
 
-                    <!--                    <TextView-->
-                    <!--                        android:id="@+id/text_view_select_countryy"-->
-                    <!--                        android:layout_width="match_parent"-->
-                    <!--                        android:layout_height="wrap_content"-->
-                    <!--                        android:layout_margin="5dp"-->
-                    <!--                        android:clickable="true"-->
-                    <!--                        android:focusable="true"-->
-                    <!--                        android:gravity="center"-->
-                    <!--                        android:padding="10dp"-->
-                    <!--                        android:text="@string/select_country"-->
-                    <!--                        android:textColor="@color/white" />-->
-
-                    <!--                    <TextView-->
-                    <!--                        android:id="@+id/text_view_select_city"-->
-                    <!--                        android:layout_width="match_parent"-->
-                    <!--                        android:layout_height="wrap_content"-->
-                    <!--                        android:layout_margin="5dp"-->
-                    <!--                        android:clickable="true"-->
-                    <!--                        android:focusable="true"-->
-                    <!--                        android:gravity="center"-->
-                    <!--                        android:padding="10dp"-->
-                    <!--                        android:text="@string/select_city"-->
-                    <!--                        android:textColor="@color/white" />-->
-
                     <com.google.android.material.textfield.TextInputLayout
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
-                        android:layout_marginTop="5dp"
+                        android:layout_marginTop="@dimen/edit_ads_text_input_layout_margin_top"
                         android:hint="@string/edit_select_country" >
 
                         <com.google.android.material.textfield.TextInputEditText
-                            android:id="@+id/text_view_select_country"
+                            android:id="@+id/select_country_edit_text"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:clickable="true"
                             android:focusable="false" />
                     </com.google.android.material.textfield.TextInputLayout>
 
                     <com.google.android.material.textfield.TextInputLayout
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
-                        android:layout_marginTop="5dp"
+                        android:layout_marginTop="@dimen/edit_ads_text_input_layout_margin_top"
                         android:hint="@string/edit_select_city" >
 
                         <com.google.android.material.textfield.TextInputEditText
-                            android:id="@+id/text_view_select_city"
+                            android:id="@+id/select_city_edit_text"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:clickable="true"
                             android:focusable="false" />
                     </com.google.android.material.textfield.TextInputLayout>
 
                     <com.google.android.material.textfield.TextInputLayout
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
-                        android:layout_marginTop="5dp"
+                        android:layout_marginTop="@dimen/edit_ads_text_input_layout_margin_top"
                         android:hint="@string/edit_index">
 
                         <com.google.android.material.textfield.TextInputEditText
-                            android:id="@+id/text_view_index"
+                            android:id="@+id/index_edit_text"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:focusable="true"
@@ -177,11 +152,11 @@
                     <com.google.android.material.textfield.TextInputLayout
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
-                        android:layout_marginTop="5dp"
+                        android:layout_marginTop="@dimen/edit_ads_text_input_layout_margin_top"
                         android:hint="@string/edit_phone_number">
 
                         <com.google.android.material.textfield.TextInputEditText
-                            android:id="@+id/text_view_select_tel_numb"
+                            android:id="@+id/phone_edit_text"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:focusable="true"
@@ -191,11 +166,11 @@
                     <com.google.android.material.textfield.TextInputLayout
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
-                        android:layout_marginTop="5dp"
+                        android:layout_marginTop="@dimen/edit_ads_text_input_layout_margin_top"
                         android:hint="@string/email_hint">
 
                         <com.google.android.material.textfield.TextInputEditText
-                            android:id="@+id/text_view_select_email"
+                            android:id="@+id/email_edit_text"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:focusable="true"
@@ -206,86 +181,54 @@
             </androidx.cardview.widget.CardView>
 
             <androidx.cardview.widget.CardView
-                android:id="@+id/card_category"
+                android:id="@+id/card_view_category"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:layout_margin="5dp"
-                app:cardCornerRadius="5dp"
-                app:cardElevation="5dp">
+                android:layout_margin="@dimen/edit_ads_card_margin"
+                app:cardCornerRadius="@dimen/edit_ads_card_corner_radius"
+                app:cardElevation="@dimen/edit_ads_card_elevation">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:orientation="vertical"
-                    android:padding="5dp">
-
-                    <!--                    <TextView-->
-                    <!--                        android:id="@+id/text_view_select_countryy"-->
-                    <!--                        android:layout_width="match_parent"-->
-                    <!--                        android:layout_height="wrap_content"-->
-                    <!--                        android:layout_margin="5dp"-->
-                    <!--                        android:clickable="true"-->
-                    <!--                        android:focusable="true"-->
-                    <!--                        android:gravity="center"-->
-                    <!--                        android:padding="10dp"-->
-                    <!--                        android:text="@string/select_country"-->
-                    <!--                        android:textColor="@color/white" />-->
-
-                    <!--                    <TextView-->
-                    <!--                        android:id="@+id/text_view_select_city"-->
-                    <!--                        android:layout_width="match_parent"-->
-                    <!--                        android:layout_height="wrap_content"-->
-                    <!--                        android:layout_margin="5dp"-->
-                    <!--                        android:clickable="true"-->
-                    <!--                        android:focusable="true"-->
-                    <!--                        android:gravity="center"-->
-                    <!--                        android:padding="10dp"-->
-                    <!--                        android:text="@string/select_city"-->
-                    <!--                        android:textColor="@color/white" />-->
+                    android:padding="@dimen/edit_ads_layout_padding">
 
                     <com.google.android.material.textfield.TextInputLayout
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
-                        android:layout_marginBottom="5dp"
+                        android:layout_marginBottom="@dimen/edit_ads_text_input_layout_margin_bottom"
                         android:hint="@string/edit_select_category" >
 
                         <com.google.android.material.textfield.TextInputEditText
-                            android:id="@+id/text_view_select_category"
+                            android:id="@+id/select_category_edit_text"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:clickable="true"
                             android:focusable="false" />
 
-                        <!--<CheckBox
-                            android:id="@+id/check_box_with_send"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="5dp"
-                            android:text="@string/with_send" />-->
                     </com.google.android.material.textfield.TextInputLayout>
 
                     <com.google.android.material.textfield.TextInputLayout
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
-                        android:hint="Вариант отправки">
+                        android:hint="@string/edit_send_option">
 
                         <com.google.android.material.textfield.TextInputEditText
-                            android:id="@+id/text_view_select_withSend"
+                            android:id="@+id/select_send_option_edit_text"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:text="Не важно"
-                            android:clickable="true"
+                            android:text="@string/no_matter"
                             android:focusable="false" />
                     </com.google.android.material.textfield.TextInputLayout>
 
                     <com.google.android.material.textfield.TextInputLayout
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
-                        android:layout_marginTop="5dp"
+                        android:layout_marginTop="@dimen/edit_ads_text_input_layout_margin_top"
                         android:hint="@string/edit_price">
 
                         <com.google.android.material.textfield.TextInputEditText
-                            android:id="@+id/text_view_price"
+                            android:id="@+id/price_edit_text"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:focusable="true"
@@ -295,11 +238,11 @@
                     <com.google.android.material.textfield.TextInputLayout
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
-                        android:layout_marginTop="5dp"
+                        android:layout_marginTop="@dimen/edit_ads_text_input_layout_margin_top"
                         android:hint="@string/edit_description" >
 
                         <com.google.android.material.textfield.TextInputEditText
-                            android:id="@+id/text_view_description"
+                            android:id="@+id/description_edit_text"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:focusable="true" />
@@ -312,18 +255,17 @@
                 android:id="@+id/button_publish"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_margin="5dp"
+                android:layout_margin="@dimen/edit_ads_button_margin"
                 android:text="@string/edit_publish" />
 
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
 
     <LinearLayout
-        android:id="@+id/progress_layout"
+        android:id="@+id/linear_layout_progress"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        android:background="#743C3B3B"
-        android:clickable="true"
+        android:background="@color/linear_layout_progress_color"
         android:focusable="auto"
         android:gravity="center"
         android:orientation="vertical"
@@ -334,10 +276,19 @@
         app:layout_constraintTop_toTopOf="parent">
 
         <ProgressBar
-            android:id="@+id/progressBar2"
+            android:id="@+id/progress_bar_publishing"
             style="?android:attr/progressBarStyle"
             android:layout_width="match_parent"
             android:layout_height="wrap_content" />
     </LinearLayout>
+
+    <FrameLayout
+        android:id="@+id/edit_ads_fragment_container"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

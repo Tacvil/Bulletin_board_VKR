@@ -5,13 +5,13 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    tools:context=".presentation.activity.LauncherActivity">
+    tools:context=".presentation.activities.LauncherActivity">
 
     <com.airbnb.lottie.LottieAnimationView
-        android:id="@+id/launcherAnim"
+        android:id="@+id/lottie_animation_view"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        app:lottie_fileName="anim1.json">
+        app:lottie_fileName="first_launch_animation.json">
 
     </com.airbnb.lottie.LottieAnimationView>
 

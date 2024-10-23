@@ -3,10 +3,10 @@
 
     <string-array name="category">
 
-        <item>Машины</item>
-        <item>Компьютеры</item>
-        <item>Смартфоны</item>
-        <item>Бытовая техника</item>
+        <item>@string/ad_car</item>
+        <item>@string/ad_pc</item>
+        <item>@string/ad_smartphone</item>
+        <item>@string/ad_dm</item>
 
     </string-array>
 

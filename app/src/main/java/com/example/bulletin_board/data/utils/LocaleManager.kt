@@ -3,8 +3,8 @@ package com.example.bulletin_board.data.utils
 import android.content.Context
 import android.content.res.Configuration
 import androidx.preference.PreferenceManager
-import com.example.bulletin_board.presentation.activity.SettingsActivity.Companion.LANGUAGE_EN
-import com.example.bulletin_board.presentation.activity.SettingsActivity.Companion.LANGUAGE_KEY
+import com.example.bulletin_board.presentation.activities.SettingsActivity.Companion.LANGUAGE_EN
+import com.example.bulletin_board.presentation.activities.SettingsActivity.Companion.LANGUAGE_KEY
 import java.util.Locale
 
 object LocaleManager {

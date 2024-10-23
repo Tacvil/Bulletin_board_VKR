@@ -17,6 +17,7 @@
     <string name="open">Open</string>
     <string name="close">Close</string>
     <string name="not_reg">Please sign in or register!</string>
+    <string name="ad_my_ads">My Ads</string>
 
     <!-- Sign dialog -->
     <string name="email_hint">Email</string>
@@ -52,6 +53,7 @@
     <string name="edit_submitted_for_moderation">Ad submitted for moderation!</string>
     <string name="edit_submission_error">Ad submission error!</string>
     <string name="edit_no_result">No result</string>
+    <string name="edit_send_option">Send Option</string>
 
     <!-- Description Activity -->
     <string name="desc_ad_title">Ad Title</string>
@@ -68,14 +70,21 @@
     <!-- Filter Activity -->
     <string name="hint_from">from</string>
     <string name="hint_to">to</string>
+    <string name="button_apply_filter">Apply Filter</string>
+    <string name="button_clear_filter">Clear Filter</string>
 
     <!-- Ad list item -->
     <string name="price_desc">Price:</string>
     <string name="ads_name">Title Ad</string>
     <string name="publication_time">Publication time</string>
+    <string name="main_image_description">Main image of the ad</string>
+    <string name="view_counter_icon_description">Icon representing the number of views</string>
+    <string name="delete_ad_button_description">Button to delete the ad</string>
+    <string name="edit_ad_button_description">Button to edit the ad</string>
 
     <!-- Search bar -->
     <string name="search_ads">Search ads</string>
+    <string name="search_hint">Enter text to search</string>
 
     <!-- Settings -->
     <string name="settings">Settings</string>
@@ -111,12 +120,9 @@
     <string name="pix_last_month">Last Month</string>
     <string name="pix_last_week">Last Week</string>
     <string name="pix_counter_number">0:00</string>
-
-    <!-- content descriptions -->
     <string name="click_button">click button</string>
     <string name="camera_flash_button">camera flash button</string>
     <string name="lens_facing_button">lens facing button</string>
-    <string name="ad_my_ads">My Ads</string>
 
     <!-- Account -->
     <string name="guest">Guest</string>
@@ -141,4 +147,8 @@
     <string name="voice_recognition_not_supported">Voice recognition is not supported on your device</string>
     <string name="voice_recognition_no_results">Voice recognition did not produce any results</string>
     <string name="voice_recognition_canceled">Voice recognition canceled</string>
+
+    <!-- Progress Dialog -->
+    <string name="loading_message">Loading…</string>
+
 </resources>

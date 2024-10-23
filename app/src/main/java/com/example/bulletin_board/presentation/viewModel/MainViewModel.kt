@@ -97,7 +97,10 @@ class MainViewModel
 
         suspend fun deleteAd(adKey: String) {
             when (val result = useCasesDataUpdate.deleteAdUseCase(adKey)) {
-                is Result.Success -> _appState.value = _appState.value.copy(adEvent = AdUpdateEvent.AdDeleted)
+                is Result.Success ->
+                    _appState.value =
+                        _appState.value.copy(adEvent = AdUpdateEvent.AdDeleted)
+
                 is Result.Error -> {
                     Timber.e(result.exception, "Error deleting ad: $adKey")
                 }

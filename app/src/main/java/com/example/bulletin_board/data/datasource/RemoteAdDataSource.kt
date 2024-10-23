@@ -50,6 +50,11 @@ class RemoteAdDataSource
             const val ADS_LIMIT = 2
         }
 
+        /**
+         * Inserts a new ad into the Firestore database.
+         * @param ad The ad object to be inserted.
+         * @return A Result object indicating success or failure.
+         */
         suspend fun insertAd(ad: Ad): Result<Boolean> =
             try {
                 firestore
@@ -62,6 +67,11 @@ class RemoteAdDataSource
                 Result.Error(e)
             }
 
+        /**
+         * Deletes an ad from the Firestore database.
+         * @param adKey The key of the ad to be deleted.
+         * @return A Result object indicating success or failure.
+         */
         suspend fun deleteAd(adKey: String): Result<Boolean> =
             try {
                 firestore
@@ -75,6 +85,11 @@ class RemoteAdDataSource
                 Result.Error(e)
             }
 
+        /**
+         * Increments the views counter for an ad in the Firestore database.
+         * @param viewData The ViewData object containing the ad key and current views counter.
+         * @return A Result object containing the updated ViewData or an error.
+         */
         suspend fun adViewed(viewData: ViewData): Result<ViewData> =
             try {
                 val viewsCounter = viewData.viewsCounter + 1
@@ -89,6 +104,13 @@ class RemoteAdDataSource
                 Result.Error(e)
             }
 
+        /**
+         * Handles the favorite click action for an ad.
+         * Adds or removes the current user's UID from the favUids array in the Firestore database.
+         * Updates the favCounter accordingly.
+         * @param favData The FavData object containing the ad key, favCounter, and isFav status.
+         * @return A Result object containing the updated FavData or an error.
+         */
         suspend fun onFavClick(favData: FavData): Result<FavData> =
             try {
                 auth.uid?.let { uid ->
@@ -120,6 +142,12 @@ class RemoteAdDataSource
                 Result.Error(e)
             }
 
+        /**
+         * Retrieves the user's ads from the Firestore database.
+         * @param key The document snapshot to start querying from (for pagination).
+         * @param limit The maximum number of ads to retrieve.
+         * @return A Pair containing the list of ads and the next document snapshot (for pagination).
+         */
         suspend fun getMyAds(
             key: DocumentSnapshot? = null,
             limit: Long = ADS_LIMIT.toLong(),
@@ -147,6 +175,12 @@ class RemoteAdDataSource
                 Pair(emptyList(), null)
             }
 
+        /**
+         * Retrieves the user's favorite ads from the Firestore database.
+         * @param limit The maximum number of ads to retrieve.
+         * @param startAfter The document snapshot to start querying from (for pagination).
+         * @return A Pair containing the list of ads and the next document snapshot (for pagination).
+         */
         suspend fun getMyFavs(
             limit: Long = ADS_LIMIT.toLong(),
             startAfter: DocumentSnapshot? = null,
@@ -182,6 +216,11 @@ class RemoteAdDataSource
                 Pair(emptyList(), null)
             }
 
+        /**
+         * Retrieves the minimum and maximum price for ads in a specific category.
+         * @param category The category to filter by (optional).
+         * @return A Result object containing a Pair of the minimum and maximum price, or an error.
+         */
         suspend fun getMinMaxPrice(category: String?): Result<Pair<Int?, Int?>> =
             try {
                 val collectionReference = firestore.collection(MAIN_COLLECTION)
@@ -229,6 +268,13 @@ class RemoteAdDataSource
                 Result.Error(e)
             }
 
+        /**
+         * Retrieves all ads from the Firestore database, applying filters and pagination.
+         * @param filter A map of filters to apply to the query.
+         * @param key The document snapshot to start querying from (for pagination).
+         * @param limit The maximum number of ads to retrieve.
+         * @return A Pair containing the list of ads and the next document snapshot (for pagination).
+         */
         suspend fun getAllAds(
             filter: MutableMap<String, String>,
             key: DocumentSnapshot? = null,
@@ -426,6 +472,11 @@ class RemoteAdDataSource
             return query
         }
 
+        /**
+         * Fetches search results from the Firestore database based on the input query.
+         * @param inputSearchQuery The search query entered by the user.
+         * @return A Result object containing the list of search results or an error.
+         */
         suspend fun fetchSearchResults(inputSearchQuery: String): Result<List<String>> =
             try {
                 val query =
@@ -444,6 +495,11 @@ class RemoteAdDataSource
                 Result.Error(e)
             }
 
+        /**
+         * Uploads an image to Firebase Storage.
+         * @param byteArray The byte array representation of the image.
+         * @return A Result object containing the download URI of the uploaded image or an error.
+         */
         suspend fun uploadImage(byteArray: ByteArray): Result<Uri> =
             try {
                 val imageFileName = "image_${System.currentTimeMillis()}"
@@ -462,6 +518,12 @@ class RemoteAdDataSource
                 Result.Error(e)
             }
 
+        /**
+         * Updates an existing image in Firebase Storage.
+         * @param byteArray The byte array representation of the new image.
+         * @param url The URL of the existing image to be updated.
+         * @return A Result object containing the download URI of the updated image or an error.
+         */
         suspend fun updateImage(
             byteArray: ByteArray,
             url: String,
@@ -482,6 +544,11 @@ class RemoteAdDataSource
                 Result.Error(e)
             }
 
+        /**
+         * Deletes an image from Firebase Storage by its URL.
+         * @param oldUrl The URL of the image to be deleted.
+         * @return A Result object indicating success or failure.
+         */
         suspend fun deleteImageByUrl(oldUrl: String) =
             try {
                 val imageRef = dbStorage.storage.getReferenceFromUrl(oldUrl)
@@ -491,6 +558,11 @@ class RemoteAdDataSource
                 Result.Error(e)
             }
 
+        /**
+         * Saves the user's FCM token to the Firestore database.
+         * @param token The FCM token to be saved.
+         * @return A Result object indicating success or failure.
+         */
         suspend fun saveToken(token: String): Result<Boolean> =
             try {
                 val userRef = firestore.collection(USERS_COLLECTION).document(auth.uid ?: "")

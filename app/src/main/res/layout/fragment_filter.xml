@@ -2,7 +2,7 @@
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/place_holder"
+    android:id="@+id/fragment_container"
     style="@style/Widget.Material3.BottomSheet"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -14,60 +14,59 @@
         android:orientation="vertical">
 
         <com.google.android.material.bottomsheet.BottomSheetDragHandleView
-            android:id="@+id/drag_handle"
+            android:id="@+id/bottom_sheet_drag_handle"
             android:layout_width="match_parent"
             android:layout_height="wrap_content" />
 
         <androidx.core.widget.NestedScrollView
-            android:id="@+id/scroll_view_main"
+            android:id="@+id/filter_scroll_view"
             android:layout_width="match_parent"
             android:layout_height="match_parent">
 
             <LinearLayout
-                android:id="@+id/placeee"
+                android:id="@+id/filter_content_layout"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical">
 
                 <androidx.cardview.widget.CardView
-                    android:id="@+id/card_address"
+                    android:id="@+id/address_card_view"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
 
-                    android:layout_margin="5dp"
-                    app:cardCornerRadius="5dp"
-                    app:cardElevation="5dp">
+                    android:layout_margin="@dimen/filter_card_margin"
+                    app:cardCornerRadius="@dimen/filter_card_corner_radius"
+                    app:cardElevation="@dimen/filter_card_elevation">
 
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
                         android:orientation="vertical"
-                        android:padding="5dp">
+                        android:padding="@dimen/filter_layout_padding">
 
                         <com.google.android.material.textfield.TextInputLayout
-                            android:id="@+id/text_view_select_country_layout"
+                            android:id="@+id/select_country_text_input_layout"
                             android:layout_width="match_parent"
                             android:layout_height="match_parent"
-                            android:layout_marginTop="5dp"
+                            android:layout_marginTop="@dimen/filter_text_input_layout_margin_top"
                             android:hint="@string/edit_select_country">
 
                             <com.google.android.material.textfield.TextInputEditText
-                                android:id="@+id/text_view_select_country"
+                                android:id="@+id/select_country_edit_text"
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
-                                android:clickable="true"
                                 android:focusable="false" />
                         </com.google.android.material.textfield.TextInputLayout>
 
                         <com.google.android.material.textfield.TextInputLayout
-                            android:id="@+id/text_view_select_city_layout"
+                            android:id="@+id/select_city_text_input_layout"
                             android:layout_width="match_parent"
                             android:layout_height="match_parent"
-                            android:layout_marginTop="5dp"
+                            android:layout_marginTop="@dimen/filter_text_input_layout_margin_top"
                             android:hint="@string/edit_select_city">
 
                             <com.google.android.material.textfield.TextInputEditText
-                                android:id="@+id/text_view_select_city"
+                                android:id="@+id/select_city_edit_text"
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
                                 android:clickable="true"
@@ -77,11 +76,11 @@
                         <com.google.android.material.textfield.TextInputLayout
                             android:layout_width="match_parent"
                             android:layout_height="match_parent"
-                            android:layout_marginTop="5dp"
+                            android:layout_marginTop="@dimen/filter_text_input_layout_margin_top"
                             android:hint="@string/edit_index">
 
                             <com.google.android.material.textfield.TextInputEditText
-                                android:id="@+id/text_view_index"
+                                android:id="@+id/index_edit_text"
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
                                 android:focusable="true"
@@ -92,18 +91,18 @@
                 </androidx.cardview.widget.CardView>
 
                 <androidx.cardview.widget.CardView
-                    android:id="@+id/card_category"
+                    android:id="@+id/category_card_view"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
-                    android:layout_margin="5dp"
-                    app:cardCornerRadius="5dp"
-                    app:cardElevation="5dp">
+                    android:layout_margin="@dimen/filter_card_margin"
+                    app:cardCornerRadius="@dimen/filter_card_corner_radius"
+                    app:cardElevation="@dimen/filter_card_elevation">
 
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
                         android:orientation="vertical"
-                        android:padding="5dp">
+                        android:padding="@dimen/filter_layout_padding">
 
                         <com.google.android.material.textfield.TextInputLayout
                             android:layout_width="match_parent"
@@ -116,45 +115,46 @@
                         <com.google.android.material.textfield.TextInputLayout
                             android:layout_width="match_parent"
                             android:layout_height="match_parent"
-                            android:layout_marginTop="5dp"
-                            android:hint="Вариант отправки">
+                            android:layout_marginTop="@dimen/filter_text_input_layout_margin_top"
+                            android:hint="@string/edit_send_option">
 
                             <com.google.android.material.textfield.TextInputEditText
-                                android:id="@+id/text_view_select_withSend"
+                                android:id="@+id/select_send_option_edit_text"
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
                                 android:clickable="true"
                                 android:focusable="false"
-                                android:text="Не важно" />
+                                android:text="@string/no_matter" />
                         </com.google.android.material.textfield.TextInputLayout>
 
                         <TextView
                             style="@style/Widget.MaterialComponents.TextInputLayout.FilledBox"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_marginStart="2dp"
-                            android:layout_marginTop="5dp"
-                            android:text="Цена"
-                            android:textSize="16sp">
+                            android:layout_marginStart="@dimen/filter_price_text_view_margin_start"
+                            android:layout_marginTop="@dimen/filter_price_text_view_margin_top"
+                            android:text="@string/desc_price"
+                            android:textSize="@dimen/filter_price_text_view_text_size">
 
                         </TextView>
 
                         <LinearLayout
                             android:layout_width="match_parent"
                             android:layout_height="match_parent"
+                            android:baselineAligned="false"
                             android:orientation="horizontal"
                             android:weightSum="2">
 
                             <com.google.android.material.textfield.TextInputLayout
-                                android:id="@+id/text_view_price_from_layout"
+                                android:id="@+id/price_from_text_input_layout"
                                 android:layout_width="match_parent"
                                 android:layout_height="match_parent"
-                                android:layout_marginEnd="2dp"
+                                android:layout_marginEnd="@dimen/filter_price_input_layout_margin_horizontal"
                                 android:layout_weight="1"
-                                android:hint="от">
+                                android:hint="@string/hint_from">
 
                                 <com.google.android.material.textfield.TextInputEditText
-                                    android:id="@+id/text_view_price_from"
+                                    android:id="@+id/price_from_edit_text"
                                     android:layout_width="match_parent"
                                     android:layout_height="wrap_content"
                                     android:layout_weight="1"
@@ -164,15 +164,15 @@
                             </com.google.android.material.textfield.TextInputLayout>
 
                             <com.google.android.material.textfield.TextInputLayout
-                                android:id="@+id/text_view_price_to_layout"
+                                android:id="@+id/price_to_text_input_layout"
                                 android:layout_width="match_parent"
                                 android:layout_height="match_parent"
-                                android:layout_marginStart="2dp"
+                                android:layout_marginStart="@dimen/filter_price_input_layout_margin_horizontal"
                                 android:layout_weight="1"
-                                android:hint="до">
+                                android:hint="@string/hint_to">
 
                                 <com.google.android.material.textfield.TextInputEditText
-                                    android:id="@+id/text_view_price_to"
+                                    android:id="@+id/price_to_edit_text"
                                     android:layout_width="match_parent"
                                     android:layout_height="wrap_content"
                                     android:layout_weight="1"
@@ -188,23 +188,23 @@
                 </androidx.cardview.widget.CardView>
 
                 <Button
-                    android:id="@+id/button_done"
+                    android:id="@+id/apply_filter_button"
                     style="@style/Widget.Material3.Button"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="5dp"
-                    android:layout_marginEnd="5dp"
-                    android:text="Применить фильтр" />
+                    android:layout_marginStart="@dimen/filter_button_margin_horizontal"
+                    android:layout_marginEnd="@dimen/filter_button_margin_horizontal"
+                    android:text="@string/button_apply_filter" />
 
                 <Button
-                    android:id="@+id/button_clear_filter"
+                    android:id="@+id/clear_filter_button"
                     style="@style/Widget.Material3.Button"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="5dp"
-                    android:layout_marginEnd="5dp"
-                    android:layout_marginBottom="5dp"
-                    android:text="Очистить фильтр" />
+                    android:layout_marginStart="@dimen/filter_button_margin_horizontal"
+                    android:layout_marginEnd="@dimen/filter_button_margin_horizontal"
+                    android:layout_marginBottom="@dimen/filter_button_margin_bottom"
+                    android:text="@string/button_clear_filter" />
 
             </LinearLayout>
         </androidx.core.widget.NestedScrollView>

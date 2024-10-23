@@ -1,21 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content">
 
     <androidx.cardview.widget.CardView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_margin="5dp"
-        app:cardCornerRadius="5dp"
-        app:cardElevation="5dp"
+        android:layout_margin="@dimen/card_margin"
+        app:cardCornerRadius="@dimen/card_corner_radius"
+        app:cardElevation="@dimen/card_elevation"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.0">
+        app:layout_constraintTop_toTopOf="parent">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -23,7 +21,7 @@
             android:orientation="vertical">
 
             <com.google.android.material.textfield.TextInputLayout
-                android:id="@+id/text_view_title"
+                android:id="@+id/ad_title_input_layout"
                 style="@style/Widget.MaterialComponents.TextInputLayout.FilledBox"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
@@ -31,7 +29,7 @@
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent"
                 app:errorEnabled="false"
-                android:padding="5dp">
+                android:padding="@dimen/layout_padding">
 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/ad_title_edit_text"
@@ -44,47 +42,30 @@
                     android:cursorVisible="false"
                     android:focusableInTouchMode="false"
                     android:gravity="center"
-                    android:maxLines="2"
+                    android:maxLines="1"
+                    android:singleLine="true"
                     android:ellipsize="end"
-                    android:hint="@string/ads_name"
-                    android:text="Example name ads"/>
+                    android:text="@tools:sample/lorem/random"
+                    android:hint="@string/ads_name" />
             </com.google.android.material.textfield.TextInputLayout>
 
             <ImageView
                 android:id="@+id/image_view_main_image"
                 android:layout_width="match_parent"
-                android:layout_height="200dp"
-                android:layout_marginStart="5dp"
-                android:layout_marginEnd="5dp"
+                android:layout_height="@dimen/viewpager_height"
+                android:layout_marginStart="@dimen/layout_padding"
+                android:layout_marginEnd="@dimen/layout_padding"
+                android:contentDescription="@string/main_image_description"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@+id/text_view_title"
                 app:srcCompat="@drawable/ic_def_image" />
 
-            <com.google.android.material.textfield.TextInputLayout
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:padding="5dp"
-                android:visibility="gone">
-
-                <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/text_view_description"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:clickable="false"
-                    android:cursorVisible="false"
-                    android:ellipsize="end"
-                    android:focusable="false"
-                    android:focusableInTouchMode="false"
-                    android:hint="Описание"
-                    android:inputType="none"
-                    android:maxLines="3" />
-            </com.google.android.material.textfield.TextInputLayout>
-
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
+                android:baselineAligned="false"
                 android:orientation="horizontal"
                 android:weightSum="2">
 
@@ -95,12 +76,11 @@
                     android:orientation="horizontal">
 
                     <TextView
-                        android:id="@+id/textViewData"
+                        android:id="@+id/text_view_date"
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
-                        android:layout_marginStart="10dp"
-                        android:gravity="center_vertical"
-                        android:text="" />
+                        android:layout_marginStart="@dimen/ads_item_date_margin_start"
+                        android:gravity="center_vertical"/>
                 </LinearLayout>
 
                 <LinearLayout
@@ -111,11 +91,11 @@
                     android:orientation="horizontal">
 
                     <TextView
-                        android:id="@+id/text_view_price_desc"
+                        android:id="@+id/text_view_price_description"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginEnd="2dp"
-                        android:padding="5dp"
+                        android:layout_marginEnd="@dimen/ads_item_price_description_margin_end"
+                        android:padding="@dimen/layout_padding"
 
                         android:text="@string/price_desc" />
 
@@ -123,10 +103,8 @@
                         android:id="@+id/text_view_price"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginEnd="8dp"
-
-                        android:padding="5dp"
-                        android:text="223232332" />
+                        android:layout_marginEnd="@dimen/ads_item_price_margin_end"
+                        android:padding="@dimen/layout_padding"/>
 
                 </LinearLayout>
             </LinearLayout>
@@ -135,9 +113,10 @@
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:layout_marginStart="5dp"
-                android:layout_marginEnd="5dp"
-                android:layout_marginBottom="5dp"
+                android:layout_marginStart="@dimen/ads_item_linear_layout_margin_horizontal"
+                android:layout_marginEnd="@dimen/ads_item_linear_layout_margin_horizontal"
+                android:layout_marginBottom="@dimen/ads_item_linear_layout_margin_bottom"
+                android:baselineAligned="false"
                 android:orientation="horizontal">
 
                 <LinearLayout
@@ -152,11 +131,12 @@
                         android:layout_height="match_parent">
 
                         <ImageView
-                            android:id="@+id/image_view_view_counter2"
+                            android:id="@+id/image_view_view_counter"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_marginStart="8dp"
-                            android:layout_marginTop="3dp"
+                            android:layout_marginStart="@dimen/ads_item_view_counter_icon_margin_start"
+                            android:layout_marginTop="@dimen/ads_item_view_counter_icon_margin_top"
+                            android:contentDescription="@string/view_counter_icon_description"
                             app:layout_constraintStart_toStartOf="parent"
                             app:layout_constraintTop_toTopOf="parent"
                             app:srcCompat="@drawable/ic_eye" />
@@ -165,53 +145,38 @@
                             android:id="@+id/text_view_view_counter"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_marginStart="8dp"
-                            android:layout_marginTop="5dp"
-                            android:text="0"
-                            android:textSize="14sp"
-                            app:layout_constraintStart_toEndOf="@+id/image_view_view_counter2"
+                            android:layout_marginStart="@dimen/ads_item_view_counter_margin_start"
+                            android:layout_marginTop="@dimen/ads_item_view_counter_margin_top"
+                            android:textSize="@dimen/ads_item_text_size"
+                            app:layout_constraintStart_toEndOf="@+id/image_view_view_counter"
                             app:layout_constraintTop_toTopOf="parent" />
 
                         <com.airbnb.lottie.LottieAnimationView
-                            android:id="@+id/image_button_fav1"
-                            android:layout_width="30dp"
-                            android:layout_height="30dp"
-                            android:layout_marginStart="8dp"
-                            android:clickable="true"
+                            android:id="@+id/lottie_animation_view_button_favorite"
+                            android:layout_width="@dimen/ads_item_favorite_button_size"
+                            android:layout_height="@dimen/ads_item_favorite_button_size"
+                            android:layout_marginStart="@dimen/ads_item_favorite_button_margin_start"
                             android:focusable="true"
                             app:layout_constraintStart_toEndOf="@+id/text_view_view_counter"
                             app:layout_constraintTop_toTopOf="parent"
-                            app:lottie_fileName="blue_heart.json">
+                            app:lottie_fileName="favorite_toggle_animation.json">
 
                         </com.airbnb.lottie.LottieAnimationView>
 
                         <TextView
-                            android:id="@+id/text_view_fav"
+                            android:id="@+id/text_view_favorite_counter"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_marginStart="8dp"
-                            android:layout_marginTop="5dp"
-                            android:text="0"
-                            android:textSize="14sp"
-                            app:layout_constraintStart_toEndOf="@+id/image_button_fav1"
+                            android:layout_marginStart="@dimen/ads_item_favorite_counter_margin_start"
+                            android:layout_marginTop="@dimen/ads_item_favorite_counter_margin_top"
+                            android:textSize="@dimen/ads_item_text_size"
+                            app:layout_constraintStart_toEndOf="@+id/lottie_animation_view_button_favorite"
                             app:layout_constraintTop_toTopOf="parent" />
                     </androidx.constraintlayout.widget.ConstraintLayout>
-
-                    <!--                    <ImageButton-->
-                    <!--                        android:id="@+id/image_button_fav"-->
-                    <!--                        android:layout_width="wrap_content"-->
-                    <!--                        android:layout_height="wrap_content"-->
-                    <!--                        android:layout_marginStart="6dp"-->
-                    <!--                        android:layout_marginTop="2dp"-->
-                    <!--                        android:layout_marginEnd="2dp"-->
-                    <!--                        android:layout_marginBottom="2dp"-->
-                    <!--                        android:background="@android:color/transparent"-->
-                    <!--                        android:src="@drawable/ic_favorite_normal" />-->
-
                 </LinearLayout>
 
                 <LinearLayout
-                    android:id="@+id/editPanel"
+                    android:id="@+id/edit_panel"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:layout_weight="2"
@@ -223,16 +188,18 @@
                         android:id="@+id/image_button_delete_ad"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginEnd="16dp"
+                        android:layout_marginEnd="@dimen/ads_item_delete_button_margin_end"
                         android:background="@drawable/edit_image_bg"
+                        android:contentDescription="@string/delete_ad_button_description"
                         android:src="@drawable/ic_delete_image" />
 
                     <ImageButton
                         android:id="@+id/image_button_edit_ad"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginEnd="5dp"
+                        android:layout_marginEnd="@dimen/ads_item_edit_button_margin_end"
                         android:background="@drawable/edit_image_bg"
+                        android:contentDescription="@string/edit_ad_button_description"
                         android:src="@drawable/ic_edit" />
                 </LinearLayout>
             </LinearLayout>

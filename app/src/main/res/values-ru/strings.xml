@@ -17,6 +17,7 @@
     <string name="open">Open</string>
     <string name="close">Close</string>
     <string name="not_reg">Войдите или зарегистрируйтесь!</string>
+    <string name="ad_my_ads">Мои объявления</string>
 
     <!-- Sign dialog -->
     <string name="email_hint">Email</string>
@@ -52,6 +53,7 @@
     <string name="edit_submitted_for_moderation">Объявление отправлено на модерацию!</string>
     <string name="edit_submission_error">Ошибка отправки объявления!</string>
     <string name="edit_no_result">Нет результата</string>
+    <string name="edit_send_option">Вариант отправки</string>
 
     <!-- Description Activity -->
     <string name="desc_ad_title">Название объявления</string>
@@ -68,14 +70,21 @@
     <!-- Filter Activity -->
     <string name="hint_from">от</string>
     <string name="hint_to">до</string>
+    <string name="button_apply_filter">Применить фильтр</string>
+    <string name="button_clear_filter">Очистить фильтр</string>
 
     <!-- Ad list item -->
     <string name="price_desc">Цена:</string>
     <string name="ads_name">Название объявления</string>
     <string name="publication_time">Время публикации</string>
+    <string name="main_image_description">Главное изображение объявления</string>
+    <string name="view_counter_icon_description">Значок, отображающий количество просмотров</string>
+    <string name="delete_ad_button_description">Кнопка для удаления объявления</string>
+    <string name="edit_ad_button_description">Кнопка для редактирования объявления</string>
 
     <!-- Search bar -->
     <string name="search_ads">Поиск объявлений</string>
+    <string name="search_hint">Введите текст для поиска</string>
 
     <!-- Settings -->
     <string name="settings">Настройки</string>
@@ -100,23 +109,20 @@
     <string name="without_sending">Без отправки</string>
 
     <!-- Pix -->
-    <string name="pix_selection_limiter">Can\'t select more than %d items.</string>
-    <string name="pix_bottom_message_without_video">Drag images up for gallery</string>
-    <string name="pix_bottom_message_with_only_video">Drag videos up for gallery</string>
-    <string name="pix_bottom_message_with_video">Hold for video, tap for photo</string>
-    <string name="pix_ok">OK</string>
-    <string name="pix_tap_to_select">Tap photo to select</string>
-    <string name="pix_selected">Selected</string>
-    <string name="pix_recent">Recent</string>
-    <string name="pix_last_month">Last Month</string>
-    <string name="pix_last_week">Last Week</string>
+    <string name="pix_selection_limiter">Нельзя выбрать больше %d элементов.</string>
+    <string name="pix_bottom_message_without_video">Перетащите изображения вверх для галереи</string>
+    <string name="pix_bottom_message_with_only_video">Перетащите видео вверх для галереи</string>
+    <string name="pix_bottom_message_with_video">Удерживайте для видео, нажмите для фото</string>
+    <string name="pix_ok">ОК</string>
+    <string name="pix_tap_to_select">Нажмите на фото для выбора</string>
+    <string name="pix_selected">Выбрано</string>
+    <string name="pix_recent">Недавние</string>
+    <string name="pix_last_month">Прошлый месяц</string>
+    <string name="pix_last_week">Прошлая неделя</string>
     <string name="pix_counter_number">0:00</string>
-
-    <!-- content descriptions -->
-    <string name="click_button">click button</string>
-    <string name="camera_flash_button">camera flash button</string>
-    <string name="lens_facing_button">lens facing button</string>
-    <string name="ad_my_ads">Мои объявления</string>
+    <string name="click_button">Нажмите кнопку</string>
+    <string name="camera_flash_button">Вспышка</string>
+    <string name="lens_facing_button">Переключить камеру</string>
 
     <!-- Account -->
     <string name="guest">Гость</string>
@@ -141,4 +147,7 @@
     <string name="voice_recognition_not_supported">Голосовое распознавание не поддерживается на вашем устройстве</string>
     <string name="voice_recognition_no_results">Распознавание речи не дало результатов</string>
     <string name="voice_recognition_canceled">Распознавание речи отменено</string>
+
+    <!-- Progress Dialog -->
+    <string name="loading_message">Загрузка…</string>
 </resources>

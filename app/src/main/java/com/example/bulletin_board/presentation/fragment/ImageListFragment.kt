@@ -15,7 +15,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.bulletin_board.R
 import com.example.bulletin_board.data.image.ImageManager
 import com.example.bulletin_board.data.image.PixImagePicker.Companion.MAX_IMAGE_COUNT
-import com.example.bulletin_board.databinding.ListImageFragBinding
+import com.example.bulletin_board.databinding.FragmentImageListBinding
 import com.example.bulletin_board.domain.navigation.OnFragmentClosedListener
 import com.example.bulletin_board.presentation.adapters.ItemTouchMoveCallback
 import com.example.bulletin_board.presentation.adapters.SelectImageRvAdapter
@@ -31,20 +31,22 @@ class ImageListFragment
         private val imageManager: ImageManager,
         private val adapter: SelectImageRvAdapter,
     ) : BaseAdsFrag() {
-        private var _binding: ListImageFragBinding? = null
+        private var _binding: FragmentImageListBinding? = null
         val binding get() = _binding!!
 
         private lateinit var dragCallback: ItemTouchMoveCallback
         private lateinit var touchHelper: ItemTouchHelper
         var addImageMenuItem: MenuItem? = null
 
+        private var onBindingReady: (() -> Unit)? = null
+
         override fun onCreateView(
             inflater: LayoutInflater,
             container: ViewGroup?,
             savedInstanceState: Bundle?,
         ): View {
-            _binding = ListImageFragBinding.inflate(inflater, container, false)
-            bannerAdView = binding.adView
+            _binding = FragmentImageListBinding.inflate(inflater, container, false)
+            bannerAdView = binding.bannerAdView
             return binding.root
         }
 
@@ -55,6 +57,7 @@ class ImageListFragment
             super.onViewCreated(view, savedInstanceState)
             initializeRecyclerView()
             initializeToolbar()
+            onBindingReady?.invoke()
         }
 
         private fun initializeRecyclerView() {
@@ -116,16 +119,19 @@ class ImageListFragment
             uri: Uri,
             pos: Int,
         ) {
-            val progressBar =
-                binding.recyclerViewSelectImage[pos]
-                    .findViewById<ProgressBar>(R.id.progress_bar)
-                    .apply {
-                        visibility = View.VISIBLE
+            val recyclerView = binding.recyclerViewSelectImage
+            recyclerView.post {
+                if (recyclerView.adapter != null && recyclerView.adapter!!.itemCount > pos) {
+                    val progressBar =
+                        recyclerView[pos]
+                            .findViewById<ProgressBar>(R.id.progress_bar_item_loading)
+                            .apply { visibility = View.VISIBLE }
+                    imageManager.imageResize(arrayListOf(uri)) { bitmapList ->
+                        adapter.selectedImages[pos] = bitmapList[0]
+                        progressBar.visibility = View.GONE
+                        adapter.notifyItemChanged(pos)
                     }
-            imageManager.imageResize(arrayListOf(uri)) { bitmapList ->
-                adapter.selectedImages[pos] = bitmapList[0]
-                progressBar.visibility = View.GONE
-                adapter.notifyItemChanged(pos)
+                }
             }
         }
 
@@ -144,6 +150,10 @@ class ImageListFragment
 
         private fun updateAddImageMenuItemVisibility() {
             addImageMenuItem?.isVisible = adapter.selectedImages.size <= 2
+        }
+
+        fun setOnBindingReadyListener(listener: (() -> Unit)?) {
+            onBindingReady = listener
         }
 
         override fun onDestroyView() {

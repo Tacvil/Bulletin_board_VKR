@@ -17,18 +17,22 @@ import com.example.bulletin_board.data.datasource.RemoteAdDataSource.Companion.P
 import com.example.bulletin_board.data.datasource.RemoteAdDataSource.Companion.PRICE_TO_FIELD
 import com.example.bulletin_board.data.datasource.RemoteAdDataSource.Companion.WITH_SEND_FIELD
 import com.example.bulletin_board.data.utils.SortOption
-import com.example.bulletin_board.databinding.ActivityFilterBinding
+import com.example.bulletin_board.data.utils.SortUtils
+import com.example.bulletin_board.databinding.FragmentFilterBinding
 import com.example.bulletin_board.domain.location.CityDataSourceProvider
 import com.example.bulletin_board.presentation.adapters.RcViewDialogSpinnerAdapter
 import com.example.bulletin_board.presentation.dialogs.DialogSpinnerHelper
+import com.example.bulletin_board.presentation.utils.KeyboardUtils
 import com.example.bulletin_board.presentation.viewModel.MainViewModel
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
+import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
 import dagger.hilt.android.AndroidEntryPoint
 import jakarta.inject.Inject
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import timber.log.Timber
 
 @AndroidEntryPoint
 class FilterFragment
@@ -38,17 +42,20 @@ class FilterFragment
         private val dialogSpinnerHelper: DialogSpinnerHelper,
     ) : BottomSheetDialogFragment() {
         private val viewModel: MainViewModel by activityViewModels()
-        private var _binding: ActivityFilterBinding? = null
+        private var _binding: FragmentFilterBinding? = null
         val binding get() = _binding!!
 
-        // override fun getTheme(): Int = R.style.BottomSheetDialogTheme
+        @Inject
+        lateinit var sortUtils: SortUtils
+
+        private var focusedEditText: TextInputEditText? = null
 
         override fun onCreateView(
             inflater: LayoutInflater,
             container: ViewGroup?,
             savedInstanceState: Bundle?,
         ): View {
-            _binding = ActivityFilterBinding.inflate(inflater, container, false)
+            _binding = FragmentFilterBinding.inflate(inflater, container, false)
             return binding.root
         }
 
@@ -62,8 +69,8 @@ class FilterFragment
                 viewModel.getMinMaxPrice()
                 viewModel.appState.collectLatest { appState ->
                     appState.minMaxPrice?.let { (min, max) ->
-                        binding.textViewPriceFromLayout.hint = "${getString(R.string.hint_from)} $min"
-                        binding.textViewPriceToLayout.hint = "${getString(R.string.hint_to)} $max"
+                        binding.priceFromTextInputLayout.hint = "${getString(R.string.hint_from)} $min"
+                        binding.priceToTextInputLayout.hint = "${getString(R.string.hint_to)} $max"
                         focusChangeListener(min, max)
                     }
                 }
@@ -74,7 +81,7 @@ class FilterFragment
 
             getFilter()
             setupSelectors()
-            onClickDone()
+            onClickApplyFilters()
             onClickClear()
         }
 
@@ -87,8 +94,8 @@ class FilterFragment
             minPrice: Int?,
             maxPrice: Int?,
         ) = with(binding) {
-            setHintOnFocusChange(textViewPriceFromLayout, minPrice, getString(R.string.hint_from))
-            setHintOnFocusChange(textViewPriceToLayout, maxPrice, getString(R.string.hint_to))
+            setHintOnFocusChange(priceFromTextInputLayout, minPrice, getString(R.string.hint_from))
+            setHintOnFocusChange(priceToTextInputLayout, maxPrice, getString(R.string.hint_to))
         }
 
         private fun setHintOnFocusChange(
@@ -97,57 +104,75 @@ class FilterFragment
             hint: String,
         ) {
             textInputLayout.editText?.onFocusChangeListener =
-                View.OnFocusChangeListener { _, hasFocus ->
-                    textInputLayout.hint =
-                        if (hasFocus) {
-                            hint
-                        } else {
-                            "$hint ${price ?: 0}"
-                        }
+                View.OnFocusChangeListener { v, hasFocus ->
+                    if (hasFocus) focusedEditText = v as? TextInputEditText
+
+                    textInputLayout.hint = hint.takeIf { hasFocus } ?: "$hint ${price ?: 0}"
                 }
         }
 
         private fun getFilter() =
             with(binding) {
-                viewModel.getFilterValue(COUNTRY_FIELD)?.let { textViewSelectCountry.setText(it) }
-                viewModel.getFilterValue(CITY_FIELD)?.let { textViewSelectCity.setText(it) }
-                viewModel.getFilterValue(INDEX_FIELD)?.let { textViewIndex.setText(it) }
-                viewModel.getFilterValue(PRICE_FROM_FIELD)?.let { textViewPriceFrom.setText(it) }
-                viewModel.getFilterValue(PRICE_TO_FIELD)?.let { textViewPriceTo.setText(it) }
-                viewModel.getFilterValue(WITH_SEND_FIELD)?.let { textViewSelectWithSend.setText(it) }
+                viewModel.getFilterValue(COUNTRY_FIELD)?.let { selectCountryEditText.setText(it) }
+                viewModel.getFilterValue(CITY_FIELD)?.let { selectCityEditText.setText(it) }
+                viewModel.getFilterValue(INDEX_FIELD)?.let { indexEditText.setText(it) }
+                viewModel.getFilterValue(PRICE_FROM_FIELD)?.let { priceFromEditText.setText(it) }
+                viewModel.getFilterValue(PRICE_TO_FIELD)?.let { priceToEditText.setText(it) }
+                viewModel.getFilterValue(WITH_SEND_FIELD)?.let { selectSendOptionEditText.setText(it) }
             }
 
         private fun setupSelectors() =
             with(binding) {
-                textViewSelectCountry.setOnClickListener {
-                    if (textViewSelectCity.text.toString() != EMPTY_STRING) {
-                        textViewSelectCity.setText(EMPTY_STRING)
+                indexEditText.onFocusChangeListener =
+                    View.OnFocusChangeListener { v, hasFocus ->
+                        if (hasFocus) {
+                            focusedEditText = v as? TextInputEditText
+                        }
                     }
-                    showSpinnerPopup(textViewSelectCountry, cityDataSourceProvider.getAllCountries()) {
-                        textViewSelectCountry.setText(it)
+
+                selectCountryEditText.setOnClickListener {
+                    focusedEditText?.clearFocus()
+                    KeyboardUtils.hideKeyboard(requireContext(), selectCountryEditText)
+                    if (selectCityEditText.text.toString() != EMPTY_STRING) {
+                        selectCityEditText.setText(EMPTY_STRING)
+                    }
+                    showSpinnerPopup(selectCountryEditText, cityDataSourceProvider.getAllCountries()) {
+                        selectCountryEditText.setText(it)
                     }
                 }
 
-                textViewSelectCity.setOnClickListener {
-                    val selectedCountry = textViewSelectCountry.text.toString()
-                    if (selectedCountry != getString(R.string.edit_select_country)) {
-                        showSpinnerPopup(textViewSelectCity, cityDataSourceProvider.getAllCities(selectedCountry)) {
-                            textViewSelectCity.setText(it)
+                selectCityEditText.setOnClickListener {
+                    focusedEditText?.clearFocus()
+                    KeyboardUtils.hideKeyboard(requireContext(), selectCityEditText)
+                    val selectedCountry = selectCountryEditText.text.toString()
+                    if (selectedCountry.isNotBlank()) {
+                        showSpinnerPopup(
+                            selectCityEditText,
+                            cityDataSourceProvider.getAllCities(selectedCountry),
+                        ) {
+                            selectCityEditText.setText(it)
                         }
                     } else {
-                        Toast.makeText(requireContext(), getString(R.string.edit_no_country_selected), Toast.LENGTH_LONG).show()
+                        Toast
+                            .makeText(
+                                requireContext(),
+                                getString(R.string.edit_no_country_selected),
+                                Toast.LENGTH_SHORT,
+                            ).show()
                     }
                 }
 
-                textViewSelectWithSend.setOnClickListener {
-                    val listVariant =
+                selectSendOptionEditText.setOnClickListener {
+                    focusedEditText?.clearFocus()
+                    KeyboardUtils.hideKeyboard(requireContext(), selectSendOptionEditText)
+                    val deliveryOptionsList =
                         arrayListOf(
                             Pair(getString(R.string.no_matter), EMPTY_STRING),
                             Pair(getString(R.string.with_sending), EMPTY_STRING),
                             Pair(getString(R.string.without_sending), EMPTY_STRING),
                         )
-                    showSpinnerPopup(textViewSelectWithSend, listVariant, false) {
-                        textViewSelectWithSend.setText(it)
+                    showSpinnerPopup(selectSendOptionEditText, deliveryOptionsList, false) {
+                        selectSendOptionEditText.setText(it)
                     }
                 }
             }
@@ -155,7 +180,7 @@ class FilterFragment
         private fun showSpinnerPopup(
             textView: TextView,
             items: ArrayList<Pair<String, String>>,
-            isCountry: Boolean = true,
+            showSearchBar: Boolean = true,
             onItemSelected: (String) -> Unit,
         ) {
             dialogSpinnerHelper.showDialogSpinner(
@@ -168,13 +193,13 @@ class FilterFragment
                         onItemSelected(item)
                     }
                 },
-                isCountry,
+                showSearchBar,
             )
         }
 
-        private fun onClickDone() =
+        private fun onClickApplyFilters() =
             with(binding) {
-                buttonDone.setOnClickListener {
+                applyFilterButton.setOnClickListener {
                     createFilter()
                     dismiss()
                 }
@@ -182,42 +207,48 @@ class FilterFragment
 
         private fun onClickClear() =
             with(binding) {
-                buttonClearFilter.setOnClickListener {
-                    textViewSelectCountry.setText(EMPTY_STRING)
-                    textViewSelectCity.setText(EMPTY_STRING)
-                    textViewSelectCountryLayout.hint = getString(R.string.edit_select_country)
-                    textViewSelectCityLayout.hint = getString(R.string.edit_select_city)
-                    textViewIndex.setText(EMPTY_STRING)
-                    textViewSelectWithSend.setText(getString(R.string.no_matter))
-                    textViewPriceFrom.setText(EMPTY_STRING)
-                    textViewPriceTo.setText(EMPTY_STRING)
+                clearFilterButton.setOnClickListener {
+                    selectCountryEditText.setText(EMPTY_STRING)
+                    selectCityEditText.setText(EMPTY_STRING)
+                    selectCountryTextInputLayout.hint = getString(R.string.edit_select_country)
+                    selectCityTextInputLayout.hint = getString(R.string.edit_select_city)
+                    indexEditText.setText(EMPTY_STRING)
+                    selectSendOptionEditText.setText(getString(R.string.no_matter))
+                    priceFromEditText.setText(EMPTY_STRING)
+                    priceToEditText.setText(EMPTY_STRING)
                 }
             }
 
-        private fun createFilter() {
-            with(binding) {
-                val filters = mutableMapOf<String, String>()
-                filters[COUNTRY_FIELD] = textViewSelectCountry.text.toString()
-                filters[CITY_FIELD] = textViewSelectCity.text.toString()
-                filters[INDEX_FIELD] = textViewIndex.text.toString()
-                if (textViewSelectWithSend.text.toString() != getString(R.string.no_matter)) {
-                    filters[WITH_SEND_FIELD] =
-                        when (textViewSelectWithSend.text.toString()) {
-                            getString(R.string.with_sending) -> SortOption.WITH_SEND.id
-                            getString(R.string.without_sending) -> SortOption.WITHOUT_SEND.id
-                            else -> EMPTY_STRING
-                        }
-                }
-                filters[PRICE_FROM_FIELD] = textViewPriceFrom.text.toString()
-                filters[PRICE_TO_FIELD] = textViewPriceTo.text.toString()
+    private fun createFilter() {
+        with(binding) {
+            val filters = mutableMapOf<String, String>()
 
-                if (filters[PRICE_FROM_FIELD]?.isNotEmpty() == true || filters[PRICE_TO_FIELD]?.isNotEmpty() == true) {
-                    filters[ORDER_BY_FIELD] = SortOption.BY_PRICE_ASC.id
-                }
-
-                viewModel.updateFilters(filters)
+            selectCountryEditText.text.toString().takeIf { it.isNotBlank() }?.let {
+                filters[COUNTRY_FIELD] = it
             }
+            selectCityEditText.text.toString().takeIf { it.isNotBlank() }?.let {
+                filters[CITY_FIELD] = it
+            }
+            indexEditText.text.toString().takeIf { it.isNotBlank() }?.let {
+                filters[INDEX_FIELD] = it
+            }
+            if (selectSendOptionEditText.text.toString() != getString(R.string.no_matter)) {
+                filters[WITH_SEND_FIELD] = sortUtils.getSendOption(selectSendOptionEditText.text.toString())
+            }
+            priceFromEditText.text.toString().takeIf { it.isNotBlank() }?.let {
+                filters[PRICE_FROM_FIELD] = it
+            }
+            priceToEditText.text.toString().takeIf { it.isNotBlank() }?.let {
+                filters[PRICE_TO_FIELD] = it
+            }
+
+            if (filters[PRICE_FROM_FIELD]?.isNotEmpty() == true || filters[PRICE_TO_FIELD]?.isNotEmpty() == true) {
+                filters[ORDER_BY_FIELD] = SortOption.BY_PRICE_ASC.id
+            }
+
+            viewModel.updateFilters(filters)
         }
+    }
 
         companion object {
             const val FILTER_FRAGMENT_TAG = "FilterFragment"

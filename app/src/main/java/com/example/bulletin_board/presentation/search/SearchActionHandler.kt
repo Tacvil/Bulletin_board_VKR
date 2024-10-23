@@ -17,7 +17,7 @@ class SearchActionHandler
                 val querySearch = searchUi.getQueryText().trim()
                 if (querySearch.isNotEmpty()) {
                     searchUi.updateSearchBar(querySearch)
-                    filterUpdater.addToFilter(KEYWORDS_FIELD, querySearch.split(" ").joinToString("-"))
+                    filterUpdater.addToFilter(KEYWORDS_FIELD, querySearch.split(" ").joinToString("-").lowercase())
                 }
                 searchUi.hideSearchView()
                 false

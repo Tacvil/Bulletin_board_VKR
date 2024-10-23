@@ -1,10 +1,10 @@
-package com.example.bulletin_board.presentation.activity
+package com.example.bulletin_board.presentation.activities
 
-import android.app.Activity
 import android.content.Context
 import android.os.Bundle
 import android.view.MenuItem
 import androidx.activity.OnBackPressedCallback
+import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.preference.PreferenceManager
 import com.example.bulletin_board.R
@@ -13,6 +13,7 @@ import com.example.bulletin_board.databinding.ActivitySettingsBinding
 import com.example.bulletin_board.domain.listener.OnSettingsChangeListener
 import com.example.bulletin_board.presentation.fragment.SettingsFragment
 import com.example.bulletin_board.presentation.theme.ThemeManager
+import com.example.bulletin_board.presentation.viewModel.MainViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import jakarta.inject.Inject
 
@@ -42,14 +43,13 @@ class SettingsActivity :
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         if (item.itemId == android.R.id.home) {
-            setResult(Activity.RESULT_OK)
             finish()
         }
         return super.onOptionsItemSelected(item)
     }
 
     private fun setupToolbar() {
-        setSupportActionBar(binding.toolbar2)
+        setSupportActionBar(binding.settingsToolbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         supportActionBar?.setDisplayShowHomeEnabled(true)
     }
@@ -60,7 +60,6 @@ class SettingsActivity :
             object : OnBackPressedCallback(true) {
                 override fun handleOnBackPressed() {
                     isEnabled = true
-                    setResult(Activity.RESULT_OK)
                     finish()
                 }
             },
@@ -71,10 +70,9 @@ class SettingsActivity :
         if (savedInstanceState == null) {
             supportFragmentManager
                 .beginTransaction()
-                .replace(R.id.place_holder, settingsFragment)
+                .replace(R.id.settings_fragment_container, settingsFragment)
                 .commit()
         }
-        supportActionBar?.setDisplayHomeAsUpEnabled(true)
     }
 
     override fun onLanguageChanged(newLanguage: String) {
@@ -86,9 +84,9 @@ class SettingsActivity :
     }
 
     companion object {
-        const val THEME_KEY = "theme_key"
+        const val THEME_KEY = "THEME_KEY"
         const val LANGUAGE_KEY = "LANGUAGE_KEY"
-        const val DEFAULT_THEME = "Light theme"
+        const val DEFAULT_THEME = "light_theme"
         const val LANGUAGE_RU = "ru"
         const val LANGUAGE_EN = "en"
     }

@@ -7,20 +7,20 @@
         android:layout_height="wrap_content"
         android:title="@string/title_main">
         <com.example.bulletin_board.presentation.preferences.ListPreference
-            android:defaultValue="RU"
+            android:defaultValue="English"
             android:entries="@array/language_array"
             android:entryValues="@array/language_array_values"
             android:icon="@drawable/ic_language"
             android:key="LANGUAGE_KEY"
             android:title="@string/app_language" />
 
-        <com.example.bulletin_board.presentation.preferences.ListPreference
+<!--        <com.example.bulletin_board.presentation.preferences.ListPreference
             android:defaultValue="hh:mm:ss - yyyy/MM/dd"
             android:entries="@array/time_format_array"
             android:entryValues="@array/time_format_values"
             android:icon="@drawable/ic_calendar"
             android:key="time_format_key"
-            android:title="@string/date_and_time" />
+            android:title="@string/date_and_time" />-->
     </PreferenceCategory>
 
     <PreferenceCategory
@@ -29,7 +29,7 @@
         android:title="@string/title_interface">
 
         <com.example.bulletin_board.presentation.preferences.ListPreference
-            android:key="theme_key"
+            android:key="THEME_KEY"
             android:title="@string/choose_style"
             android:defaultValue="@string/light_theme"
             android:icon="@drawable/ic_colors"

@@ -8,7 +8,7 @@ import kotlinx.coroutines.SupervisorJob
 import timber.log.Timber
 
 @HiltAndroidApp
-class MyApplication : Application() {
+class AppApplication : Application() {
     val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     override fun onCreate() {

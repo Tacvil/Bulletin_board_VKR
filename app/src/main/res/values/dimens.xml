@@ -1,33 +1,139 @@
 <resources>
-    <!-- Default screen margins, per the Android Design guidelines. -->
     <dimen name="margin_video_counter_pix">42dp</dimen>
     <dimen name="margin_top">0dp</dimen>
     <dimen name="margin_top_nve">0dp</dimen>
     <dimen name="small_thumb">62dp</dimen>
     <dimen name="fastscroll_bubble_size">38dp</dimen>
 
+    <!-- Popups -->
     <dimen name="popup_offset_x">8dp</dimen>
     <dimen name="popup_offset_y">8dp</dimen>
+
+    <!-- Bottom Sheets -->
     <dimen name="bottom_sheet_drag_handle_height">48dp</dimen>
 
-    <!-- Cards -->
+    <!-- Description -->
     <dimen name="card_margin">5dp</dimen>
     <dimen name="card_corner_radius">5dp</dimen>
     <dimen name="card_elevation">3dp</dimen>
-
-    <!-- ViewPager -->
     <dimen name="viewpager_height">200dp</dimen>
     <dimen name="viewpager_margin_top">5dp</dimen>
-
-    <!-- General padding -->
     <dimen name="layout_padding">5dp</dimen>
-
-    <!-- LinearLayout-->
     <dimen name="linear_layout_margin_top">3dp</dimen>
-
-    <!-- Buttons -->
     <dimen name="button_margin_horizontal">3dp</dimen>
     <dimen name="button_margin_top">3dp</dimen>
     <dimen name="button_margin_end">3dp</dimen>
     <dimen name="button_margin_start">3dp</dimen>
+
+    <!-- Filters -->
+    <dimen name="filter_card_margin">5dp</dimen>
+    <dimen name="filter_card_corner_radius">5dp</dimen>
+    <dimen name="filter_card_elevation">5dp</dimen>
+    <dimen name="filter_layout_padding">5dp</dimen>
+    <dimen name="filter_text_input_layout_margin_top">5dp</dimen>
+    <dimen name="filter_price_text_view_margin_start">2dp</dimen>
+    <dimen name="filter_price_text_view_margin_top">5dp</dimen>
+    <dimen name="filter_price_text_view_text_size">16sp</dimen>
+    <dimen name="filter_price_input_layout_margin_horizontal">2dp</dimen>
+    <dimen name="filter_button_margin_horizontal">5dp</dimen>
+    <dimen name="filter_button_margin_bottom">5dp</dimen>
+
+    <!-- Edit Ads Activity -->
+    <dimen name="edit_ads_card_margin">5dp</dimen>
+    <dimen name="edit_ads_card_corner_radius">5dp</dimen>
+    <dimen name="edit_ads_card_elevation">5dp</dimen>
+    <dimen name="edit_ads_layout_margin">5dp</dimen>
+    <dimen name="edit_ads_layout_padding">5dp</dimen>
+    <dimen name="edit_ads_viewpager_height">200dp</dimen>
+    <dimen name="edit_ads_viewpager_padding">5dp</dimen>
+    <dimen name="edit_ads_add_image_button_margin_top">10dp</dimen>
+    <dimen name="edit_ads_add_image_button_margin_end">10dp</dimen>
+    <dimen name="edit_ads_add_image_button_padding">3dp</dimen>
+    <dimen name="edit_ads_text_input_layout_margin_top">5dp</dimen>
+    <dimen name="edit_ads_text_input_layout_margin_bottom">5dp</dimen>
+    <dimen name="edit_ads_button_margin">5dp</dimen>
+
+    <!-- Ads Item -->
+    <dimen name="ads_item_linear_layout_margin_horizontal">5dp</dimen>
+    <dimen name="ads_item_linear_layout_margin_bottom">5dp</dimen>
+    <dimen name="ads_item_date_margin_start">10dp</dimen>
+    <dimen name="ads_item_price_description_margin_end">2dp</dimen>
+    <dimen name="ads_item_price_margin_end">8dp</dimen>
+    <dimen name="ads_item_view_counter_icon_margin_start">8dp</dimen>
+    <dimen name="ads_item_view_counter_icon_margin_top">3dp</dimen>
+    <dimen name="ads_item_view_counter_margin_start">8dp</dimen>
+    <dimen name="ads_item_view_counter_margin_top">5dp</dimen>
+    <dimen name="ads_item_favorite_button_size">30dp</dimen>
+    <dimen name="ads_item_favorite_button_margin_start">8dp</dimen>
+    <dimen name="ads_item_favorite_counter_margin_start">8dp</dimen>
+    <dimen name="ads_item_favorite_counter_margin_top">5dp</dimen>
+    <dimen name="ads_item_text_size">14sp</dimen>
+    <dimen name="ads_item_delete_button_margin_end">16dp</dimen>
+    <dimen name="ads_item_edit_button_margin_end">5dp</dimen>
+
+    <!-- Main Activity -->
+    <dimen name="main_app_bar_height">135dp</dimen>
+    <dimen name="main_linear_layout_margin_top">75dp</dimen>
+    <dimen name="main_text_input_layout_margin_start">10dp</dimen>
+    <dimen name="main_edit_text_drawable_padding">-13dp</dimen>
+    <dimen name="main_edit_text_text_size">12sp</dimen>
+    <dimen name="main_text_input_layout_margin_end">10dp</dimen>
+    <dimen name="main_bottom_nav_view_margin_end">20dp</dimen>
+    <dimen name="main_floating_action_button_image_size">30dp</dimen>
+    <dimen name="main_search_view_elevation">10dp</dimen>
+    <dimen name="main_bottom_app_bar_fab_cradle_margin">10dp</dimen>
+    <dimen name="main_bottom_app_bar_fab_cradle_rounded_corner_radius">30dp</dimen>
+
+    <!-- Navigation header -->
+    <dimen name="account_image_size">90dp</dimen>
+    <dimen name="account_image_margin_start">16dp</dimen>
+    <dimen name="account_image_margin_top">30dp</dimen>
+    <dimen name="account_email_margin_top">8dp</dimen>
+    <dimen name="account_email_margin_end">16dp</dimen>
+    <dimen name="account_email_margin_bottom">8dp</dimen>
+
+    <!-- Progress dialog -->
+    <dimen name="progress_bar_margin_horizontal">16dp</dimen>
+    <dimen name="progress_bar_margin_vertical">8dp</dimen>
+    <dimen name="loading_message_margin_start">16dp</dimen>
+    <dimen name="loading_message_margin_end">16dp</dimen>
+    <dimen name="loading_message_text_size">18sp</dimen>
+
+    <!-- Edit Image Item -->
+    <dimen name="edit_image_card_margin_horizontal">8dp</dimen>
+    <dimen name="edit_image_card_margin_vertical">8dp</dimen>
+    <dimen name="edit_image_card_margin_bottom">6dp</dimen>
+    <dimen name="edit_image_card_corner_radius">6dp</dimen>
+    <dimen name="edit_image_card_elevation">6dp</dimen>
+    <dimen name="edit_image_image_height">200dp</dimen>
+    <dimen name="edit_image_image_margin">8dp</dimen>
+    <dimen name="edit_image_title_margin_top">8dp</dimen>
+    <dimen name="edit_image_title_margin_end">8dp</dimen>
+    <dimen name="edit_image_title_padding">2dp</dimen>
+    <dimen name="edit_image_drag_button_margin_start">8dp</dimen>
+    <dimen name="edit_image_drag_button_margin_top">8dp</dimen>
+    <dimen name="edit_image_drag_button_padding">1dp</dimen>
+    <dimen name="edit_image_edit_button_margin_end">16dp</dimen>
+    <dimen name="edit_image_edit_button_padding">1dp</dimen>
+    <dimen name="edit_image_delete_button_margin_end">8dp</dimen>
+    <dimen name="edit_image_delete_button_margin_bottom">8dp</dimen>
+    <dimen name="edit_image_delete_button_padding">1dp</dimen>
+
+    <!-- Sign In/Up dialog -->
+    <dimen name="sign_dialog_title_margin_top">8dp</dimen>
+    <dimen name="sign_dialog_title_text_size">18sp</dimen>
+    <dimen name="sign_dialog_error_margin_top">8dp</dimen>
+    <dimen name="sign_dialog_input_horizontal_margin">40dp</dimen>
+    <dimen name="sign_dialog_input_margin_top">8dp</dimen>
+    <dimen name="sign_dialog_button_margin_top">8dp</dimen>
+    <dimen name="sign_dialog_button_margin_bottom">8dp</dimen>
+
+    <!-- Spinner Card View -->
+    <dimen name="spinner_card_margin">10dp</dimen>
+    <dimen name="spinner_card_corner_radius">10dp</dimen>
+
+    <!-- Spinner Item -->
+    <dimen name="spinner_item_icon_margin">5dp</dimen>
+    <dimen name="spinner_item_padding">16dp</dimen>
+    <dimen name="spinner_item_text_size">12sp</dimen>
 </resources>

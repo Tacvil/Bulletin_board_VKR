@@ -14,7 +14,7 @@ import com.bumptech.glide.Glide
 import com.bumptech.glide.load.resource.bitmap.RoundedCorners
 import com.bumptech.glide.request.RequestOptions
 import com.example.bulletin_board.R
-import com.example.bulletin_board.databinding.AdListItemBinding
+import com.example.bulletin_board.databinding.ItemAdListBinding
 import com.example.bulletin_board.domain.model.Ad
 import com.example.bulletin_board.domain.model.FavData
 import com.example.bulletin_board.domain.ui.ad.AdItemClickListener
@@ -26,7 +26,7 @@ abstract class BaseAdAdapter<VH : BaseAdAdapter.BaseAdViewHolder>(
     private val adItemClickListener: AdItemClickListener,
 ) : PagingDataAdapter<Ad, VH>(PagingAdDiffCallback) {
     abstract class BaseAdViewHolder(
-        val binding: AdListItemBinding,
+        val binding: ItemAdListBinding,
         private val adItemClickListener: AdItemClickListener,
     ) : RecyclerView.ViewHolder(binding.root) {
         private val formatter = SimpleDateFormat("dd/MM/yyyy - hh:mm", Locale.getDefault())
@@ -34,15 +34,14 @@ abstract class BaseAdAdapter<VH : BaseAdAdapter.BaseAdViewHolder>(
         @RequiresApi(Build.VERSION_CODES.O)
         fun bind(ad: Ad) =
             with(binding) {
-                textViewDescription.setText(ad.description)
                 textViewPrice.text = ad.price.toString()
                 adTitleEditText.setText(ad.title)
                 textViewViewCounter.text = ad.viewsCounter.toString()
-                textViewFav.text = ad.favCounter
-                imageButtonFav1.isClickable = true
+                textViewFavoriteCounter.text = ad.favCounter
+                lottieAnimationViewButtonFavorite.isClickable = true
                 val publishTimeLabel = binding.root.context.getString(R.string.publication_time)
                 val publishTime = "$publishTimeLabel: ${getTimeFromMillis(ad.time)}"
-                textViewData.text = publishTime
+                textViewDate.text = publishTime
 
                 Glide
                     .with(binding.root)
@@ -58,18 +57,18 @@ abstract class BaseAdAdapter<VH : BaseAdAdapter.BaseAdViewHolder>(
                         false -> Triple(0.87f, 0.87f, 0f)
                     }
 
-                imageButtonFav1.apply {
+                lottieAnimationViewButtonFavorite.apply {
                     setupFavAnimation(startProgress, endProgress, speed)
                 }
 
-                imageButtonFav1.setOnClickListener {
+                lottieAnimationViewButtonFavorite.setOnClickListener {
                     val (startProgressFav, endProgressFav, speedFav) =
                         when (ad.isFav) {
                             true -> Triple(0.6f, 0.87f, 1.5f)
                             false -> Triple(0.0f, 0.38f, 1.5f)
                         }
 
-                    imageButtonFav1.apply {
+                    lottieAnimationViewButtonFavorite.apply {
                         setupFavAnimation(startProgressFav, endProgressFav, speedFav)
 
                         addAnimatorListener(
@@ -116,7 +115,7 @@ abstract class BaseAdAdapter<VH : BaseAdAdapter.BaseAdViewHolder>(
             endProgress: Float,
             speed: Float,
         ) {
-            binding.imageButtonFav1.apply {
+            binding.lottieAnimationViewButtonFavorite.apply {
                 pauseAnimation()
                 cancelAnimation()
                 setMinAndMaxProgress(startProgress, endProgress)
@@ -143,12 +142,12 @@ abstract class BaseAdAdapter<VH : BaseAdAdapter.BaseAdViewHolder>(
         parent: ViewGroup,
         viewType: Int,
     ): VH {
-        val binding = AdListItemBinding.inflate(LayoutInflater.from(parent.context), parent, false)
+        val binding = ItemAdListBinding.inflate(LayoutInflater.from(parent.context), parent, false)
         return getViewHolder(binding, adItemClickListener)
     }
 
     abstract fun getViewHolder(
-        binding: AdListItemBinding,
+        binding: ItemAdListBinding,
         adItemClickListener: AdItemClickListener,
     ): VH
 

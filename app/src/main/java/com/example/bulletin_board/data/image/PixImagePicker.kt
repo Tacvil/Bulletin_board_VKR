@@ -20,7 +20,7 @@ class PixImagePicker
         AddImageHandler,
         GetSingleImagesHandler {
         override fun getMultiImages(imageCounter: Int) {
-            pixImagePickerActions.addPixToActivityImpl(R.id.place_holder, getOptions(imageCounter)) { result ->
+            pixImagePickerActions.addPixToActivityImpl(R.id.edit_ads_fragment_container, getOptions(imageCounter)) { result ->
                 when (result.status) {
                     PixEventCallback.Status.SUCCESS -> {
                         getMultiSelectImages(result.data)
@@ -32,7 +32,7 @@ class PixImagePicker
         }
 
         override fun addImages(imageCounter: Int) {
-            pixImagePickerActions.addPixToActivityImpl(R.id.place_holder, getOptions(imageCounter)) { result ->
+            pixImagePickerActions.addPixToActivityImpl(R.id.edit_ads_fragment_container, getOptions(imageCounter)) { result ->
                 when (result.status) {
                     PixEventCallback.Status.SUCCESS -> {
                         pixImagePickerActions.openChooseImageFrag()
@@ -46,7 +46,7 @@ class PixImagePicker
         }
 
         override fun getSingleImages() {
-            pixImagePickerActions.addPixToActivityImpl(R.id.place_holder, getOptions(1)) { result ->
+            pixImagePickerActions.addPixToActivityImpl(R.id.edit_ads_fragment_container, getOptions(1)) { result ->
                 when (result.status) {
                     PixEventCallback.Status.SUCCESS -> {
                         pixImagePickerActions.openChooseImageFrag()

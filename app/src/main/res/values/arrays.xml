@@ -2,8 +2,8 @@
 <resources>
 
     <string-array name="language_array">
-        <item>RU</item>
-        <item>EN</item>
+        <item>Русский</item>
+        <item>English</item>
     </string-array>
     <string-array name="language_array_values">
         <item>ru</item>
@@ -24,8 +24,8 @@
         <item>@string/light_theme</item>
     </string-array>
     <string-array name="chose_theme_values">
-        <item>Dark theme</item>
-        <item>Light theme</item>
+        <item>dark_theme</item>
+        <item>light_theme</item>
     </string-array>
 
     <string-array name="text_size_array">
@@ -52,7 +52,6 @@
         <attr name="android:defaultValue" format="string" />
         <attr name="android:entries" format="reference" />
         <attr name="android:entryValues" format="reference" />
-        <!-- Другие атрибуты, которые вы можете определить -->
     </declare-styleable>
 
 

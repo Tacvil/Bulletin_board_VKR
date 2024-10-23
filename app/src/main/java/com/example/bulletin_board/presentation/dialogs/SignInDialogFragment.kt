@@ -1,4 +1,4 @@
-package com.example.bulletin_board.presentation.fragment
+package com.example.bulletin_board.presentation.dialogs
 
 import android.app.AlertDialog
 import android.app.Dialog
@@ -54,7 +54,7 @@ class SignInDialogFragment(
     private fun setupClickListeners() {
         binding.buttonSignUpIn.setOnClickListener { handleSignUpInClick() }
         binding.buttonForgetPassword.setOnClickListener { handleResetPasswordClick() }
-        binding.buttonGoogleSigIn.setOnClickListener { handleGoogleSignInClick() }
+        binding.googleSignInButton.setOnClickListener { handleGoogleSignInClick() }
     }
 
     private fun handleSignUpInClick() {
@@ -83,7 +83,7 @@ class SignInDialogFragment(
                 }
             dismiss()
         } else {
-            binding.textViewError.visibility = View.VISIBLE
+            binding.textViewErrorEmail.visibility = View.VISIBLE
         }
     }
 
