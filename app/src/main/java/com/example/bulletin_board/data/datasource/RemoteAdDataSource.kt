@@ -366,7 +366,7 @@ class RemoteAdDataSource
                         WITH_SEND_FIELD,
                         SortOption.WITHOUT_SEND.id,
                     )
-
+                null, "" -> query
                 else -> query
             }
 

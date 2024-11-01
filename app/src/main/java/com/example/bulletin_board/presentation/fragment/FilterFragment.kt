@@ -32,7 +32,6 @@ import dagger.hilt.android.AndroidEntryPoint
 import jakarta.inject.Inject
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
-import timber.log.Timber
 
 @AndroidEntryPoint
 class FilterFragment
@@ -223,27 +222,33 @@ class FilterFragment
         with(binding) {
             val filters = mutableMapOf<String, String>()
 
-            selectCountryEditText.text.toString().takeIf { it.isNotBlank() }?.let {
+            selectCountryEditText.text.toString().let {
                 filters[COUNTRY_FIELD] = it
             }
-            selectCityEditText.text.toString().takeIf { it.isNotBlank() }?.let {
+            selectCityEditText.text.toString().let {
                 filters[CITY_FIELD] = it
             }
-            indexEditText.text.toString().takeIf { it.isNotBlank() }?.let {
+            indexEditText.text.toString().let {
                 filters[INDEX_FIELD] = it
             }
-            if (selectSendOptionEditText.text.toString() != getString(R.string.no_matter)) {
+
+            if (selectSendOptionEditText.text.toString() == getString(R.string.no_matter)) {
+                filters[WITH_SEND_FIELD] = EMPTY_STRING
+            } else {
                 filters[WITH_SEND_FIELD] = sortUtils.getSendOption(selectSendOptionEditText.text.toString())
             }
-            priceFromEditText.text.toString().takeIf { it.isNotBlank() }?.let {
+
+            priceFromEditText.text.toString().let {
                 filters[PRICE_FROM_FIELD] = it
             }
-            priceToEditText.text.toString().takeIf { it.isNotBlank() }?.let {
+            priceToEditText.text.toString().let {
                 filters[PRICE_TO_FIELD] = it
             }
 
             if (filters[PRICE_FROM_FIELD]?.isNotEmpty() == true || filters[PRICE_TO_FIELD]?.isNotEmpty() == true) {
                 filters[ORDER_BY_FIELD] = SortOption.BY_PRICE_ASC.id
+            }else{
+                filters[ORDER_BY_FIELD] = SortOption.BY_NEWEST.id
             }
 
             viewModel.updateFilters(filters)
